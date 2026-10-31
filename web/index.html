@@ -1,52 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Sakina Saifuddin — Portfolio</title>
-  <meta name="description" content="Sakina Saifuddin — Data Scientist & ML Engineer. Interactive 3D portfolio." />
-  <meta property="og:title" content="Sakina Saifuddin" />
-  <meta property="og:description" content="Data Scientist & ML Engineer — interactive 3D portfolio" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Sans:wght@300;400;500&display=swap" />
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sakina Saifuddin | Data Scientist</title>
+<meta name="description" content="Portfolio of Sakina Saifuddin, data scientist at the University of Houston.">
+<meta name="theme-color" content="#0d0906">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 fill=%27%230d0906%27/%3E%3Crect x=%273%27 y=%273%27 width=%2710%27 height=%277%27 fill=%27%23e0a04a%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{"imports":{"three":"./vendor/three/build/three.module.js","three/addons/":"./vendor/three/examples/jsm/"}}
+</script>
 </head>
 <body>
-  <!-- Loading screen -->
-  <div id="loader" role="progressbar" aria-label="Loading portfolio">
-    <div class="loader-name">SAKINA SAIFUDDIN</div>
-    <div class="loader-bar-wrap"><div id="loader-bar"></div></div>
-    <div class="loader-status" id="loader-status">Initialising…</div>
-  </div>
+<canvas id="scene" aria-label="Interactive 3D model of Sakina's desk. Use the buttons below or the keys T, I, N and Z to move between areas."></canvas>
 
-  <!-- Canvas -->
-  <canvas id="three-canvas" aria-hidden="true"></canvas>
+<header class="brand">
+  <h1>SAKINA SAIFUDDIN</h1>
+  <p>DATA SCIENTIST · UNIVERSITY OF HOUSTON</p>
+</header>
 
-  <!-- HUD: View label -->
-  <div id="view-label" aria-live="polite">HOME</div>
+<aside id="panel" class="panel" role="dialog" aria-labelledby="panel-title" hidden>
+  <button class="close" id="panel-close" aria-label="Close panel">ESC</button>
+  <p class="eyebrow" id="panel-eyebrow"></p>
+  <h2 id="panel-title"></h2>
+  <div id="panel-body"></div>
+</aside>
 
-  <!-- Navigation hotspot menu (keyboard/screen-reader) -->
-  <nav id="hotspot-nav" aria-label="Room navigation">
-    <button data-view="DESK"    title="Go to Desk">DESK</button>
-    <button data-view="MONITOR" title="Go to Computer">COMPUTER</button>
-    <button data-view="TV"      title="Go to TV">TV / VCR</button>
-    <button data-view="VHS"     title="Go to VHS Rack">VHS TAPES</button>
-    <button data-view="HOME"    title="Return home">HOME</button>
-  </nav>
+<div id="hint" class="hint" aria-hidden="true"></div>
 
-  <!-- Tooltip -->
-  <div id="tip" role="status" aria-live="polite"></div>
+<nav class="bar" aria-label="Scene controls">
+  <ul class="keys">
+    <li><button data-view="tapes"><kbd>T</kbd> Tapes</button></li>
+    <li><button data-view="ibm"><kbd>I</kbd> IBM PC</button></li>
+    <li><button data-view="notepad"><kbd>N</kbd> Notepad</button></li>
+    <li><button data-view="desk"><kbd>Z</kbd> Zoom desk</button></li>
+  </ul>
+  <ul class="toggles">
+    <li><button id="btn-credits">CREDITS</button></li>
+    <li><button id="btn-sound" aria-pressed="false">SOUND OFF</button></li>
+    <li><button id="btn-lofi" aria-pressed="false">LO-FI</button></li>
+  </ul>
+</nav>
 
-  <!-- Side panel (project details) -->
-  <aside id="panel" aria-label="Project details" hidden>
-    <button id="panel-close" aria-label="Close panel">✕</button>
-    <div id="panel-content"></div>
-  </aside>
+<div id="loader" class="loader" role="status">
+  <p class="loader-title">SAKINA SAIFUDDIN</p>
+  <div class="loader-track"><div id="loader-fill"></div></div>
+  <p id="loader-text">LOADING 0%</p>
+</div>
 
-  <!-- Scripts (vendor loaded first) -->
-  <script src="vendor/three.r134.min.js"></script>
-  <script src="audio.js"></script>
-  <script src="content.js"></script>
-  <script src="main.js"></script>
+<div id="nogl" class="nogl" hidden>
+  <p>This site needs WebGL. Enable hardware acceleration or try another browser.</p>
+</div>
+
+<div class="scan" aria-hidden="true"></div>
+<script type="module" src="main.js"></script>
 </body>
 </html>
