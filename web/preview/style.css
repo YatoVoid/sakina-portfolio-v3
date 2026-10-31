@@ -1,0 +1,45 @@
+:root{--ink:#e8d9bd;--dim:#a8967a;--bg:#0d0906;--amber:#e0a04a;--line:rgba(232,217,189,.22)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:"IBM Plex Mono",ui-monospace,monospace;overflow:hidden}
+canvas#scene{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+canvas#scene.hot{cursor:pointer}
+canvas#scene:active{cursor:grabbing}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
+.brand{position:fixed;top:max(1.4rem,env(safe-area-inset-top));left:clamp(1.2rem,3vw,2.6rem);pointer-events:none;text-shadow:0 2px 18px #000}
+.brand h1{font:400 clamp(1.5rem,3.2vw,2.6rem)/1 "DM Serif Display",Georgia,serif;letter-spacing:.06em}
+.brand p{margin-top:.55rem;font-size:clamp(.62rem,1vw,.78rem);letter-spacing:.22em;color:var(--dim)}
+.bar{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;padding:.8rem clamp(1rem,3vw,2.6rem) max(.8rem,env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(13,9,6,.86) 55%);font-size:.72rem;letter-spacing:.14em}
+.bar ul{display:flex;gap:.4rem 1.4rem;list-style:none;flex-wrap:wrap}
+.bar button{padding:.5rem .25rem;text-transform:uppercase;color:var(--dim);transition:color .2s}
+.bar button:hover,.bar button[aria-pressed="true"],.bar button.on{color:var(--amber)}
+kbd{font:inherit;display:inline-block;min-width:1.7em;padding:.1em .35em;margin-right:.45em;text-align:center;border:1px solid var(--line);border-radius:3px;color:var(--ink)}
+.panel{position:fixed;right:clamp(1rem,3vw,2.6rem);top:50%;transform:translateY(-50%);width:min(26rem,calc(100vw - 2rem));max-height:calc(100vh - 11rem);overflow:auto;padding:1.6rem 1.7rem 1.8rem;background:rgba(18,12,8,.9);border:1px solid var(--line);box-shadow:0 20px 60px rgba(0,0,0,.6);backdrop-filter:blur(6px)}
+.panel[hidden]{display:none}
+.panel .close{position:absolute;top:.9rem;right:1rem;font-size:.66rem;letter-spacing:.14em;color:var(--dim)}
+.panel .close:hover{color:var(--amber)}
+.eyebrow{font-size:.66rem;letter-spacing:.2em;color:var(--amber);margin-bottom:.7rem}
+.panel h2{font:400 1.7rem/1.15 "DM Serif Display",Georgia,serif;margin-bottom:1rem;padding-right:2.5rem}
+.panel p,.panel li{font-size:.8rem;line-height:1.7;color:var(--ink)}
+.panel p+p,.panel ul,.panel .tags{margin-top:.85rem}
+.panel ul{padding-left:1.1rem}
+.tags{display:flex;flex-wrap:wrap;gap:.4rem}
+.tags span{font-size:.66rem;letter-spacing:.1em;padding:.2rem .55rem;border:1px solid var(--line);color:var(--dim)}
+.panel a{color:var(--amber)}
+.panel .pager{display:flex;justify-content:space-between;margin-top:1.3rem;font-size:.68rem;letter-spacing:.14em;color:var(--dim)}
+.panel .pager button:hover{color:var(--amber)}
+.hint{position:fixed;left:50%;bottom:4.6rem;transform:translateX(-50%);font-size:.68rem;letter-spacing:.2em;color:var(--dim);opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.hint.show{opacity:1}
+.loader{position:fixed;inset:0;z-index:20;display:grid;place-content:center;gap:1.1rem;text-align:center;background:var(--bg);transition:opacity .9s}
+.loader.done{opacity:0;pointer-events:none}
+.loader-title{font:400 1.7rem "DM Serif Display",Georgia,serif;letter-spacing:.08em}
+.loader-track{width:min(18rem,70vw);height:2px;background:var(--line)}
+#loader-fill{height:100%;width:0;background:var(--amber);transition:width .2s}
+#loader-text{font-size:.68rem;letter-spacing:.2em;color:var(--dim)}
+.nogl{position:fixed;inset:0;z-index:30;display:grid;place-content:center;padding:2rem;text-align:center;background:var(--bg);font-size:.85rem}
+.nogl[hidden]{display:none}
+.scan{position:fixed;inset:0;pointer-events:none;z-index:10;background:repeating-linear-gradient(transparent 0 2px,rgba(0,0,0,.16) 2px 3px),radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55));mix-blend-mode:multiply}
+.scan::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent,rgba(224,160,74,.05) 50%,transparent);height:18%;animation:roll 7s linear infinite}
+@keyframes roll{from{transform:translateY(-100%)}to{transform:translateY(560%)}}
+@media (prefers-reduced-motion:reduce){.scan::after{animation:none;display:none}.loader{transition:none}}
+@media (max-width:720px){.panel{top:auto;bottom:6.5rem;right:1rem;transform:none;max-height:45vh}.bar{font-size:.64rem}.hint{display:none}}
