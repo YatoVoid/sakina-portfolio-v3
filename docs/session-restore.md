@@ -1,3 +1,5 @@
+> **Superseded (2026-10-31):** this describes an earlier concept/setup. The approved room is the live baked night scene — start from `CLAUDE.md`, `PROJECT_VISION.md` and `ARCHITECTURE.md`. Kept for history.
+
 # V3 Session Restore Guide
 
 Every cloud session starts from a blank container. This guide gets V3 back to a working state in about 3 minutes.

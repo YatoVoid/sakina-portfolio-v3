@@ -1,3 +1,5 @@
+> **Superseded (2026-10-31):** this describes an earlier concept/setup. The approved room is the live baked night scene — start from `CLAUDE.md`, `PROJECT_VISION.md` and `ARCHITECTURE.md`. Kept for history.
+
 # Sakina Saifuddin — Portfolio V3
 
 Cinematic, photorealistic vintage study-room built with **Three.js r134**.  
