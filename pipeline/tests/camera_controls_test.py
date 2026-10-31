@@ -46,15 +46,26 @@ def same(a, b, tol=1e-6):
     return all(abs(x - y) <= tol for x, y in zip(a["p"] + a["d"], b["p"] + b["d"]))
 
 
+def settle(pg, min_wait=1.2, timeout=40):
+    """Wait until the camera stops moving (slow software rendering can stretch flights)."""
+    time.sleep(min_wait); prev = pg.evaluate(CAM); t0 = time.time()
+    while time.time() - t0 < timeout:
+        time.sleep(0.7); cur = pg.evaluate(CAM)
+        if same(prev, cur, 1e-5):
+            return cur
+        prev = cur
+    return prev
+
+
 def drag(pg, dx, dy, steps=30):
     pg.mouse.move(W / 2, H / 2); pg.mouse.down()
     for i in range(1, steps + 1):
         pg.mouse.move(W / 2 + dx * i / steps, H / 2 + dy * i / steps)
-    pg.mouse.up(); time.sleep(1.0)
+    pg.mouse.up(); settle(pg, 0.8)
 
 
 def home(pg):
-    pg.keyboard.press("Escape"); time.sleep(2.2)
+    pg.keyboard.press("Escape"); settle(pg, 1.6)
 
 
 def shot(pg, name):
@@ -111,7 +122,7 @@ with sync_playwright() as p:
     home(pg)
     # 13/14. keyboard presets + home
     for key, want in [("t", "TAPE"), ("i", "IBM"), ("n", "NOTEPAD"), ("z", None)]:
-        pg.keyboard.press(key); time.sleep(2.2)
+        pg.keyboard.press(key); settle(pg, 1.6)
         eb = pg.evaluate("document.getElementById('panel').hidden?null:document.getElementById('panel-eyebrow').textContent")
         ok = (eb is None) if want is None else (eb is not None and want in eb)
         check(f"13 key {key.upper()} preset", ok, f"panel={eb!r}")
@@ -129,7 +140,7 @@ with sync_playwright() as p:
     pg.mouse.move(x, y); pg.mouse.down(); pg.mouse.move(x + 40, y, steps=5); pg.mouse.up(); time.sleep(1.0)
     check("11a drag that starts on a tape does not open it", pg.evaluate(PANEL) is None)
     home(pg); x, y = proj(tapes[3]["spine"])
-    pg.mouse.click(x, y); time.sleep(2.2)
+    pg.mouse.click(x, y); settle(pg, 1.6)
     check("11b plain click on a tape opens it", pg.evaluate(PANEL) == "BLUTECH CONSULTING", f"panel={pg.evaluate(PANEL)!r}")
     home(pg)
     # 12. click the CRT screen (report current behaviour)
