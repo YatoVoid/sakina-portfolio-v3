@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>GLB Isolation Test</title>
+<script type="importmap">
+{"imports":{
+  "three":"/vendor/three/build/three.module.js",
+  "three/addons/":"./vendor/three/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<pre id="log">Testing...</pre>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js';
+
+const log = document.getElementById('log');
+function out(msg) { log.textContent += '\n' + msg; console.log(msg); }
+
+out('THREE version: ' + THREE.REVISION);
+
+const draco = new DRACOLoader();
+draco.setDecoderPath('/vendor/three/examples/js/libs/draco/gltf/');
+out('Draco decoder path: /vendor/three/examples/js/libs/draco/gltf/');
+
+const loader = new GLTFLoader();
+loader.setDRACOLoader(draco);
+
+out('Loading sakina-room-v3.glb...');
+const start = performance.now();
+
+loader.load(
+  '/sakina-room-v3.glb',
+  (gltf) => {
+    const ms = Math.round(performance.now() - start);
+    out('SUCCESS! Loaded in ' + ms + 'ms');
+    out('Scene children: ' + gltf.scene.children.length);
+    let meshCount = 0;
+    gltf.scene.traverse(o => { if(o.isMesh) meshCount++; });
+    out('Meshes: ' + meshCount);
+  },
+  (progress) => {
+    if(progress.lengthComputable) {
+      const pct = Math.round(progress.loaded/progress.total*100);
+      out('Progress: ' + pct + '% (' + Math.round(progress.loaded/1024) + 'KB)');
+    }
+  },
+  (error) => {
+    out('ERROR: ' + error.message);
+    out('Stack: ' + error.stack);
+  }
+);
+</script>
+</body>
+</html>
