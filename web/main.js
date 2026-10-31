@@ -51,6 +51,7 @@ draco.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/lib
 const loader=new GLTFLoader();
 loader.setDRACOLoader(draco);
 const meshes={};
+const objs={};   // all named Object3D (groups + meshes)
 let progressRoom=0,progressOut=0;
 function setProgress(){
   const p=Math.round((progressRoom*0.9+progressOut*0.1)*100);
@@ -59,6 +60,7 @@ function setProgress(){
 const roomP=new Promise((res,rej)=>loader.load("sakina-room-v3.glb",g=>{
   const maxAniso=renderer.capabilities.getMaxAnisotropy();
   g.scene.traverse(o=>{
+    if(o.name)objs[o.name]=o;
     if(!o.isMesh)return;
     meshes[o.name]=o;
     const m=o.material;
@@ -70,15 +72,13 @@ const roomP=new Promise((res,rej)=>loader.load("sakina-room-v3.glb",g=>{
 const outP=new Promise((res,rej)=>loader.load("sakina-outside.glb",g=>{scene.add(g.scene);res()},
   e=>{if(e.lengthComputable){progressOut=e.loaded/e.total;setProgress()}},rej));
 
-const box=name=>new THREE.Box3().setFromObject(meshes[name]);
+const box=name=>new THREE.Box3().setFromObject(objs[name]);
 const DESK_TOP=0.72;
 function deskTapeBox(){
-  const b=new THREE.Box3(),v=new THREE.Vector3(),m=meshes.Room_Tapes;
-  m.updateWorldMatrix(true,false);
-  const pos=m.geometry.attributes.position;
-  for(let i=0;i<pos.count;i++){
-    v.fromBufferAttribute(pos,i).applyMatrix4(m.matrixWorld);
-    if(v.y>DESK_TOP)b.expandByPoint(v);
+  const b=new THREE.Box3();
+  for(let i=1;i<=7;i++){
+    const g=objs['PTape_'+i];
+    if(g)b.expandByObject(g);
   }
   return b;
 }
@@ -91,9 +91,9 @@ let VIEWS;
 function buildViews(){
   tapeBox=deskTapeBox();
   const tapes=tapeBox.getCenter(new THREE.Vector3());
-  const ibmC=box("Room_Station").getCenter(new THREE.Vector3());
+  const ibmC=box("Station_Root").getCenter(new THREE.Vector3());
   ibmC.y+=0.3;
-  const deskBox=box("Room_Desk");
+  const deskBox=box("Desk_Top");
   const deskC=deskBox.getCenter(new THREE.Vector3());
   const note=new THREE.Vector3(-0.45,0.76,-1.36);
   VIEWS={
@@ -203,17 +203,26 @@ function pick(ev){
   const r=canvas.getBoundingClientRect();
   ptr.set(((ev.clientX-r.left)/r.width)*2-1,-((ev.clientY-r.top)/r.height)*2+1);
   ray.setFromCamera(ptr,camera);
-  const targets=["Room_Tapes","Room_Station","Room_Desk"].map(n=>meshes[n]).filter(Boolean);
+  // collect tape child meshes (PTape_1..7 are groups; their children are meshes)
+  const tapeMeshes=[];
+  for(let i=1;i<=7;i++){
+    const g=objs['PTape_'+i];
+    if(g)g.traverse(o=>{if(o.isMesh)tapeMeshes.push(o)});
+  }
+  const ibmMesh=meshes['PC_Unit'];
+  const deskMesh=meshes['Desk_Top'];
+  const targets=[...tapeMeshes,ibmMesh,deskMesh].filter(Boolean);
   const hit=ray.intersectObjects(targets,false)[0];
   if(!hit)return null;
   const n=hit.object.name;
-  if(n==="Room_Tapes"){
-    const {stack,n}=tapeIndex(hit.point);
+  // tape hit: any PTape_N or PTape_N_* child
+  if(/^PTape_\d/.test(n)){
+    const {stack,n:slots}=tapeIndex(hit.point);
     const h=tapeBox.max.y-DESK_TOP;
-    const row=Math.min(n-1,Math.max(0,Math.floor(((tapeBox.max.y-hit.point.y)/h)*n)));
+    const row=Math.min(slots-1,Math.max(0,Math.floor(((tapeBox.max.y-hit.point.y)/h)*slots)));
     return {kind:"tapes",idx:stack===0?row:6+row};
   }
-  if(n==="Room_Station")return {kind:"ibm"};
+  if(n==='PC_Unit')return {kind:"ibm"};
   if(Math.hypot(hit.point.x+0.45,hit.point.z+1.36)<0.3&&hit.point.y<0.95)return {kind:"notepad"};
   return null;
 }
