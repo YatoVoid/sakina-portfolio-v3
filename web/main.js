@@ -63,6 +63,10 @@ const roomP=new Promise((res,rej)=>loader.load("sakina-room-v3.glb",g=>{
   const maxAniso=renderer.capabilities.getMaxAnisotropy();
   g.scene.traverse(o=>{
     if(o.name)objs[o.name]=o;
+    // Blender volumetric haze: glTF has no volume shaders, so it arrives as an opaque white box around the camera.
+    if(o.name==="Room_Volume"){o.visible=false;return;}
+    // Blender exports lights in candela (W*683/4pi) while emissive strengths stay radiometric; convert back to W/sr.
+    if(o.isLight){o.intensity/=683;return;}
     if(!o.isMesh)return;
     meshes[o.name]=o;
     const m=o.material;
