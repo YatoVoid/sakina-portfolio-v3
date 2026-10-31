@@ -26,19 +26,22 @@ const HOME={pos:new THREE.Vector3(0.12,0.86,-0.3),target:new THREE.Vector3(0.1,0
 camera.position.copy(HOME.pos);
 
 const controls=new OrbitControls(camera,canvas);
-controls.enablePan=false;
+controls.enablePan=true;
+controls.panSpeed=0.6;
 controls.enableDamping=true;
-controls.dampingFactor=0.07;
-controls.rotateSpeed=0.45;
-controls.zoomSpeed=0.6;
+controls.dampingFactor=0.05;
+controls.rotateSpeed=0.7;
+controls.zoomSpeed=0.8;
 controls.target.copy(HOME.target);
 
 function limitAround(){
-  const az=controls.getAzimuthalAngle(),po=controls.getPolarAngle();
-  controls.minAzimuthAngle=az-0.7;controls.maxAzimuthAngle=az+0.7;
-  controls.minPolarAngle=Math.max(0.55,po-0.12);controls.maxPolarAngle=Math.min(2.0,po+0.12);
-  const d=camera.position.distanceTo(controls.target);
-  controls.minDistance=d*0.7;controls.maxDistance=d*1.25;
+  // Free orbit — no angle restrictions
+  controls.minAzimuthAngle=-Infinity;
+  controls.maxAzimuthAngle=Infinity;
+  controls.minPolarAngle=0.2;
+  controls.maxPolarAngle=Math.PI*0.85;
+  controls.minDistance=0.5;
+  controls.maxDistance=12;
 }
 controls.update();limitAround();
 
