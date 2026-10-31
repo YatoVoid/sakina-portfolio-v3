@@ -18,7 +18,7 @@ try{
 }
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
-renderer.physicallyCorrectLights=true;
+renderer.useLegacyLights=false;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.0;
 renderer.setClearColor(0x07050a);
@@ -49,7 +49,7 @@ function limitAround(){
 controls.update();limitAround();
 
 const draco=new DRACOLoader();
-draco.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/libs/draco/gltf/");
+draco.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/");
 const loader=new GLTFLoader();
 loader.setDRACOLoader(draco);
 const meshes={};
