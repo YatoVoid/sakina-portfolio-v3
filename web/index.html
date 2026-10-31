@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Sakina Saifuddin — Portfolio</title>
+  <meta name="description" content="Sakina Saifuddin — Data Scientist & ML Engineer. Interactive 3D portfolio." />
+  <meta property="og:title" content="Sakina Saifuddin" />
+  <meta property="og:description" content="Data Scientist & ML Engineer — interactive 3D portfolio" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Sans:wght@300;400;500&display=swap" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Loading screen -->
+  <div id="loader" role="progressbar" aria-label="Loading portfolio">
+    <div class="loader-name">SAKINA SAIFUDDIN</div>
+    <div class="loader-bar-wrap"><div id="loader-bar"></div></div>
+    <div class="loader-status" id="loader-status">Initialising…</div>
+  </div>
+
+  <!-- Canvas -->
+  <canvas id="three-canvas" aria-hidden="true"></canvas>
+
+  <!-- HUD: View label -->
+  <div id="view-label" aria-live="polite">HOME</div>
+
+  <!-- Navigation hotspot menu (keyboard/screen-reader) -->
+  <nav id="hotspot-nav" aria-label="Room navigation">
+    <button data-view="DESK"    title="Go to Desk">DESK</button>
+    <button data-view="MONITOR" title="Go to Computer">COMPUTER</button>
+    <button data-view="TV"      title="Go to TV">TV / VCR</button>
+    <button data-view="VHS"     title="Go to VHS Rack">VHS TAPES</button>
+    <button data-view="HOME"    title="Return home">HOME</button>
+  </nav>
+
+  <!-- Tooltip -->
+  <div id="tip" role="status" aria-live="polite"></div>
+
+  <!-- Side panel (project details) -->
+  <aside id="panel" aria-label="Project details" hidden>
+    <button id="panel-close" aria-label="Close panel">✕</button>
+    <div id="panel-content"></div>
+  </aside>
+
+  <!-- Scripts (vendor loaded first) -->
+  <script src="vendor/three.r134.min.js"></script>
+  <script src="audio.js"></script>
+  <script src="content.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

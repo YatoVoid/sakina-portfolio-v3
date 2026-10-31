@@ -1,0 +1,237 @@
+/* ── V3 Design Tokens ────────────────────────────────────────────────────── */
+:root {
+  --amber:       #D4900A;
+  --amber-dim:   #7a5200;
+  --amber-glow:  #ffc84033;
+  --fg:          #e8dfd0;
+  --fg-muted:    #8a7f72;
+  --bg:          #07050a;
+  --bg-panel:    #0d0b10;
+  --border:      rgba(212,144,10,0.18);
+  --mono:        'IBM Plex Mono', 'Courier New', monospace;
+  --sans:        'IBM Plex Sans', system-ui, sans-serif;
+  --radius:      3px;
+  --safe-t:      env(safe-area-inset-top,    0px);
+  --safe-b:      env(safe-area-inset-bottom, 0px);
+  --safe-l:      env(safe-area-inset-left,   0px);
+  --safe-r:      env(safe-area-inset-right,  0px);
+}
+
+/* ── Reset ───────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--fg) }
+[hidden] { display: none !important }
+button { font: inherit; cursor: pointer; border: none; background: none; color: inherit }
+
+/* ── Canvas ──────────────────────────────────────────────────────────────── */
+#three-canvas {
+  display: block;
+  width: 100vw !important;
+  height: 100vh !important;
+  position: fixed;
+  inset: 0;
+}
+
+/* ── Loader ──────────────────────────────────────────────────────────────── */
+#loader {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  z-index: 100;
+  transition: opacity 0.6s ease;
+  font-family: var(--mono);
+}
+.loader-name {
+  font-size: 13px;
+  letter-spacing: 0.28em;
+  color: var(--amber);
+}
+.loader-bar-wrap {
+  width: 200px;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+#loader-bar {
+  height: 100%;
+  background: var(--amber);
+  width: 0%;
+  transition: width 0.25s linear;
+}
+.loader-status {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--fg-muted);
+}
+
+/* ── View label HUD ──────────────────────────────────────────────────────── */
+#view-label {
+  position: fixed;
+  top: max(14px, var(--safe-t));
+  left: max(14px, var(--safe-l));
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--amber);
+  background: rgba(7,5,10,0.7);
+  padding: 5px 10px;
+  border-radius: var(--radius);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* ── Nav buttons ─────────────────────────────────────────────────────────── */
+#hotspot-nav {
+  position: fixed;
+  top: max(14px, var(--safe-t));
+  right: max(14px, var(--safe-r));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 20;
+}
+#hotspot-nav button {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--fg-muted);
+  background: rgba(7,5,10,0.7);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 5px 10px;
+  border-radius: var(--radius);
+  backdrop-filter: blur(8px);
+  transition: color 0.15s, border-color 0.15s;
+  text-align: right;
+}
+#hotspot-nav button:hover,
+#hotspot-nav button:focus-visible {
+  color: var(--amber);
+  border-color: var(--amber-dim);
+  outline: none;
+}
+
+/* ── Tooltip ─────────────────────────────────────────────────────────────── */
+#tip {
+  position: fixed;
+  bottom: max(28px, var(--safe-b));
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--amber);
+  background: rgba(7,5,10,0.88);
+  border: 1px solid var(--amber-dim);
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 0.18s;
+}
+#tip.show { opacity: 1 }
+
+/* ── Side panel ──────────────────────────────────────────────────────────── */
+#panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(420px, 95vw);
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  padding: max(22px, var(--safe-t)) 24px max(22px, var(--safe-b)) 24px;
+  overflow-y: auto;
+  z-index: 30;
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+#panel.open { transform: none }
+#panel-close {
+  position: absolute;
+  top: max(18px, var(--safe-t));
+  right: 18px;
+  font-size: 16px;
+  color: var(--fg-muted);
+  padding: 6px;
+  border-radius: var(--radius);
+  transition: color 0.15s;
+}
+#panel-close:hover { color: var(--fg) }
+#panel-content { margin-top: 42px; font-family: var(--sans) }
+#panel-content h2 {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: var(--amber);
+  margin-bottom: 16px;
+}
+#panel-content h3 {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--fg);
+  margin-bottom: 8px;
+  text-wrap: balance;
+}
+#panel-content p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--fg-muted);
+  margin-bottom: 14px;
+}
+#panel-content .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+#panel-content .tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--fg-muted);
+  border: 1px solid var(--border);
+  padding: 3px 8px;
+  border-radius: var(--radius);
+}
+#panel-content .links { display: flex; flex-direction: column; gap: 8px; margin-top: 18px }
+#panel-content .links a {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--amber);
+  text-decoration: none;
+  border-bottom: 1px solid var(--amber-dim);
+  padding-bottom: 2px;
+  width: fit-content;
+  transition: border-color 0.15s;
+}
+#panel-content .links a:hover { border-color: var(--amber) }
+
+/* ── Version badge ───────────────────────────────────────────────────────── */
+#badge {
+  position: fixed;
+  bottom: max(10px, var(--safe-b));
+  right: max(14px, var(--safe-r));
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  color: var(--fg-muted);
+  opacity: 0.35;
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* ── Phone responsive ────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  #hotspot-nav { display: none }   /* touch: use tap-to-fly only */
+  #panel { width: 100vw; border-left: none; border-top: 1px solid var(--border) }
+}

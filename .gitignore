@@ -1,0 +1,66 @@
+# ── Node / npm ────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ── Python / bpy pipeline ─────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+env/
+venv/
+*.egg-info/
+dist/
+build/
+
+# ── Blender ───────────────────────────────────────────────────────────────
+*.blend1
+*.blend2
+/pipeline/blend/
+
+# ── Generated GLB assets (rebuilt from pipeline; do not commit large bins) ─
+assets/models/*.glb
+assets/models/*.gltf
+
+# ── Render / preview outputs (rebuilt on demand) ─────────────────────────
+assets/previews/*.png
+assets/previews/*.jpg
+assets/previews/*.exr
+
+# ── OS / editor junk ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── Secrets — NEVER commit these ─────────────────────────────────────────
+.env
+.env.*
+*.key
+*.pem
+secrets.json
+credentials.json
+
+# ── Temp / cache ──────────────────────────────────────────────────────────
+/tmp/
+*.tmp
+*.log
+.cache/
+
+# ── Large media that ships from V2 via device bridge (not source-tracked) ─
+assets/images/*.jpg
+assets/images/*.jpeg
+assets/images/*.png
+assets/images/*.webp
+!assets/images/.gitkeep
+assets/resume/*.pdf
+!assets/resume/.gitkeep
+
+# ── Three.js vendor (pinned CDN; only keep if you mirror locally) ─────────
+# web/vendor/three.r134.min.js  ← uncomment to exclude if you prefer CDN
