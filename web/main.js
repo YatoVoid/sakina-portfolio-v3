@@ -18,13 +18,11 @@ try{
 }
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
-renderer.useLegacyLights=false;
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.0;
+renderer.toneMapping=THREE.NoToneMapping;
 renderer.setClearColor(0x07050a);
 
 const scene=new THREE.Scene();
-const camera=new THREE.PerspectiveCamera(46,1,0.05,120);
+const camera=new THREE.PerspectiveCamera(46,1,0.05,7000);
 const HOME={pos:new THREE.Vector3(0.12,0.86,-0.3),target:new THREE.Vector3(0.1,0.98,-1.8)};
 camera.position.copy(HOME.pos);
 
@@ -53,20 +51,14 @@ draco.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/li
 const loader=new GLTFLoader();
 loader.setDRACOLoader(draco);
 const meshes={};
-const objs={};   // all named Object3D (groups + meshes)
 let progressRoom=0,progressOut=0;
 function setProgress(){
   const p=Math.round((progressRoom*0.9+progressOut*0.1)*100);
   $("loader-fill").style.width=p+"%";$("loader-text").textContent="LOADING "+p+"%";
 }
-const roomP=new Promise((res,rej)=>loader.load("sakina-room-v3.glb",g=>{
+const roomP=new Promise((res,rej)=>loader.load("sakina-room-baked.glb",g=>{
   const maxAniso=renderer.capabilities.getMaxAnisotropy();
   g.scene.traverse(o=>{
-    if(o.name)objs[o.name]=o;
-    // Blender volumetric haze: glTF has no volume shaders, so it arrives as an opaque white box around the camera.
-    if(o.name==="Room_Volume"){o.visible=false;return;}
-    // Blender exports lights in candela (W*683/4pi) while emissive strengths stay radiometric; convert back to W/sr.
-    if(o.isLight){o.intensity/=683;return;}
     if(!o.isMesh)return;
     meshes[o.name]=o;
     const m=o.material;
@@ -78,13 +70,15 @@ const roomP=new Promise((res,rej)=>loader.load("sakina-room-v3.glb",g=>{
 const outP=new Promise((res,rej)=>loader.load("sakina-outside.glb",g=>{scene.add(g.scene);res()},
   e=>{if(e.lengthComputable){progressOut=e.loaded/e.total;setProgress()}},rej));
 
-const box=name=>new THREE.Box3().setFromObject(objs[name]);
+const box=name=>new THREE.Box3().setFromObject(meshes[name]);
 const DESK_TOP=0.72;
 function deskTapeBox(){
-  const b=new THREE.Box3();
-  for(let i=1;i<=7;i++){
-    const g=objs['PTape_'+i];
-    if(g)b.expandByObject(g);
+  const b=new THREE.Box3(),v=new THREE.Vector3(),m=meshes.Room_Tapes;
+  m.updateWorldMatrix(true,false);
+  const pos=m.geometry.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    v.fromBufferAttribute(pos,i).applyMatrix4(m.matrixWorld);
+    if(v.y>DESK_TOP)b.expandByPoint(v);
   }
   return b;
 }
@@ -97,9 +91,9 @@ let VIEWS;
 function buildViews(){
   tapeBox=deskTapeBox();
   const tapes=tapeBox.getCenter(new THREE.Vector3());
-  const ibmC=box("Station_Root").getCenter(new THREE.Vector3());
+  const ibmC=box("Room_Station").getCenter(new THREE.Vector3());
   ibmC.y+=0.3;
-  const deskBox=box("Desk_Top");
+  const deskBox=box("Room_Desk");
   const deskC=deskBox.getCenter(new THREE.Vector3());
   const note=new THREE.Vector3(-0.45,0.76,-1.36);
   VIEWS={
@@ -209,26 +203,17 @@ function pick(ev){
   const r=canvas.getBoundingClientRect();
   ptr.set(((ev.clientX-r.left)/r.width)*2-1,-((ev.clientY-r.top)/r.height)*2+1);
   ray.setFromCamera(ptr,camera);
-  // collect tape child meshes (PTape_1..7 are groups; their children are meshes)
-  const tapeMeshes=[];
-  for(let i=1;i<=7;i++){
-    const g=objs['PTape_'+i];
-    if(g)g.traverse(o=>{if(o.isMesh)tapeMeshes.push(o)});
-  }
-  const ibmMesh=meshes['PC_Unit'];
-  const deskMesh=meshes['Desk_Top'];
-  const targets=[...tapeMeshes,ibmMesh,deskMesh].filter(Boolean);
+  const targets=["Room_Tapes","Room_Station","Room_Desk"].map(n=>meshes[n]).filter(Boolean);
   const hit=ray.intersectObjects(targets,false)[0];
   if(!hit)return null;
   const n=hit.object.name;
-  // tape hit: any PTape_N or PTape_N_* child
-  if(/^PTape_\d/.test(n)){
-    const {stack,n:slots}=tapeIndex(hit.point);
+  if(n==="Room_Tapes"){
+    const {stack,n}=tapeIndex(hit.point);
     const h=tapeBox.max.y-DESK_TOP;
-    const row=Math.min(slots-1,Math.max(0,Math.floor(((tapeBox.max.y-hit.point.y)/h)*slots)));
+    const row=Math.min(n-1,Math.max(0,Math.floor(((tapeBox.max.y-hit.point.y)/h)*n)));
     return {kind:"tapes",idx:stack===0?row:6+row};
   }
-  if(n==='PC_Unit')return {kind:"ibm"};
+  if(n==="Room_Station")return {kind:"ibm"};
   if(Math.hypot(hit.point.x+0.45,hit.point.z+1.36)<0.3&&hit.point.y<0.95)return {kind:"notepad"};
   return null;
 }
