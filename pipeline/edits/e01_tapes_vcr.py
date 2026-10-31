@@ -55,6 +55,16 @@ def _rebuild_tape(root, centre_xy, yaw):
     new_world = Matrix.Translation((centre_xy, front_y_world + TAPE_W / 2, z)) @ Matrix.Rotation(math.radians(yaw), 4, 'Z')
     root.matrix_world = new_world
 
+    def xspan(c):                                         # child's x extent in tape-local coords
+        xs = [(rel[c.name] @ Vector(b)).x for b in c.bound_box]
+        return min(xs), max(xs)
+
+    # Right end of the label strip = just left of the number (which stays anchored to the right end).
+    no = next((c for c in root.children if c.name.endswith("_No") and not c.name.startswith("Tape_Top_")), None)
+    no_left = hl + LABEL_K * (xspan(no)[0] - half_l_old) if no else hl - 0.02
+    strip_end = no_left - 0.006
+    text_end = strip_end - 0.004
+
     for c in root.children:
         m = rel[c.name]
         p = m.translation.copy()
@@ -71,12 +81,18 @@ def _rebuild_tape(root, centre_xy, yaw):
             bx = [ (m @ Vector(b)).x for b in c.bound_box ]
             a_old, b_old = min(bx), max(bx)
             a_new = -hl + LABEL_K * (a_old + half_l_old)
-            b_new = hl - LABEL_K * 0.050                  # leave room for the number at the right end
+            b_new = strip_end                             # stop short of the number
             fx = (b_new - a_new) / (b_old - a_old)
             # map x linearly [a_old,b_old] -> [a_new,b_new]; y onto the new face; z uniform
             newp = Vector((a_new + (p.x - a_old) * fx, p.y * (TAPE_W / 2) / half_w_old, p.z * LABEL_K))
             S = Matrix.Diagonal((fx, LABEL_K, LABEL_K, 1.0))
-        else:                                             # logo, panel, icons, name, website: anchored left
+        elif c.type == 'FONT' and n.endswith(("_Name", "_Site")):   # text: anchored left, shrunk only if too long
+            a_old, b_old = xspan(c)
+            a_new = -hl + LABEL_K * (a_old + half_l_old)
+            k = min(LABEL_K, (text_end - a_new) / (b_old - a_old))
+            newp = Vector((a_new + k * (p.x - a_old), p.y * (TAPE_W / 2) / half_w_old, p.z * LABEL_K))
+            S = Matrix.Diagonal((k, k, k, 1.0))
+        else:                                             # logo, panel, icons: anchored left
             newp = Vector((-hl + LABEL_K * (p.x + half_l_old), p.y * (TAPE_W / 2) / half_w_old, p.z * LABEL_K))
             S = Matrix.Diagonal((LABEL_K, LABEL_K, LABEL_K, 1.0))
         c.matrix_world = root.matrix_world @ Matrix.Translation(newp) @ S @ lin

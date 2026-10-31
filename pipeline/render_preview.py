@@ -28,7 +28,8 @@ VIEWS = {
 cam_data = D.cameras.new("PreviewCam"); cam = D.objects.new("PreviewCam", cam_data)
 sc.collection.objects.link(cam); sc.camera = cam
 cam_data.sensor_fit = 'VERTICAL'; cam_data.clip_start = 0.05; cam_data.clip_end = 7000
-for name, (pos, tgt, vfov) in VIEWS.items():
+ONLY = sys.argv[4].split(",") if len(sys.argv) > 4 else list(VIEWS)
+for name, (pos, tgt, vfov) in [(k, v) for k, v in VIEWS.items() if k in ONLY]:
     cam.location = pos
     cam.rotation_euler = (tgt - pos).to_track_quat('-Z', 'Y').to_euler()
     cam_data.angle_y = math.radians(vfov)
