@@ -21,15 +21,18 @@ sc.render.image_settings.file_format = 'PNG'
 
 # three.js (x, y, z) Y-up  ->  Blender (x, -z, y)
 b = lambda x, y, z: mathutils.Vector((x, -z, y))
-VIEWS = {
-    "home":  (b(0.12, 0.86, -0.3), b(0.1, 0.98, -1.8), 46),
-    "tapes": (b(0.42, 1.10, -0.78), b(0.42, 0.80, -1.65), 40),
+VIEWS = {   # name: (camera, target, vertical fov, (width, height))
+    "home":  (b(0.12, 0.86, -0.3), b(0.1, 0.98, -1.8), 46, (1280, 720)),       # site HOME before round 2
+    "hero":  (b(-0.02, 1.12, -0.25), b(-0.02, 0.92, -1.65), 38, (1600, 724)),  # new HOME (round 2), 2.21:1 screen
+    "tapes": (b(0.42, 1.10, -0.78), b(0.42, 0.80, -1.65), 40, (1280, 720)),
+    "plant": (b(-0.55, 1.22, -1.05), b(-0.92, 1.02, -1.74), 42, (1280, 720)),
 }
 cam_data = D.cameras.new("PreviewCam"); cam = D.objects.new("PreviewCam", cam_data)
 sc.collection.objects.link(cam); sc.camera = cam
 cam_data.sensor_fit = 'VERTICAL'; cam_data.clip_start = 0.05; cam_data.clip_end = 7000
 ONLY = sys.argv[4].split(",") if len(sys.argv) > 4 else list(VIEWS)
-for name, (pos, tgt, vfov) in [(k, v) for k, v in VIEWS.items() if k in ONLY]:
+for name, (pos, tgt, vfov, (rx, ry)) in [(k, v) for k, v in VIEWS.items() if k in ONLY]:
+    sc.render.resolution_x, sc.render.resolution_y = rx, ry
     cam.location = pos
     cam.rotation_euler = (tgt - pos).to_track_quat('-Z', 'Y').to_euler()
     cam_data.angle_y = math.radians(vfov)

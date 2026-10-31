@@ -50,13 +50,13 @@ with sync_playwright() as p:
     time.sleep(2)
     state = pg.evaluate("document.getElementById('loader')?document.getElementById('loader-text').textContent:'loaded'")
     print("LOAD:", state)
-    pg.keyboard.press("t"); time.sleep(2.5)
+    pg.keyboard.press("t"); time.sleep(3.0)
     if SHOT:
         pg.screenshot(path=SHOT + "_tapes_view.png", timeout=300000)
     for t in TAPES:
         xy = pg.evaluate("""([x,y,z])=>{const {camera,THREE}=window.__dbg;const v=new THREE.Vector3(x,y,z).project(camera);
             const r=document.getElementById('scene').getBoundingClientRect();return [r.left+(v.x+1)/2*r.width, r.top+(1-v.y)/2*r.height]}""", t["spine"])
-        pg.mouse.move(xy[0], xy[1]); pg.mouse.down(); pg.mouse.up(); time.sleep(0.6)
+        pg.mouse.move(xy[0], xy[1]); pg.mouse.down(); pg.mouse.up(); time.sleep(2.0)   # let any camera flight finish
         got = pg.evaluate("document.getElementById('panel').hidden?null:document.getElementById('panel-title').textContent")
         want = titles[t["idx"]]
         ok = got == want

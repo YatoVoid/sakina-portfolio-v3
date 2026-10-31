@@ -23,7 +23,8 @@ renderer.setClearColor(0x07050a);
 
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(46,1,0.05,7000);
-const HOME={pos:new THREE.Vector3(0.12,0.86,-0.3),target:new THREE.Vector3(0.1,0.98,-1.8)};
+// Opening hero shot (round 2): eye at screen height, 1.4 m from the CRT, looking slightly down at the desk.
+const HOME={pos:new THREE.Vector3(-0.02,1.12,-0.25),target:new THREE.Vector3(-0.02,0.92,-1.65)};
 camera.position.copy(HOME.pos);
 
 const controls=new OrbitControls(camera,canvas);
@@ -56,7 +57,10 @@ function setProgress(){
   const p=Math.round((progressRoom*0.9+progressOut*0.1)*100);
   $("loader-fill").style.width=p+"%";$("loader-text").textContent="LOADING "+p+"%";
 }
-const roomP=new Promise((res,rej)=>loader.load("sakina-room-baked.glb",g=>{
+// Per-tape click boxes generated from the Blender scene (pipeline/tools/tape_layout.py).
+let TAPES=[];
+const tapesP=fetch("tapes.json").then(r=>r.json()).then(t=>{TAPES=t.map(d=>({idx:d.idx,box:new THREE.Box3(new THREE.Vector3(...d.min),new THREE.Vector3(...d.max))}))});
+const roomP=new Promise((res,rej)=>loader.load("sakina-room-r2.glb",g=>{
   const maxAniso=renderer.capabilities.getMaxAnisotropy();
   g.scene.traverse(o=>{
     if(!o.isMesh)return;
@@ -67,7 +71,21 @@ const roomP=new Promise((res,rej)=>loader.load("sakina-room-baked.glb",g=>{
   });
   scene.add(g.scene);res();
 },e=>{if(e.lengthComputable){progressRoom=e.loaded/e.total;setProgress()}},rej));
-const outP=new Promise((res,rej)=>loader.load("sakina-outside.glb",g=>{scene.add(g.scene);res()},
+// Night sky behind the city: dark zenith fading to a warm light-pollution haze at the horizon (round 2).
+{
+  const g=new THREE.SphereGeometry(3000,48,24),pos=g.attributes.position,c=new THREE.Color(),col=[];
+  const zen=new THREE.Color(0x05060c),mid=new THREE.Color(0x111528),hor=new THREE.Color(0x5a3620);
+  for(let i=0;i<pos.count;i++){
+    const y=pos.getY(i)/3000;
+    if(y<0)c.copy(hor);else if(y<0.10)c.copy(hor).lerp(mid,y/0.10);else c.copy(mid).lerp(zen,Math.min(1,(y-0.10)/0.5));
+    col.push(c.r,c.g,c.b);
+  }
+  g.setAttribute("color",new THREE.Float32BufferAttribute(col,3));
+  const sky=new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide,depthWrite:false}));
+  sky.renderOrder=-1;scene.add(sky);
+}
+// City lowered 10 m so its lit skyline fills the window behind the monitor (round 2).
+const outP=new Promise((res,rej)=>loader.load("sakina-outside.glb",g=>{g.scene.position.y=-10;scene.add(g.scene);res()},
   e=>{if(e.lengthComputable){progressOut=e.loaded/e.total;setProgress()}},rej));
 
 const box=name=>new THREE.Box3().setFromObject(meshes[name]);
@@ -83,9 +101,16 @@ function deskTapeBox(){
   return b;
 }
 let tapeBox;
-function tapeIndex(p){
-  const gap=(tapeBox.min.x+tapeBox.max.x)/2;
-  return p.x<gap?{stack:0,n:6}:{stack:1,n:7};
+// Which tape contains this point: the tape whose box holds it with the most vertical margin (stacked tapes share faces).
+function tapeAt(p){
+  let best=null,bestM=-Infinity;
+  for(const t of TAPES){
+    const b=t.box.clone().expandByScalar(0.004);
+    if(!b.containsPoint(p))continue;
+    const m=Math.min(p.y-t.box.min.y,t.box.max.y-p.y);
+    if(m>bestM){bestM=m;best=t.idx}
+  }
+  return best;
 }
 let VIEWS;
 function buildViews(){
@@ -208,10 +233,8 @@ function pick(ev){
   if(!hit)return null;
   const n=hit.object.name;
   if(n==="Room_Tapes"){
-    const {stack,n}=tapeIndex(hit.point);
-    const h=tapeBox.max.y-DESK_TOP;
-    const row=Math.min(n-1,Math.max(0,Math.floor(((tapeBox.max.y-hit.point.y)/h)*n)));
-    return {kind:"tapes",idx:stack===0?row:6+row};
+    const idx=tapeAt(hit.point);
+    return idx===null?null:{kind:"tapes",idx};
   }
   if(n==="Room_Station")return {kind:"ibm"};
   if(Math.hypot(hit.point.x+0.45,hit.point.z+1.36)<0.3&&hit.point.y<0.95)return {kind:"notepad"};
@@ -242,7 +265,9 @@ function resize(){
   const w=innerWidth,h=innerHeight;
   renderer.setSize(w,h,false);
   camera.aspect=w/h;
-  camera.fov=w/h<1?64:46;
+  // Portrait keeps 64 deg; landscape keeps the same desk width in frame on any screen shape
+  // (38 deg at 2.2:1, ~46 deg at 16:9), clamped to 36-50 deg.
+  camera.fov=w/h<1?64:Math.min(50,Math.max(36,2*Math.atan(0.761/(w/h))*180/Math.PI));
   camera.updateProjectionMatrix();
 }
 addEventListener("resize",resize);resize();
@@ -259,7 +284,7 @@ function frame(now){
   renderer.render(scene,camera);
 }
 
-Promise.all([roomP,outP]).then(()=>{
+Promise.all([roomP,outP,tapesP]).then(()=>{
   buildViews();
   const l=$("loader");l.classList.add("done");
   setTimeout(()=>l.remove(),1000);
