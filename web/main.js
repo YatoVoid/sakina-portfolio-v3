@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import {OrbitControls} from "three/addons/controls/OrbitControls.js";
+import {LookControls} from "./look-controls.js?v=2";
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 import {DRACOLoader} from "three/addons/loaders/DRACOLoader.js";
 import {projects,ibm,notepad,credits} from "./content.js";
@@ -27,25 +27,11 @@ const camera=new THREE.PerspectiveCamera(46,1,0.05,7000);
 const HOME={pos:new THREE.Vector3(-0.02,1.12,-0.25),target:new THREE.Vector3(-0.02,0.92,-1.65)};
 camera.position.copy(HOME.pos);
 
-const controls=new OrbitControls(camera,canvas);
-controls.enablePan=true;
-controls.panSpeed=0.6;
-controls.enableDamping=true;
-controls.dampingFactor=0.05;
-controls.rotateSpeed=0.7;
-controls.zoomSpeed=0.8;
+// Drag-to-look camera with limits (round 2): no cursor parallax, no free orbit, zoom and position kept inside the room.
+const controls=new LookControls(camera,canvas);
 controls.target.copy(HOME.target);
-
-function limitAround(){
-  // Free orbit — no angle restrictions
-  controls.minAzimuthAngle=-Infinity;
-  controls.maxAzimuthAngle=Infinity;
-  controls.minPolarAngle=0.2;
-  controls.maxPolarAngle=Math.PI*0.85;
-  controls.minDistance=0.5;
-  controls.maxDistance=12;
-}
-controls.update();limitAround();
+camera.lookAt(controls.target);
+controls.setFromCamera();
 
 const draco=new DRACOLoader();
 draco.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/");
@@ -146,7 +132,7 @@ function stepTween(now){
   controls.target.lerpVectors(tween.from.t,tween.to.target,e);
   camera.lookAt(controls.target);
   if(k>=1){
-    tween=null;controls.enabled=true;controls.update();limitAround();
+    tween=null;controls.enabled=true;controls.setFromCamera();
   }
 }
 
@@ -222,7 +208,6 @@ lofiBtn.addEventListener("click",async()=>{
 
 const ray=new THREE.Raycaster();
 const ptr=new THREE.Vector2();
-const mouse={x:0,y:0,sx:0,sy:0};
 let hover=null;
 function pick(ev){
   const r=canvas.getBoundingClientRect();
@@ -241,7 +226,6 @@ function pick(ev){
   return null;
 }
 canvas.addEventListener("pointermove",ev=>{
-  mouse.x=(ev.clientX/innerWidth)*2-1;mouse.y=(ev.clientY/innerHeight)*2-1;
   if(ev.pointerType!=="mouse"||tween||ev.buttons)return;
   hover=pick(ev);
   canvas.classList.toggle("hot",!!hover);
@@ -254,7 +238,7 @@ canvas.addEventListener("pointerdown",ev=>{down={x:ev.clientX,y:ev.clientY}});
 canvas.addEventListener("pointerup",ev=>{
   if(!down||tween)return;
   const moved=Math.hypot(ev.clientX-down.x,ev.clientY-down.y);down=null;
-  if(moved>6)return;
+  if(moved>6||controls.clickBlocked)return;     // a drag or pinch is never a click
   const hit=pick(ev);
   if(!hit)return;
   if(hit.kind==="tapes"){flyTo("tapes");openPanel("tapes",hit.idx)}
@@ -276,11 +260,6 @@ function frame(now){
   requestAnimationFrame(frame);
   stepTween(now);
   if(controls.enabled)controls.update();
-  if(!reduced){
-    mouse.sx+=(mouse.x-mouse.sx)*0.05;mouse.sy+=(mouse.y-mouse.sy)*0.05;
-    const w=innerWidth,h=innerHeight;
-    camera.setViewOffset(w,h,mouse.sx*w*0.012,mouse.sy*h*0.012,w,h);
-  }
   renderer.render(scene,camera);
 }
 
