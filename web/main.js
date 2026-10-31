@@ -18,7 +18,9 @@ try{
 }
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
-renderer.toneMapping=THREE.NoToneMapping;
+renderer.physicallyCorrectLights=true;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.0;
 renderer.setClearColor(0x07050a);
 
 const scene=new THREE.Scene();
