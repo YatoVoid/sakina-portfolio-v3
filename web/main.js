@@ -52,7 +52,7 @@ function setProgress(){
   const p=Math.round((progressRoom*0.9+progressOut*0.1)*100);
   $("loader-fill").style.width=p+"%";$("loader-text").textContent="LOADING "+p+"%";
 }
-const roomP=new Promise((res,rej)=>loader.load("sakina-room.glb",g=>{
+const roomP=new Promise((res,rej)=>loader.load("sakina-room-v2.glb",g=>{
   const maxAniso=renderer.capabilities.getMaxAnisotropy();
   g.scene.traverse(o=>{
     if(!o.isMesh)return;
