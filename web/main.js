@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
+import {DRACOLoader} from "three/addons/loaders/DRACOLoader.js";
 import {projects,ibm,notepad,credits} from "./content.js";
 import {Ambience} from "./audio.js";
 
@@ -45,14 +46,17 @@ function limitAround(){
 }
 controls.update();limitAround();
 
+const draco=new DRACOLoader();
+draco.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/libs/draco/gltf/");
 const loader=new GLTFLoader();
+loader.setDRACOLoader(draco);
 const meshes={};
 let progressRoom=0,progressOut=0;
 function setProgress(){
   const p=Math.round((progressRoom*0.9+progressOut*0.1)*100);
   $("loader-fill").style.width=p+"%";$("loader-text").textContent="LOADING "+p+"%";
 }
-const roomP=new Promise((res,rej)=>loader.load("sakina-room.glb",g=>{
+const roomP=new Promise((res,rej)=>loader.load("sakina-room-v3.glb",g=>{
   const maxAniso=renderer.capabilities.getMaxAnisotropy();
   g.scene.traverse(o=>{
     if(!o.isMesh)return;
