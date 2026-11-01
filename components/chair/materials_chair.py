@@ -52,8 +52,8 @@ def paint_material(name="Chair_Whitewash"):
     band = g.ramp(ringv, 0.62, 0.97)                                    # latewood bands 0..1
     pores = g.ramp(g.noise(g.mapping(gv, scale=(1500, 1500, 55)), 1.0, detail=1.0), 0.60, 0.76)
     streak = g.noise(g.mapping(gv, scale=(380, 380, 8)), 1.0, detail=4.0, rough=0.6)
-    wood_c = g.mix(g.math("MAXIMUM", band, pores), hex_lin("#8f7a60"), hex_lin("#4a3a2c"))
-    wood_c = g.mix(g.ramp(streak, 0.35, 0.7, 0.0, 0.5), wood_c, hex_lin("#a89070"))
+    wood_c = g.mix(g.math("MAXIMUM", band, pores), hex_lin("#7d7164"), hex_lin("#40372e"))
+    wood_c = g.mix(g.ramp(streak, 0.35, 0.7, 0.0, 0.5), wood_c, hex_lin("#8e8374"))
 
     # --- the paint: two limewash tones, brush streaks along the grain, grain telegraphing through
     wash = g.ramp(g.noise(g.mapping(gv, scale=(16, 16, 2.4)), 1.0, detail=3.0), 0.35, 0.68)
@@ -61,7 +61,7 @@ def paint_material(name="Chair_Whitewash"):
     brush = g.noise(g.mapping(gv, scale=(70, 70, 2.2)), 1.0, detail=3.0, rough=0.6)
     paint = g.mix(1.0, paint, g.mix(g.ramp(brush, 0.3, 0.75), hex_lin("#e9e9e9"), hex_lin("#ffffff")),
                   blend="MULTIPLY")
-    show = g.math("MULTIPLY", g.math("MAXIMUM", g.math("MULTIPLY", band, 0.9), g.math("MULTIPLY", pores, 0.8)), 0.42)
+    show = g.math("MULTIPLY", g.math("MAXIMUM", g.math("MULTIPLY", band, 0.30), g.math("MULTIPLY", pores, 0.9)), 0.42)
     paint = g.mix(show, paint, hex_lin("#6b6558"))                       # grain lines through the paint
     fine = g.ramp(g.noise(g.mapping(gv, scale=(900, 900, 26)), 1.0, detail=2.0), 0.45, 0.8)
     paint = g.mix(g.math("MULTIPLY", fine, 0.22), paint, hex_lin("#8b877c"))
@@ -73,13 +73,13 @@ def paint_material(name="Chair_Whitewash"):
     g.L.new(bev.outputs["Normal"], dot.inputs[0]); g.L.new(geo.outputs["Normal"], dot.inputs[1])
     edge = g.ramp(dot.outputs["Value"], 0.996, 0.93)
     chips = g.ramp(g.noise(g.mapping(gv, scale=(260, 260, 40)), 1.0, detail=3.0, rough=0.7), 0.42, 0.62)
-    patch = g.ramp(g.noise(g.mapping(gv, scale=(7, 7, 1.0)), 1.0, detail=2.0), 0.50, 0.60)
+    patch = g.ramp(g.noise(g.mapping(gv, scale=(7, 7, 1.0)), 1.0, detail=2.0), 0.55, 0.66)
     scuff = g.ramp(g.noise(g.mapping(gv, scale=(110, 110, 9)), 1.0, detail=3.0, rough=0.65), 0.44, 0.56)
     nick = g.ramp(g.noise(g.mapping(gv, scale=(34, 34, 34)), 1.0, detail=1.0), 0.68, 0.74)   # sparse dents
     wear = g.math("MAXIMUM", g.math("MULTIPLY", edge, g.math("MULTIPLY_ADD", chips, 0.9, 0.18)),
                   g.math("MAXIMUM", g.math("MULTIPLY", patch, g.math("MULTIPLY", scuff, 0.95)),
-                         g.math("MULTIPLY", nick, 0.9)))
-    wear = g.ramp(wear, 0.18, 0.55)
+                         g.math("MULTIPLY", nick, 0.6)))
+    wear = g.ramp(wear, 0.26, 0.66)
     col = g.mix(wear, paint, wood_c)
 
     # --- dirt: crevices (AO) and the last 12 cm above the floor
@@ -113,8 +113,9 @@ def fabric_material(name="Chair_SeatFabric", period=0.0030):
     g = G(nt)
     uvn = g.N.new("ShaderNodeUVMap"); uvn.uv_map = "FabricUV"
     ux, uy, _ = g.xyz(uvn.outputs["UV"])
-    uu = g.math("DIVIDE", ux, period)
-    vv = g.math("DIVIDE", uy, period)
+    # shift into positive coordinates: Blender's MODULO is truncated, so negative cells would break the weave parity
+    uu = g.math("DIVIDE", g.math("ADD", ux, 5.0), period)
+    vv = g.math("DIVIDE", g.math("ADD", uy, 5.0), period)
     # a 2x2 basket: pairs of threads travel together -> cell index = floor(coord / 2)
     cu = g.math("FLOOR", uu); cv = g.math("FLOOR", vv)
     par = g.math("MODULO", g.math("ADD", g.math("FLOOR", g.math("DIVIDE", cu, 2.0)),
@@ -126,8 +127,10 @@ def fabric_material(name="Chair_SeatFabric", period=0.0030):
 
     def wn(a, bb, c):
         n = g.N.new("ShaderNodeTexWhiteNoise"); n.noise_dimensions = "3D"
-        v = g.N.new("ShaderNodeCombineXYZ")
-        g.set(v.inputs[0], a); g.set(v.inputs[1], bb); g.set(v.inputs[2], c)
+        v = g.N.new("ShaderNodeCombineXYZ")      # decorrelate the integer lattice (plain integers hash into diagonal terraces)
+        g.set(v.inputs[0], g.math("MULTIPLY_ADD", a, 0.6180339, g.math("MULTIPLY", bb, 0.7548776) if not isinstance(bb, float) else 0.37))
+        g.set(v.inputs[1], g.math("MULTIPLY_ADD", bb if not isinstance(bb, float) else a, 0.3819660, 0.113))
+        g.set(v.inputs[2], c)
         g.L.new(v.outputs[0], n.inputs["Vector"])
         return n.outputs["Value"]
     ru = wn(cu, 0.0, 7.3)

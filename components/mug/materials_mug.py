@@ -114,7 +114,8 @@ def crema(name):
                  g.ramp(d, 0.034, 0.045))
     col = g.mix(g.math("MULTIPLY", bub, 0.35), ramp.outputs["Color"], hex_lin("#9a6430"))
     g.L.new(col, b.inputs["Base Color"])
-    g.L.new(g.math("MULTIPLY_ADD", swirl, 0.16, 0.26), b.inputs["Roughness"])
+    g.L.new(g.math("MULTIPLY_ADD", swirl, 0.20, 0.52), b.inputs["Roughness"])
+    b.inputs["Specular IOR Level"].default_value = 0.10      # espresso reads dark brown, not a white sheen
     return m
 
 
