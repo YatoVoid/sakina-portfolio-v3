@@ -3,14 +3,15 @@ The source .blend is never modified; the result is saved to $V3_WORK/source/v3-e
 
     python3 pipeline/build_scene.py                 # all edits in EDITS
     python3 pipeline/build_scene.py --upto e00      # V2 state only (no V3 edits) = what the live site was baked from
-    python3 pipeline/build_scene.py --only e02      # V2 state + that one edit (edits are independent of each other)
+    python3 pipeline/build_scene.py --only e02      # V2 state + that one edit (edits are independent of each other, except e03 needs e02)
+    python3 pipeline/build_scene.py --only e02,e03  # V2 state + the chair and the bookcase
 """
 import bpy, os, sys, runpy, importlib.util
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WORK = os.environ.setdefault("V3_WORK", "/tmp/v3work")
 os.makedirs(WORK + "/source", exist_ok=True)
-EDITS = ["e01_tapes_vcr", "e02_club_chair"]   # applied in this order; each is pipeline/edits/<name>.py with apply()
+EDITS = ["e01_tapes_vcr", "e02_club_chair", "e03_antique_bookcase"]   # applied in this order; each is pipeline/edits/<name>.py with apply()
 
 
 def build(upto=None, save=True, only=None):
@@ -20,7 +21,7 @@ def build(upto=None, save=True, only=None):
     for name in EDITS:
         if upto and name > upto:
             break
-        if only and not name.startswith(only):
+        if only and not any(name.startswith(x) for x in only.split(',')):
             continue
         spec = importlib.util.spec_from_file_location(name, f"{ROOT}/pipeline/edits/{name}.py")
         mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)

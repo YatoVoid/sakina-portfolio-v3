@@ -37,3 +37,18 @@ Newest last. Each entry: decision — reason.
   small tiling leather detail map onto its lightmap in `main.js`. Not started.
 - **2026-11-01 · `build_scene.py --only eNN`** builds the V2 state plus one edit, so a pending edit (e.g. #1) does not
   leak into the preview of another.
+- **2026-11-01 · Edit #3: the wall-mounted half shelf on the back wall is replaced by the tall antique glazed bookcase**
+  (Sakina's "Antiques Boutique" photo). Script `pipeline/edits/e03_antique_bookcase.py` (needs e02). Floor-standing,
+  touches the floor, back on the back-wall baseboard, 1.50 m wide at the cornice x 2.16 m tall x 0.56 m deep, x 1.60-3.10.
+  *Certain from the photo:* two glazed doors, fluted corner columns with gilt capital/collar/reeds, stepped cornice,
+  gilt garland frieze (6 swags), corner rosettes, finials, thick centre stile with keyhole + hanging tag, 4 shelves + tall
+  bottom compartment of leather books (red/orange/green/navy/tan, gold bands), plinth base with a gilt scroll panel.
+  *Inferred:* real size, wood tone, shelf heights, individual books, side/back. Wood and books are procedural (not photo-sampled).
+  Old half shelf (242 objects: Shelf_*, ShelfBook_*, ShelfStack_*) removed.
+- **2026-11-01 · Nook re-arranged around the bookcase (Edit #3).** Side table (+ its books) slid 0.52 m into the back-right
+  corner; club chair turned 18 deg toward the desk (front rotated toward the back wall, i.e. image-left in the wide view),
+  rear corner on the right wall, kept in front of the bookcase base; floor lamp (+ its light L3) placed 4 cm in front of the
+  chair's front plane, offset 25 cm toward the table side so the seat stays free; the floor carton moved out of the
+  bookcase footprint to the floor in front of it.
+  *Interpretation to confirm with Sakina:* "left" is read as seen from the room (table on the chair's image-left, chair turned
+  toward image-left); "lamp in front of the chair, 4 cm" is read as base edge 4 cm from the chair's front plane.

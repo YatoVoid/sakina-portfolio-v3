@@ -22,3 +22,8 @@ Known pre-existing bug: 6 of 13 tapes open the project of the tape above them (m
   Next after approval: decide the leather-detail approach (see DECISIONS.md), re-bake Right_Nook only, publish to `/preview/`.
 - 2026-11-01 — Edit #2 revised: leather rebuilt from the reference photo's pixels (crackle + croc sheets), arms rounder,
   back cushion and seat more pillowy. New Cycles previews rendered for approval; still nothing re-baked or published.
+- 2026-11-01 — **Edit #3 in progress** (antique bookcase + nook re-arrangement, branch `edit3-bookcase`):
+  `pipeline/edits/e03_antique_bookcase.py`; Cycles previews (`nook`, `bookcase` views) rendered for approval.
+  Nothing re-baked or published; live site unchanged (`144419e`). Web caveat: the glass doors need a decision before the
+  Right_Nook re-bake (transmissive glass does not bake; plan: bake with the doors transparent and add a faint reflective
+  pane in Three.js).
