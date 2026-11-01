@@ -10,7 +10,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WORK = os.environ.setdefault("V3_WORK", "/tmp/v3work")
 os.makedirs(WORK + "/source", exist_ok=True)
 EDITS = [   # PROVISIONAL final order (integration/v3-final); each is pipeline/edits/<name>.py with apply()
-    "e01_tapes_vcr", "e05_crt_vcr", "e08_desk_detail", "e09_window_view", "e10_mug_coaster", "e11_chair",
+    "e01_tapes_vcr", "e06_wall_clocks", "e08_degree_center", "e05_crt_vcr",   # clocks + degree centring (clocks branch, 2026-11-01)
+    "e08_desk_detail", "e09_window_view", "e10_mug_coaster", "e11_chair",
     "e12_gallery_wall", "e13_wall_colour", "e14_window_reveal",
     "e02_club_chair", "e03_antique_bookcase", "e04_radiator", "e05_remove_under_desk_wires",       # bookcase branch (approved 2026-11-01)
     "e09_floor", "e10_plant_alocasia", "e11_tapes_vhs", "e12_floppy",                              # round3 items approved 2026-11-01
@@ -18,6 +19,7 @@ EDITS = [   # PROVISIONAL final order (integration/v3-final); each is pipeline/e
     "e15_retro_pc", "e16_room_refresh_props",                                                      # retro PC; lamp + remote + calculator
     "e17_window_wall_rework",                                                                      # wider window, linen curtains, desk to wall, pillar + poster out
     "e18_crt_black",                                                                               # CRT reads black, neutral screen light
+    "e19_pot_stones_mud",                                                                          # pebbles, grit and mud clods in the plant pot
 ]
 
 

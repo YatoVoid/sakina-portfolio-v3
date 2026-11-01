@@ -176,7 +176,7 @@ def _desk_to_wall():
             if o.name in lights:
                 sel.append(o)
             continue
-        if o.type not in ('MESH', 'CURVE', 'EMPTY') or o.name.startswith(skip):
+        if o.type not in ('MESH', 'CURVE', 'EMPTY', 'FONT') or o.name.startswith(skip):
             continue
         if o.name.startswith("Desk_"):
             sel.append(o)

@@ -14,11 +14,17 @@ Map Range 2.8 -> 2.2 that blend is already 1.0 below z = 2.2 m, i.e. over almost
   - floor-edge shade (`Mix.003`) = reference colour x 0.62, only below z = 0.35 m (unchanged range)
 Noise patterns, bump and roughness are unchanged, so the plaster texture stays the same.
 
+Value tuning (2026-11-01, low-res test bakes at scale 1.0 / 0.60 / 0.40, previews/integration/wall_value_test.jpg): 1.0 made the
+lamp-lit room flat and bright, 0.40 turned murky; 0.60 keeps the reference hue and lets the lamp pools read. Default = 0.60.
+
 Note: the colour is the paint (albedo). A photo shows lit paint, so the exact on-screen shade still depends on the room lighting.
 """
-import bpy
+import bpy, os
 
 REF_SRGB = (207, 197, 183)
+# Paint albedo = reference colour x WALL_SCALE. The reference is a lit photo; as pure albedo it makes the lamp-lit night room
+# bright and flat (see previews/integration/lowres_bake_test.jpg), so the albedo is scaled down. Same hue, lower value.
+WALL_SCALE = float(os.environ.get("V3_WALL_SCALE", "0.60"))
 
 
 def _lin(c8):
@@ -28,6 +34,7 @@ def _lin(c8):
 
 def _col(k):
     r, g, b = (_lin(v) for v in REF_SRGB)
+    k *= WALL_SCALE
     return (r * k, g * k, b * k, 1.0)
 
 
@@ -50,4 +57,4 @@ def apply():
     mr.inputs[1].default_value, mr.inputs[2].default_value = 2.45, 2.80
     mr.inputs[3].default_value, mr.inputs[4].default_value = 0.0, 0.55
     bpy.context.view_layer.update()
-    print("e13: WallPlaster recoloured to sRGB", REF_SRGB, "(7 wall meshes share it)", flush=True)
+    print("e13: WallPlaster recoloured to sRGB", REF_SRGB, "x albedo scale", WALL_SCALE, "(7 wall meshes share it)", flush=True)
