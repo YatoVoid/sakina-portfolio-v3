@@ -32,21 +32,23 @@ def _load(fname):
 
 # --------------------------------------------------------------------------------------- numbers
 OLD_X0, OLD_X1 = -0.73, 0.52
-X0, X1 = -0.77, 1.12                      # new opening
+X0, X1 = -0.75, 0.85                      # new opening 1.60 m (was 1.25 m), centred on the CRT (x 0.05)
 Z0, Z1 = 0.90, 2.30
 CW = 0.05                                  # casing width
 WALL = 2.50
 DESK_DY = 0.48                             # desk back edge 2.479, baseboard face at 2.482
 PLANT_DY = 0.32
-BOOKCASE_DX = 0.08
+BOOKCASE_DX = 0.0                          # desk is shorter now, the bookcase stays where it was approved
+DESK_X0, DESK_X1 = -1.20, 1.32             # desk length 2.52 m (was 2.90 m): almost nothing off the crowded left end, 33 cm off the right
+OLD_DESK_X0, OLD_DESK_X1 = -1.25, 1.65
 DESK_TOP = 0.72
 HEM_Z = DESK_TOP + 0.046                   # lowest point of the hem ends up 4 cm above the desk top (folds dip 6 mm)
 ROD_Y, ROD_Z, ROD_R = 2.43, 2.545, 0.0127
 HANG_Y = 2.405                             # fabric centre plane
 RING_R = 0.022
 Z_TOP = ROD_Z - RING_R + 0.002             # fabric top edge just under the rings
-STACKS = [("Curtain_L", -1.29, -0.85, 11), ("Curtain_R", 1.20, 1.65, 23)]   # 44-45 cm wide stacks outside the casing
-ROD_X0, ROD_X1 = -1.31, 1.69
+STACKS = [("Curtain_L", -1.17, -0.83, 11), ("Curtain_R", 0.93, 1.27, 23)]   # 44-45 cm wide stacks outside the casing
+ROD_X0, ROD_X1 = -1.22, 1.32
 
 
 def _bb(o):
@@ -161,6 +163,8 @@ def _widen_window():
 # --------------------------------------------------------------------------------------- 5 desk to wall
 def _desk_to_wall():
     D = bpy.data
+    # the cable that arched up in front of the VCR (Cable_Left) is removed (Sakina 2026-11-01)
+    _remove(["Cable_Left"], exact=True)
     plant = {o for c in D.collections if c.name == "Plant" for o in c.objects}
     lights = {"L1_DeskLamp_Key", "L2_DeskLamp_Spill", "L6_TV_Screen"}
     skip = ("Wall", "Window", "Houston", "Radiator", "Baseboard", "Sill", "Rod", "Curtain", "Glass", "Rain", "Handle", "Chair", "Bookcase")
@@ -181,7 +185,7 @@ def _desk_to_wall():
             continue
         lo, hi = _bb(o)
         c = [(lo[i] + hi[i]) / 2 for i in range(3)]
-        if -1.30 <= c[0] <= 1.70 and 1.25 <= c[1] <= 2.05 and lo[2] >= 0.69:
+        if -1.30 <= c[0] <= 1.70 and 1.25 <= c[1] <= 2.05 and lo[2] >= 0.60:
             sel.append(o)
     selset = set(sel)
     n = 0
@@ -201,10 +205,46 @@ def _desk_to_wall():
     book = [o for o in D.objects if o.name.startswith("Bookcase")]
     for o in book:
         _move(o, dx=BOOKCASE_DX)
+    # lamp cord hangs behind the desk from the lamp base: follow the lamp
+    _move(D.objects["Lamp_Cord"], dy=DESK_DY - 0.02)
+    _shorten_desk(sel)
     bpy.context.view_layer.update()
     lo, hi = _bb(D.objects["Desk_Top"])
     print(f"e17: desk slid {DESK_DY} m to the wall (top y {lo[1]:.3f}..{hi[1]:.3f}); {n} desk-top objects, {len(plant)} plant objects (+{PLANT_DY}), "
           f"{len(chair)} chair parts, {len(book)} bookcase objects (+{BOOKCASE_DX} x)", flush=True)
+
+
+def _shorten_desk(sel):
+    """Desk 2.90 m -> 2.50 m: vertices left of x -0.30 move right, right of x 0.75 move left (legs, rails and top keep their shape);
+    the drawer in the middle is untouched. Props too close to a new end are nudged inward."""
+    D = bpy.data
+    dl, dr = DESK_X0 - OLD_DESK_X0, DESK_X1 - OLD_DESK_X1
+    for o in [o for o in D.objects if o.name.startswith("Desk_") and o.type == 'MESH']:
+        o.data = o.data.copy()
+        mw = o.matrix_world
+        inv = mw.inverted()
+        for v in o.data.vertices:
+            w = mw @ v.co
+            if w.x < -0.30:
+                w.x += dl
+            elif w.x > 0.75:
+                w.x += dr
+            v.co = inv @ w
+        o.data.update()
+    bpy.context.view_layer.update()
+    selset = set(sel)
+    moved = []
+    for o in sel:
+        if o.type == 'LIGHT' or o.name.startswith("Desk_") or o.parent in selset:
+            continue
+        lo, hi = _bb(o)
+        if hi[0] - lo[0] > 1.0:
+            continue
+        if lo[0] < DESK_X0 + 0.05 and lo[0] > OLD_DESK_X0 - 0.2:
+            _move(o, dx=DESK_X0 + 0.05 - lo[0]); moved.append(o.name)
+        elif hi[0] > DESK_X1 - 0.05 and hi[0] < OLD_DESK_X1 + 0.2:
+            _move(o, dx=DESK_X1 - 0.05 - hi[0]); moved.append(o.name)
+    print(f"e17: desk shortened by {(OLD_DESK_X1 - OLD_DESK_X0) - (DESK_X1 - DESK_X0):.2f} m; props nudged inward: {moved}", flush=True)
 
 
 # --------------------------------------------------------------------------------------- 6 curtains
@@ -350,7 +390,7 @@ def _curtains():
     _ball("Rod_Finial_L", ROD_X0 - 0.01, black)
     _ball("Rod_Finial_R", ROD_X1 + 0.01, black)
     cxw = (X0 + X1) / 2
-    for i, x in enumerate((-1.22, cxw, 1.60)):                                   # brackets: both ends + one over the window centre
+    for i, x in enumerate((STACKS[0][1] + 0.03, cxw, STACKS[1][2] - 0.03)):                                   # brackets: both ends + one over the window centre
         e08._box(f"Rod_Bracket_{i}", x - 0.009, x + 0.009, ROD_Y - 0.004, WALL - 0.003, ROD_Z - 0.010, ROD_Z + 0.010, black, 0.002)
         e08._box(f"Rod_Bracket_P{i}", x - 0.0125, x + 0.0125, WALL - 0.005, WALL, ROD_Z - 0.022, ROD_Z + 0.022, black, 0.002)
     n_rings = 0
