@@ -114,7 +114,7 @@ def crema(name):
                  g.ramp(d, 0.034, 0.045))
     col = g.mix(g.math("MULTIPLY", bub, 0.35), ramp.outputs["Color"], hex_lin("#9a6430"))
     g.L.new(col, b.inputs["Base Color"])
-    g.L.new(g.math("MULTIPLY_ADD", swirl, 0.12, 0.07), b.inputs["Roughness"])
+    g.L.new(g.math("MULTIPLY_ADD", swirl, 0.16, 0.26), b.inputs["Roughness"])
     return m
 
 
@@ -126,8 +126,8 @@ def wood_slice(name, pith=(-0.007, 0.005)):
     wob = g.math("MULTIPLY", g.math("SUBTRACT", g.noise(pos, 38.0, 3.0), 0.5), 0.006)
     ph = g.math("FRACT", g.math("MULTIPLY", g.math("ADD", dist, wob), 430.0))      # ~24 rings over 55 mm
     late = g.ramp(ph, 0.70, 0.99)
-    base = g.mix(g.ramp(g.noise(pos, 20.0, 3.0), 0.3, 0.7), hex_lin("#b08a5a"), hex_lin("#9c7447"))
-    col = g.mix(g.math("MULTIPLY", late, 0.35), base, hex_lin("#7a5430"))
+    base = g.mix(g.ramp(g.noise(pos, 20.0, 3.0), 0.3, 0.7), hex_lin("#9a7142"), hex_lin("#85603a"))
+    col = g.mix(g.math("MULTIPLY", late, 0.40), base, hex_lin("#63421f"))
     fibre = g.noise(g.mapping(pos, (1400, 1400, 1400)), 1.0, 3.0)
     col = g.mix(g.math("MULTIPLY", g.ramp(fibre, 0.55, 0.8), 0.35), col, hex_lin("#bda070"))
     # one radial drying crack from the pith
@@ -148,18 +148,19 @@ def wood_slice(name, pith=(-0.007, 0.005)):
 def bark(name, top_z):
     m, g, b, pos = _base(name)
     x, y, z = g.xyz(pos)
-    furrow = g.noise(g.mapping(pos, (520, 520, 70)), 1.0, 6.0, 0.62)
+    furrow = g.noise(g.mapping(pos, (260, 260, 34)), 1.0, 8.0, 0.68)
+    plates = g.noise(g.mapping(pos, (90, 90, 14)), 1.0, 4.0, 0.55)
     patch = g.noise(pos, 30.0, 3.0)
     ramp = g.N.new("ShaderNodeValToRGB")
     e = ramp.color_ramp.elements
-    e[0].position, e[0].color = 0.28, hex_lin("#2a1d13")
-    e[1].position, e[1].color = 0.80, hex_lin("#76593f")
+    e[0].position, e[0].color = 0.30, hex_lin("#1c140e")
+    e[1].position, e[1].color = 0.82, hex_lin("#5b4636")
     g.L.new(furrow, ramp.inputs["Fac"])
     col = g.mix(g.ramp(patch, 0.55, 0.75, 0.0, 0.5), ramp.outputs["Color"], hex_lin("#8b8070"))
     cam = g.ramp(z, top_z - 0.0016, top_z - 0.0006)                                   # pale cambium line
     col = g.mix(g.math("MULTIPLY", cam, 0.9), col, hex_lin("#e6dabd"))
     g.L.new(col, b.inputs["Base Color"])
     g.L.new(g.math("MULTIPLY_ADD", furrow, -0.15, 0.93), b.inputs["Roughness"])
-    bump = g.node("ShaderNodeBump", Height=furrow, Strength=1.0, Distance=0.0012)
+    bump = g.node("ShaderNodeBump", Height=g.math("ADD", furrow, g.math("MULTIPLY", plates, 0.8)), Strength=1.0, Distance=0.0030)
     g.L.new(bump.outputs["Normal"], b.inputs["Normal"])
     return m
