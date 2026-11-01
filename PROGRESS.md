@@ -16,3 +16,9 @@ Known pre-existing bug: 6 of 13 tapes open the project of the tape above them (m
 - 2026-10-31 — **Edit #1 in progress** (tapes shorter + slanted stacks, smaller VCR):
   edit script `pipeline/edits/e01_tapes_vcr.py`; Cycles before/after previews rendered for approval.
   Next after approval: re-bake Tapes, Monitor, Desk groups; per-tape click boxes; publish to `/preview/`.
+- 2026-11-01 — **Edit #2 in progress** (club chair on the right wall): `pipeline/edits/e02_club_chair.py`;
+  Cycles before/after previews rendered for approval (`chair` and `chair_wide` views in `render_preview.py`).
+  Nothing re-baked, nothing published; live site unchanged (`144419e`).
+  Next after approval: decide the leather-detail approach (see DECISIONS.md), re-bake Right_Nook only, publish to `/preview/`.
+- 2026-11-01 — Edit #2 revised: leather rebuilt from the reference photo's pixels (crackle + croc sheets), arms rounder,
+  back cushion and seat more pillowy. New Cycles previews rendered for approval; still nothing re-baked or published.

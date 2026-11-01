@@ -1,6 +1,7 @@
 """Cycles preview renders that match the website's framing.
     python3 pipeline/render_preview.py <scene.blend> <out_prefix> [samples]
-Views: 'home' = the site's HOME camera; 'tapes' = close-up of tapes + VCR."""
+Views: 'home' = the site's HOME camera; 'tapes' = close-up of tapes + VCR;
+'chair' = right-wall armchair, front 3/4 view; 'chair_wide' = right side of the room."""
 import bpy, sys, math, mathutils, time
 
 scene_path, prefix = sys.argv[1], sys.argv[2]
@@ -24,6 +25,8 @@ b = lambda x, y, z: mathutils.Vector((x, -z, y))
 VIEWS = {
     "home":  (b(0.12, 0.86, -0.3), b(0.1, 0.98, -1.8), 46),
     "tapes": (b(0.42, 1.10, -0.78), b(0.42, 0.80, -1.65), 40),
+    "chair": (b(1.95, 1.10, -0.55), b(3.15, 0.52, -1.42), 42),
+    "chair_wide": (b(1.30, 1.45, 0.10), b(3.05, 0.55, -1.55), 62),
 }
 cam_data = D.cameras.new("PreviewCam"); cam = D.objects.new("PreviewCam", cam_data)
 sc.collection.objects.link(cam); sc.camera = cam
