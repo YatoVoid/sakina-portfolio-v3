@@ -21,8 +21,9 @@ wood_mat, simple_mat, _node, _lin, _srgb = e04.wood_mat, e04.simple_mat, e04._no
 
 WALL = 2.50                                        # inner face of the back wall (Blender y)
 OPEN_X0, OPEN_X1, OPEN_Z0, OPEN_Z1 = -0.73, 0.52, 0.90, 2.30
-ROD_Z, ROD_R, ROD_Y = 2.545, 0.0127, 2.415
-HANG_Y = 2.445                                     # fabric centre plane
+ROD_Z, ROD_R, ROD_Y = 2.545, 0.0127, 2.36        # rod sits between the fabric and the wall (back-tab: fabric hangs in front)
+HANG_Y = 2.33                                      # fabric centre plane: in front of the sill's front edge (y 2.385), so the
+                                                   # curtains hang OVER the sill instead of behind it (round 4 fix)
 FLOOR_GAP = 0.012
 PANELS = [("Curtain_L", -1.17, -0.67, 11), ("Curtain_R", 0.46, 0.96, 23)]    # x0, x1, seed
 
@@ -131,7 +132,7 @@ def cotton_mat():
 # ----------------------------------------------------------------------------------------------- window
 def _remove_old():
     D = bpy.data
-    drop = [o for o in D.objects if o.name.startswith(("Bead_", "Mullion_", "Handle_", "Frame_", "Sill", "Curtain_"))]
+    drop = [o for o in D.objects if o.name.startswith(("Bead_", "Mullion_", "Handle_", "Frame_", "Sill", "Curtain_", "Liner_", "Casing_", "Rod"))]
     for o in drop:
         me = o.data
         D.objects.remove(o, do_unlink=True)
@@ -158,7 +159,50 @@ def _window():
     _box("Sill", sx0, sx1, WALL - 0.115, glass_y, z0 - 0.002, z0 + 0.034, ox, 0.004)
     _box("Sill_Apron", x0 - cw, x1 + cw, WALL - 0.016, WALL, z0 - 0.002 - 0.055, z0 - 0.002, ox)
     # keep the single glass pane; drop the old multi-light glazing (beads/mullions removed above)
-    print("window: oak liners, casing, sill built")
+    _bars(ox, oz, glass_y)
+    print("window: oak liners, casing, sill, cross bars + handle built")
+
+
+def _bars(ox, oz, glass_y):
+    """Round-4 request: one vertical + one horizontal bar across the pane (a cross) with a handle in the middle."""
+    x0, x1, z0, z1 = OPEN_X0, OPEN_X1, OPEN_Z0, OPEN_Z1
+    cx, cz = (x0 + x1) / 2, (z0 + z1) / 2 - 0.02
+    bw, by0, by1 = 0.042, glass_y - 0.034, glass_y + 0.004          # bar width; sits in the glazing plane, proud of the glass on the room side
+    _box("Mullion_V", cx - bw / 2, cx + bw / 2, by0, by1, z0, z1 - 0.012, oz, 0.0035)
+    _box("Mullion_H", x0, x1, by0 + 0.002, by1 - 0.002, cz - bw / 2, cz + bw / 2, ox, 0.0035)
+    # window handle at the crossing: round rose, spindle, a slightly drooping lever (aged brass)
+    br = bpy.data.materials.get("WindowBrass") or simple_mat("WindowBrass", "d4b36c", rough=0.34, metal=1.0)
+    yf = by0                                                         # room-side face of the bars
+    for i, (r, t) in enumerate(((0.040, 0.006), (0.028, 0.015))):    # rose: wide thin plate + smaller boss
+        me = bpy.data.meshes.new(f"Handle_Rose{i}"); bm = bmesh.new()
+        bmesh.ops.create_cone(bm, cap_ends=True, segments=40, radius1=r, radius2=r * (0.94 if i else 1.0), depth=t)
+        bm.to_mesh(me); bm.free()
+        o = bpy.data.objects.new(f"Handle_Rose{i}", me); me.materials.append(br)
+        o.rotation_euler = (math.radians(90), 0, 0)
+        o.location = (cx, yf - (0.003 if i == 0 else 0.0135), cz)
+        for p in me.polygons:
+            p.use_smooth = True
+        _coll().objects.link(o)
+    # lever: leaves the boss horizontally, droops a little, rounded end
+    pts = [(0.0, 0.0), (0.030, -0.003), (0.066, -0.012), (0.104, -0.028), (0.130, -0.048)]
+    for k in range(len(pts) - 1):
+        (ax, az), (bx, bz) = pts[k], pts[k + 1]
+        L = math.hypot(bx - ax, bz - az)
+        me = bpy.data.meshes.new(f"Handle_Lever{k}"); bm = bmesh.new()
+        bmesh.ops.create_cone(bm, cap_ends=True, segments=20, radius1=0.0105 - 0.0007 * k, radius2=0.0105 - 0.0007 * (k + 1), depth=L)
+        bm.to_mesh(me); bm.free()
+        o = bpy.data.objects.new(f"Handle_Lever{k}", me); me.materials.append(br)
+        ang = math.atan2(bz - az, bx - ax)
+        o.rotation_euler = (0, math.radians(90) - ang, 0)
+        o.location = (cx + (ax + bx) / 2, yf - 0.0235, cz + (az + bz) / 2)
+        for p in me.polygons:
+            p.use_smooth = True
+        _coll().objects.link(o)
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.0125, location=(cx + 0.130, yf - 0.0235, cz - 0.048), segments=20, ring_count=12)
+    sp = bpy.context.active_object; sp.name = "Handle_Knob"; sp.data.materials.append(br)
+    for c in list(sp.users_collection):
+        c.objects.unlink(sp)
+    _coll().objects.link(sp)
 
 
 # ----------------------------------------------------------------------------------------------- rod
@@ -172,7 +216,7 @@ def _rod():
         _cyl(f"Rod_Neck_{side}", x, x + sgn * 0.012, ROD_Y, ROD_Z, ROD_R * 0.8, nk, 24)
         _cyl(f"Rod_Cap_{side}", x + sgn * 0.012, x + sgn * 0.052, ROD_Y, ROD_Z, 0.0215, nk, 40)
     for i, x in enumerate((-1.19, -0.60, 0.50, 0.99)):              # wall brackets
-        _box(f"Rod_Bracket_{i}", x - 0.009, x + 0.009, WALL - 0.003, ROD_Y + 0.004, ROD_Z - 0.010, ROD_Z + 0.010, nk, 0.002)
+        _box(f"Rod_Bracket_{i}", x - 0.009, x + 0.009, ROD_Y - 0.004, WALL - 0.003, ROD_Z - 0.010, ROD_Z + 0.010, nk, 0.002)
         _box(f"Rod_Bracket_P{i}", x - 0.0125, x + 0.0125, WALL - 0.005, WALL, ROD_Z - 0.022, ROD_Z + 0.022, nk, 0.002)
     print("rod built")
 
