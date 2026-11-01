@@ -122,7 +122,7 @@ def camera(ctr, r, az, el, fac, lens, corners=None, target=None, dist=None):
             else:
                 lo = mid
         place(hi * fac)
-    cam.data.dof.use_dof = bool(dist)
+    cam.data.dof.use_dof = False
     cam.data.dof.focus_distance = (tgt - cam.location).length
     cam.data.dof.aperture_fstop = 5.6
 

@@ -1,0 +1,25 @@
+{
+  "triangles": 40380,
+  "vertices": 20338,
+  "materials": [
+    "Chair_Nailheads",
+    "Chair_Seat_baked",
+    "Chair_Wood_baked"
+  ],
+  "bbox_min_m": [
+    -0.2358,
+    -0.2571,
+    -0.003
+  ],
+  "bbox_max_m": [
+    0.2358,
+    0.3147,
+    0.963
+  ],
+  "size_m": [
+    0.4716,
+    0.5718,
+    0.966
+  ],
+  "glb_bytes": 3212012
+}
