@@ -1,6 +1,6 @@
 # Integration plan — Sakina Portfolio V3 (master integration session)
 
-Branch: `integration/v3-master` (cut from `main` @ `57bdb1d`). Status: **desk, window view, mug + coaster and chair integrated; `round3` and its CRT are held (CRT not approved).**
+Branch: `integration/v3-master` (cut from `main` @ `57bdb1d`). Status: **desk, window view, mug + coaster, chair and the gallery wall integrated; `round3` and its CRT are held (CRT not approved).**
 Owner: master integration session. Production (`main`, Netlify) is not touched until Sakina approves.
 
 ## Hard limits for this session
@@ -157,3 +157,21 @@ the web export.
   (-0.95, 0.90, 0) with rotZ -22°; after `round3` is merged it will fail until the recline is dealt with on purpose.
 - The chair notes warn that the whitewash paint bakes much darker and warmer in the room than in the studio renders.
 - Still unmerged and not approved: `round3` (incl. CRT), `components/detail-assets` `room_refresh` (WIP), `components/crt`.
+
+
+### Stage 3 (2026-11-01): gallery wall above the IBM computer
+
+Sakina's request (reference photo of a staggered canvas gallery wall): the frames above the IBM computer should follow that
+layout and look realistic. Built here as an integration edit (no component branch involved).
+
+- `pipeline/edits/e12_gallery_wall.py`: removes the 20 postcards (`Postcard_00..19` + photos, 40 objects) and adds
+  `Gallery_Canvas_1..8` to `Wall_Decor`: two staggered rows copied from the reference (large landscapes in the middle,
+  portraits between them), 2.5–3.5 cm deep gallery-wrap canvases with a 1.5 mm bevel, photo edge pixels wrapped over the sides,
+  fine procedural canvas-weave bump, tiny fixed tilt (<= 0.25 deg). Photos are the ones already packed in the scene.
+  The clock is kept. `EDITS` is now `e01, e08, e09, e10, e11, e12`.
+- Measured: group 1.32 m x 0.63 m centred on the computer (y 0.59–1.91, z 1.13–1.77); gaps 15–30 mm; no overlaps; every canvas
+  0.5 mm off the wall; 10.8 cm below the clock, 7.3 cm above the computer top; lights/cameras unchanged.
+- Risk for the bake: `Wall_Decor` shares one lightmap with other decor (2048 px unless the bake config says otherwise), so photo
+  sharpness on the canvases depends on that resolution; consider a higher `Wall_Decor` size for the GPU bake.
+- `round3` conflict: its `e04_left_zone.py` rebuilds the postcards and clock and moves the left wall in to x = -2.30. After that
+  merge `e12` will fail its postcard assertion and must be re-targeted to the new wall position.

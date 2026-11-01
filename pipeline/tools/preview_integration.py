@@ -31,6 +31,10 @@ VIEWS = {
     "drawer":   (b(0.20, 0.80, -0.62), b(0.20, 0.62, -1.32), 40),  # drawer front, pull, aprons
     "mug":      (b(-0.02, 0.98, -1.02), b(-0.23, 0.77, -1.40), 36),  # mug + coaster, from the front-right, above the desk
     "chair":    (b(-0.40, 1.30, 0.15),  b(-0.95, 0.50, -0.90), 52),  # white chair beside the desk, from the front
+    "wall_full":  (b(-1.2, 1.25, -0.10), b(-3.0, 1.35, -1.25), 55),  # left wall: IBM computer + gallery wall + clock
+    "wall_close": (b(-1.7, 1.45, 0.00),  b(-3.0, 1.45, -1.25), 40),  # gallery wall close-up
+    "wall_head": (b(-1.10, 1.45, -1.00), b(-3.0, 1.45, -1.25), 42),  # head-on to the gallery wall
+    "wall_wide": (b(-0.90, 1.30, -0.55), b(-3.0, 1.15, -1.25), 58),  # IBM computer + gallery wall + clock, wide
     "chair_side": (b(0.45, 1.20, -0.25), b(-0.95, 0.50, -0.90), 50),  # chair seen with the desk edge
 }
 cam_data = D.cameras.new("PreviewCam"); cam = D.objects.new("PreviewCam", cam_data)
