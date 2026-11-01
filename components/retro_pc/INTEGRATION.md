@@ -9,7 +9,7 @@ The reference's brand text is not copied; the badges say SAKINA.
 Kept: `Cabinet_*`, `Drawer_*`, `Polaroid`.
 
 ## Round 2 changes (requested after the position preview)
-- **Polaroid** (Sakina's photo): standing on top of the monitor, facing straight into the room (+X, not swivelled): `Polaroid.location = (0.017, -0.019, 1.091)` in `Station_Root` space, rotation 0.
+- **Polaroid** (Sakina's photo): standing on top of the monitor toward its RIGHT end, facing straight into the room (+X, not swivelled): world position (-2.745, 1.320, 1.082) after the 4 cm shift (i.e. root-space y 0.110 before it), rotation 0 (upright, no lean) in `Station_Root` space, rotation 0.
 - **Wider cabinet**: +0.30 m toward the viewer's left (-Y), so the keyboard can stand to the left of the PC. Cabinet body/top/plinth/crown/drawer fronts/mouldings are stretched, feet moved to the new corners, handle bars/escutcheons/keyholes re-centred. See `place_preview.py: widen()`; the 20 wall postcards and the clock are NOT moved (they now sit over the right two thirds of the cabinet; say if they should follow).
 - **Keyboard** at room (x -2.68, y 0.78) beside the case (`KB_X, KB_Y` in `build_retro_pc.py`); mouse stays right of the case.
 

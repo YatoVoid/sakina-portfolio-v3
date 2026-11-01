@@ -67,8 +67,13 @@ if use_new:
     root.location.y += shift
     pol = D.objects.get("Polaroid")                   # re-stick the Polaroid on the new monitor's right bezel corner
     if pol:
-        pol.location = (0.017, -0.019, 1.091)         # standing on top of the monitor, facing straight (+X, not swivelled)
-        pol.rotation_euler = (0, 0, 0)
+        bpy.context.view_layer.update()
+        m = pol.matrix_world.copy()                    # keep its orientation (faces +X), only move it
+        m.translation = Vector((-2.745, 1.320, 1.082))  # world: on top of the monitor, right end
+        pol.matrix_world = m
+        pol.rotation_euler = (0, 0, 0)                 # upright, no lean: faces straight into the room
+        bpy.context.view_layer.update()
+        print("POL", pol.parent.name if pol.parent else None, tuple(pol.matrix_world.translation), tuple(pol.rotation_euler), pol.matrix_world.to_euler())
     for o in D.objects:                               # preview only: calmer screen glow in the dark room
         for sl in o.material_slots:
             if sl.material and sl.material.name.startswith("PC_Glass"):
@@ -77,6 +82,14 @@ if use_new:
                         n.inputs["Emission Strength"].default_value = 0.35
     bpy.context.view_layer.update()
 
+def _bb(n):
+    o = D.objects.get(n)
+    ws = [o.matrix_world @ Vector(c) for c in o.bound_box]
+    return [round(min(w[i] for w in ws), 3) for i in range(3)], [round(max(w[i] for w in ws), 3) for i in range(3)]
+if os.environ.get("DEBUG"):
+    for n in ("PC_Monitor", "PC_Case", "Polaroid_Border", "PC_Keyboard", "Cabinet_Top"):
+        print("BB", n, *_bb(n))
+    sys.exit(0)
 sc.render.engine = "CYCLES"; sc.cycles.device = "CPU"; sc.cycles.samples = spp; sc.cycles.use_denoising = True
 sc.render.resolution_x, sc.render.resolution_y = 1280, 720
 sc.render.image_settings.file_format = "JPEG"
