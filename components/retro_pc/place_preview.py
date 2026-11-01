@@ -20,6 +20,8 @@ for o in D.objects:
     if o.name == "Room_Volume":
         o.visible_camera = False
 root = D.objects["Station_Root"]
+if D.objects.get("L5_IBM_Screen"):            # room light that fakes the old screen glow (a textured area light, visible to camera)
+    D.objects["L5_IBM_Screen"].hide_render = True   # old fake screen glow: shows as a hot spot in the new glass
 import os
 WIDEN = float(os.environ.get("WIDEN", "0.30"))         # extra cabinet width toward the viewer's left (-Y), keyboard lives there
 CY = 1.25
@@ -48,7 +50,7 @@ if use_new:
     widen(WIDEN)
 if use_new:
     for o in list(D.objects):
-        if (o.parent == root and o.name.startswith(("PC_", "CRT2_", "Term_Key_"))) or \
+        if (o.parent == root and o.name.startswith(("PC_", "CRT2_", "Term_"))) or \
            (o.name.startswith("KB_") and any(c.name == "Station" for c in o.users_collection)):   # old keyboard is not parented to the root
             D.objects.remove(o)
     with D.libraries.load(str(ROOT / "components/retro_pc/export/retro_pc_source.blend")) as (src, dst):
@@ -69,7 +71,7 @@ if use_new:
     if pol:
         bpy.context.view_layer.update()
         m = pol.matrix_world.copy()                    # keep its orientation (faces +X), only move it
-        m.translation = Vector((-2.745, 1.320, 1.082))  # world: on top of the monitor, right end
+        m.translation = Vector((-2.682, 1.394, 0.870))  # world: on top of the monitor, right end
         pol.matrix_world = m
         pol.rotation_euler = (0, 0, 0)                 # upright, no lean: faces straight into the room
         bpy.context.view_layer.update()
@@ -99,6 +101,7 @@ VIEWS = {   # pos, target, vertical fov  (Blender coords)
     "ibm":  ((-1.55, 1.55, 0.98), (-2.80, 1.25, 0.80), 46),      # like the site's IBM view (from the room side)
     "room": ((-0.40, 0.10, 1.45), (-2.85, 1.30, 0.70), 58),      # wider, shows the cabinet against the wall
     "top":  ((-2.50, 1.25, 3.2), (-2.50, 1.25, 0.0), 40),
+    "close": ((-1.95, 1.22, 0.93), (-2.72, 1.24, 0.88), 40),     # like the reference screenshot: monitor + photo on its right side
 }
 for v in views:
     pos, tgt, fov = VIEWS[v]
