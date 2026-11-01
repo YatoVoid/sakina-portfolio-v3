@@ -48,9 +48,9 @@ def speckled_glaze(name, coffee_z, axis=(0.0, 0.0), density=1.0):
     m, g, b, pos = _base(name)
     x, y, z = g.xyz(pos)
     # --- speckles
-    a = _speck(g, pos, 400.0, 0.12, 0.24, 1.0 * density, seed=3.1)      # tiny, dense
-    s = _speck(g, pos, 200.0, 0.10, 0.20, 1.0 * density, seed=7.7)      # small
-    r = _speck(g, pos, 110.0, 0.09, 0.16, 1.0 * density, stretch=(1, 1, 0.7), seed=11.3)   # rare, larger
+    a = _speck(g, pos, 330.0, 0.16, 0.30, 1.0 * density, stretch=(1, 1, 0.8), seed=3.1)   # fine, dense
+    s = _speck(g, pos, 170.0, 0.14, 0.26, 1.0 * density, stretch=(1, 1, 0.6), seed=7.7)   # medium, streaked
+    r = _speck(g, pos, 95.0, 0.12, 0.22, 1.0 * density, stretch=(1.2, 1, 0.5), seed=11.3)  # bold, streaked
     sp = g.math("MAXIMUM", g.math("MAXIMUM", a, s), r)
 
     # --- glaze tone: warm white, soft low-frequency drift, slightly creamier where the glaze pools
@@ -58,7 +58,7 @@ def speckled_glaze(name, coffee_z, axis=(0.0, 0.0), density=1.0):
     glaze = g.mix(drift, hex_lin("#efebe2"), hex_lin("#e0dacd"))
     pool = g.ramp(g.noise(pos, 42.0, 4.0, 0.6), 0.45, 0.75, 0.0, 0.35)
     glaze = g.mix(pool, glaze, hex_lin("#d9cfba"))
-    sp_col = g.mix(g.noise(pos, 60.0, 2.0), hex_lin("#0c0907"), hex_lin("#2e231b"))
+    sp_col = g.mix(g.noise(pos, 60.0, 2.0), hex_lin("#070605"), hex_lin("#201812"))
     col = g.mix(sp, glaze, sp_col)
 
     # --- coffee tide-line on the inside wall only (normal points toward the axis)
@@ -103,16 +103,16 @@ def crema(name):
     t = g.math("ADD", t, g.math("MULTIPLY", g.math("SUBTRACT", swirl, 0.5), 0.55))
     ramp = g.N.new("ShaderNodeValToRGB")
     e = ramp.color_ramp.elements
-    e[0].position, e[0].color = 0.15, hex_lin("#7a4a1f")
-    e[1].position, e[1].color = 0.95, hex_lin("#a86b32")
-    mid = ramp.color_ramp.elements.new(0.55); mid.color = hex_lin("#93591f")
+    e[0].position, e[0].color = 0.15, hex_lin("#4a280f")
+    e[1].position, e[1].color = 0.95, hex_lin("#7f4d22")
+    mid = ramp.color_ramp.elements.new(0.55); mid.color = hex_lin("#623516")
     g.L.new(g.math("MAXIMUM", g.math("MINIMUM", t, 1.0), 0.0), ramp.inputs["Fac"])
     # bubbles: bright foam dots along the rim
     vor = g.node("ShaderNodeTexVoronoi", Vector=g.mapping(pos, (900, 900, 900)), Scale=1.0)
     vor.voronoi_dimensions = "3D"
     bub = g.math("MULTIPLY", g.ramp(vor.outputs["Distance"], 0.34, 0.2),
                  g.ramp(d, 0.034, 0.045))
-    col = g.mix(g.math("MULTIPLY", bub, 0.45), ramp.outputs["Color"], hex_lin("#c99358"))
+    col = g.mix(g.math("MULTIPLY", bub, 0.35), ramp.outputs["Color"], hex_lin("#9a6430"))
     g.L.new(col, b.inputs["Base Color"])
     g.L.new(g.math("MULTIPLY_ADD", swirl, 0.12, 0.07), b.inputs["Roughness"])
     return m
@@ -125,9 +125,9 @@ def wood_slice(name, pith=(-0.007, 0.005)):
     dist = g.math("SQRT", g.math("ADD", g.math("MULTIPLY", px, px), g.math("MULTIPLY", py, py)))
     wob = g.math("MULTIPLY", g.math("SUBTRACT", g.noise(pos, 38.0, 3.0), 0.5), 0.006)
     ph = g.math("FRACT", g.math("MULTIPLY", g.math("ADD", dist, wob), 430.0))      # ~24 rings over 55 mm
-    late = g.ramp(ph, 0.62, 0.99)
-    base = g.mix(g.ramp(g.noise(pos, 20.0, 3.0), 0.3, 0.7), hex_lin("#d8bf92"), hex_lin("#c4a374"))
-    col = g.mix(g.math("MULTIPLY", late, 0.42), base, hex_lin("#9a7448"))
+    late = g.ramp(ph, 0.70, 0.99)
+    base = g.mix(g.ramp(g.noise(pos, 20.0, 3.0), 0.3, 0.7), hex_lin("#c9a672"), hex_lin("#b48a58"))
+    col = g.mix(g.math("MULTIPLY", late, 0.30), base, hex_lin("#8f6a40"))
     fibre = g.noise(g.mapping(pos, (1400, 1400, 1400)), 1.0, 3.0)
     col = g.mix(g.math("MULTIPLY", g.ramp(fibre, 0.55, 0.8), 0.35), col, hex_lin("#bda070"))
     # one radial drying crack from the pith
@@ -152,8 +152,8 @@ def bark(name, top_z):
     patch = g.noise(pos, 30.0, 3.0)
     ramp = g.N.new("ShaderNodeValToRGB")
     e = ramp.color_ramp.elements
-    e[0].position, e[0].color = 0.28, hex_lin("#1d150f")
-    e[1].position, e[1].color = 0.80, hex_lin("#5f4a38")
+    e[0].position, e[0].color = 0.28, hex_lin("#2a1d13")
+    e[1].position, e[1].color = 0.80, hex_lin("#76593f")
     g.L.new(furrow, ramp.inputs["Fac"])
     col = g.mix(g.ramp(patch, 0.55, 0.75, 0.0, 0.5), ramp.outputs["Color"], hex_lin("#8b8070"))
     cam = g.ramp(z, top_z - 0.0016, top_z - 0.0006)                                   # pale cambium line

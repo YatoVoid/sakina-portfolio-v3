@@ -40,7 +40,7 @@ TARGET_TRIS = int(os.environ.get("MUG_TRIS", 32000))
 H = 0.085                   # mug height
 R_BASE, R_RIM = 0.037, 0.050
 WALL, FLOOR = 0.0042, 0.009
-COAST_T, COAST_R = 0.014, 0.0575
+COAST_T, COAST_R = 0.016, 0.0575
 ZB = COAST_T - 0.0002       # mug base height (rests on the coaster)
 AX, AY = 0.002, -0.002      # mug axis offset on the coaster
 COFFEE_Z = ZB + H - 0.013
@@ -256,6 +256,8 @@ def main():
     })
     bpy.ops.wm.save_as_mainfile(filepath=str(C.comp_dir(NAME) / "export" / f"{NAME}_source.blend"),
                                 compress=True)
+    if os.environ.get("SKIP_BAKE"):
+        return
     tex = C.comp_dir(NAME) / "export" / "tex"
     M.bake_to_images([mug], str(tex), px=TEX_PX, prefix="mug_body")
     M.bake_to_images([cof], str(tex), px=512, prefix="mug_coffee")
