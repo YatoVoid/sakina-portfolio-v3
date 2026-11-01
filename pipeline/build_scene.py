@@ -9,7 +9,7 @@ import bpy, os, sys, runpy, importlib.util
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WORK = os.environ.setdefault("V3_WORK", "/tmp/v3work")
 os.makedirs(WORK + "/source", exist_ok=True)
-EDITS = ["e01_tapes_vcr", "e06_wall_clocks", "e13_wall_colour"]          # applied in this order; each is pipeline/edits/<name>.py with apply()
+EDITS = ["e01_tapes_vcr", "e06_wall_clocks", "e08_degree_center", "e13_wall_colour"]          # applied in this order; each is pipeline/edits/<name>.py with apply()
 
 
 def build(upto=None, save=True):
