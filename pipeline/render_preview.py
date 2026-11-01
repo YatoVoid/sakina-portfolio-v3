@@ -36,6 +36,7 @@ VIEWS = {   # name: (camera, target, vertical fov, (width, height))
     "hem": (b(0.45, 1.10, -1.25), b(0.15, 0.80, -2.40), 52, (1280, 720)),          # round 5: curtain hem 4 cm over the desk + shadows
     "tv2": (b(0.02, 1.04, -1.40), b(-0.02, 0.97, -2.15), 34, (1280, 720)),        # round 5: CRT close-up after the desk move
     "pot": (b(-0.86, 1.28, -1.50), b(-0.90, 0.93, -2.04), 40, (1280, 720)),         # round 5: pebbles + mud in the pot
+    "pot_top": (b(-0.90, 1.62, -1.78), b(-0.90, 0.92, -2.04), 34, (1280, 720)),    # round 5: soil seen from above
     "rod": (b(-0.10, 1.95, -0.95), b(-0.20, 2.40, -2.50), 52, (1280, 720)),        # round 4: rod, end cap, header
     "floor": (b(0.25, 0.62, 0.55), b(0.55, 0.0, -1.35), 64, (1280, 720)),          # round 4: floor planks, low and raking like the reference
     "floor_left": (b(-0.4, 0.55, -0.15), b(-1.7, 0.0, -2.2), 64, (1280, 720)),    # round 4: floor beside the dresser
