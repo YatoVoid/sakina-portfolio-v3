@@ -228,3 +228,6 @@ Pushed to `integration/v3-master` only. `main` and the live site are unchanged u
 - Ran the unchanged `bake_lightmaps.py` on interim6 (all approved edits + window) at RES=512, SPP=16 on the cloud CPU (~5 min), output in scratch only; nothing written to production or committed except `previews/integration/lowres_bake_test.jpg`.
 - Purpose: judge mood/brightness only. Resolution is far too low for detail (curtains, small text, canvas photos are blurry/streaky) — expected.
 - Finding: with cream walls the room reads brighter and flatter than the earlier lamp-lit mood. Decide wall value/exposure before the GPU bake.
+
+### Wall value tuning (2026-11-01, Sakina: "make the room whatever you think is best")
+- `e13_wall_colour.py` now scales the reference albedo by `WALL_SCALE` = **0.60** (same hue). Low-res test bakes at 1.00 / 0.60 / 0.40: `previews/integration/wall_value_test.jpg`. 1.00 too bright/flat, 0.40 murky, 0.60 best. Final value should be re-judged after the GPU bake + Three.js grading.
