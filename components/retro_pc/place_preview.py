@@ -71,8 +71,19 @@ if use_new:
     if pol:
         bpy.context.view_layer.update()
         m = pol.matrix_world.copy()                    # keep its orientation (faces +X), only move it
-        m.translation = Vector((-2.682, 1.394 + float(os.environ.get("PHOTO_DY", "-0.04")), 0.870))  # world: on top of the monitor, right end
+        m.translation = Vector((float(os.environ.get("PHOTO_X", "-2.650")), 1.394 + float(os.environ.get("PHOTO_DY", "-0.04")), 0.870))  # world: on top of the monitor, right end
         pol.matrix_world = m
+        bd = D.objects.get("Polaroid_Border")           # no white frame: just the photo, cropped tight (no wall/white at the bottom)
+        if bd: D.objects.remove(bd)
+        ph = D.objects["Polaroid_Photo"]
+        me = ph.data.copy(); ph.data = me
+        W, H = 0.037, 0.040                              # half sizes (m): 7.4 x 8.0 cm print
+        for v in me.vertices:
+            v.co.x = W if v.co.x > 0 else -W
+            v.co.z = H if v.co.z > 0 else -H
+        U0, U1, V0, V1 = 0.14, 0.88, 0.0, 0.80            # crop of profile.jpg around her
+        for l in me.uv_layers.active.data:
+            l.uv = (U1 if l.uv[0] > 0.5 else U0, V1 if l.uv[1] > 0.5 else V0)
         pol.rotation_euler = (0, 0, 0)                 # upright, no lean: faces straight into the room
         bpy.context.view_layer.update()
         print("POL", pol.parent.name if pol.parent else None, tuple(pol.matrix_world.translation), tuple(pol.rotation_euler), pol.matrix_world.to_euler())
