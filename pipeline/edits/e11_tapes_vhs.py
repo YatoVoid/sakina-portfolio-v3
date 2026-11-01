@@ -216,8 +216,8 @@ def _dress(root, rng):
             _remove(c)
     lab = label_mat()
     fy = FACE_Y
-    _box(n + "_Spine", root, -0.094, 0.094, fy - 0.0006, fy + 0.0001, -0.0107, 0.0107, band_mat(n, col))
-    _box(n + "_Strip", root, -0.032, 0.056, fy - 0.0010, fy - 0.0005, -0.0098, 0.0098, lab)
+    _box(n + "_Spine", root, -0.094, 0.094, fy - 0.0004, fy + 0.0001, -0.0107, 0.0107, band_mat(n, col))
+    _box(n + "_Strip", root, -0.032, 0.056, fy - 0.0008, fy - 0.0003, -0.0098, 0.0098, lab)
     cream = cream_mat()
     for c in root.children:
         if c.type == 'FONT' and c.name == n + "_No":
