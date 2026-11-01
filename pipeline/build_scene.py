@@ -17,6 +17,7 @@ EDITS = [   # PROVISIONAL final order (integration/v3-final); each is pipeline/e
     "e08b_curtains_rod",                                                                           # round3 curtains (after e14 window)
     "e15_retro_pc", "e16_room_refresh_props",                                                      # retro PC; lamp + remote + calculator
     "e17_window_wall_rework",                                                                      # wider window, linen curtains, desk to wall, pillar + poster out
+    "e18_crt_black",                                                                               # CRT reads black, neutral screen light
 ]
 
 

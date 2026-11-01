@@ -34,6 +34,7 @@ VIEWS = {   # name: (camera, target, vertical fov, (width, height))
     "window": (b(-0.05, 1.25, -0.55), b(-0.10, 1.35, -2.50), 62, (1280, 720)),    # round 4: window + curtains
     "window_wide": (b(0.20, 1.30, -0.30), b(0.20, 1.30, -2.50), 74, (1600, 900)),   # round 5: widened window + linen curtains
     "hem": (b(0.45, 1.10, -1.25), b(0.15, 0.80, -2.40), 52, (1280, 720)),          # round 5: curtain hem 4 cm over the desk + shadows
+    "tv2": (b(0.02, 1.04, -1.40), b(-0.02, 0.97, -2.15), 34, (1280, 720)),        # round 5: CRT close-up after the desk move
     "rod": (b(-0.10, 1.95, -0.95), b(-0.20, 2.40, -2.50), 52, (1280, 720)),        # round 4: rod, end cap, header
     "floor": (b(0.25, 0.62, 0.55), b(0.55, 0.0, -1.35), 64, (1280, 720)),          # round 4: floor planks, low and raking like the reference
     "floor_left": (b(-0.4, 0.55, -0.15), b(-1.7, 0.0, -2.2), 64, (1280, 720)),    # round 4: floor beside the dresser
