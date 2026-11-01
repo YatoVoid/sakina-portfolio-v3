@@ -1,0 +1,25 @@
+{
+  "triangles": 35066,
+  "vertices": 17584,
+  "materials": [
+    "Mug_Body_baked",
+    "Mug_Coaster_baked",
+    "Mug_Coffee_baked"
+  ],
+  "bbox_min_m": [
+    -0.0573,
+    -0.0569,
+    0.0
+  ],
+  "bbox_max_m": [
+    0.0855,
+    0.0575,
+    0.103
+  ],
+  "size_m": [
+    0.1428,
+    0.1144,
+    0.103
+  ],
+  "glb_bytes": 1266032
+}
