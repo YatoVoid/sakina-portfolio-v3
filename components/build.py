@@ -30,7 +30,7 @@ def main(argv):
     os.makedirs(d + "/export", exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=f"{d}/export/{name}.blend", compress=True)
     out = {"component": name}
-    if "--no-render" not in argv:
+    if "--no-render" not in argv and getattr(mod, "STUDIO_PREVIEW", True):
         files = studio.render(root, d + "/previews", name,
                               rigs=tuple(opt("--rigs", "studio,night").split(",")),
                               views=tuple(opt("--views", "hero,front,side,back").split(",")),
@@ -38,7 +38,10 @@ def main(argv):
                               closeups=getattr(mod, "CLOSEUPS", ()))
         out["previews"] = [os.path.relpath(f, HERE) for f in files]
     if "--no-glb" not in argv:
-        out["glb"] = export.export_glb(root, f"{d}/export/{name}.glb", tex_size=int(opt("--tex", 1024)))
+        if hasattr(mod, "export"):      # component ships its own textures (e.g. a photo) — no re-bake
+            out["glb"] = mod.export(root, f"{d}/export/{name}.glb")
+        else:
+            out["glb"] = export.export_glb(root, f"{d}/export/{name}.glb", tex_size=int(opt("--tex", 1024)))
     out["seconds"] = round(time.time() - t0)
     with open(f"{d}/export/stats.json", "w") as f:
         json.dump(out, f, indent=2)

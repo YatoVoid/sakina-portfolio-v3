@@ -18,6 +18,12 @@ workshop **does not edit** any of its files:
 
 No deploys, no merges into `main`. Integration happens only after approval (see "Integration" below).
 
+## Components
+
+| Component | Status | Notes |
+|---|---|---|
+| `window_view` | awaiting approval | Berlin rail-yard night photo outside the window (`window_view/spec.md`) |
+
 ## Layout
 
 ```
