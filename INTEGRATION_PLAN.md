@@ -200,5 +200,8 @@ Sakina's request: all walls should be the wall colour of her reference photo (wa
 | Desk (e08) | Approved 2026-10-31 |
 | Window view (e09) | Approved 2026-10-31 |
 | Wall colour (e13) | **Approved 2026-11-01** (Sakina: "Approved", right after the before/after) |
-| Mug + coaster (e10), chair (e11), gallery wall (e12) | Integrated and previewed at Sakina's request; explicit approval not recorded yet |
+| Mug + coaster (e10), chair (e11), gallery wall / frame layout (e12) | **Approved 2026-11-01 10:41 CT** |
 | CRT, `round3` | Not approved, not merged |
+
+**Approved set (2026-11-01 10:41 CT):** desk, window view (city life behind the window), mug + coaster, chair, wall colour, gallery-wall frame layout.
+Pushed to `integration/v3-master` only. `main` and the live site are unchanged until the final integration is approved.
