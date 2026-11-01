@@ -8,7 +8,7 @@ Reference analysis (ornate bronze antique wall clock photo):
   inferred - real size (dial 38 cm, overall 0.62 m tall), exact scroll shape, hand shape, patina pattern, glass (omitted,
              a bake cannot hold glass; the web build adds a faint reflective pane).
 Time zones: Houston is 10 h behind Karachi, so the static poses are Houston 10:10 and Karachi 8:10 (= 20:10).
-Lettering is raised aged-brass letters fixed to the wall, written with a serif font (FreeSerif Bold).
+Lettering: bold black sans letters on a white enamel strip fixed to the wall above each clock (user request).
 All parts go to the Wall_Decor collection (the bake group that held the old clock).
 """
 import bpy, bmesh, math, os, importlib.util
@@ -24,7 +24,8 @@ ZC = 2.06                       # dial centre height
 CLOCKS = [("Karachi", -2.11, (8, 10)), ("Houston", -1.52, (10, 10))]    # name, x centre (= centre of its degree frame), (h, m)
 LABEL_Z = 2.52
 FONT = "/usr/share/fonts/truetype/freefont/FreeSerif.ttf"
-FONT_B = "/usr/share/fonts/truetype/freefont/FreeSerifBold.ttf"
+FONT_LABEL = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+STRIP_W, STRIP_H = 0.30, 0.085
 OLD_CLOCK = {"Clock_Cap", "Clock_Face", "Clock_Frame", "Clock_Hour", "Clock_Minute"} | {f"Clock_Tick_{i}" for i in range(12)}
 RX90 = Matrix.Rotation(math.radians(90), 4, 'X')        # local +Z (out of the dial) -> world -Y (into the room), local +Y -> world +Z
 
@@ -269,10 +270,12 @@ def build_clock(name, cx, hm, mats, coll):
     return objs
 
 
-def build_label(name, cx, mat, coll):
-    me = text_mesh(name, 0.075, 0.0035, D.fonts.load(FONT_B))
+def build_label(name, cx, mats, coll):
+    """White enamel strip with the city name in bold black capitals-and-lowercase, fixed to the wall above the clock."""
     A = Acc()
-    A.mesh(mat, me, Matrix.Translation((0, 0, 0.0035 + 0.0005)))
+    A.mesh(mats["strip"], E2.bevelled_box((STRIP_W / 2, STRIP_H / 2, 0.005), (0, 0, 0.005), 0.003, 2))
+    me = text_mesh(name, 0.050, 0.0012, D.fonts.load(FONT_LABEL))
+    A.mesh(mats["label_ink"], me, Matrix.Translation((0, 0, 0.010 + 0.0012)))
     D.meshes.remove(me)
     return A.build(f"WClock_Label_{name}", coll, Matrix.Translation((cx, WALL_Y, LABEL_Z)) @ RX90)
 
@@ -290,11 +293,12 @@ def apply():
         "ink": plain("WClock_Ink", (0.026, 0.020, 0.016, 1), 0.55),
         "hands": plain("WClock_Hands", (0.018, 0.016, 0.016, 1), 0.32, 0.6),
     }
-    brass = bronze_material("WClock_LetterBrass", metallic=0.35, dark=(0.45, 0.30, 0.10), light=(0.88, 0.66, 0.30))
+    mats["strip"] = plain("WClock_Strip", (0.90, 0.88, 0.82, 1), 0.45)
+    mats["label_ink"] = plain("WClock_LabelInk", (0.012, 0.012, 0.012, 1), 0.5)
     parts = []
     for name, cx, hm in CLOCKS:
         parts += build_clock(name, cx, hm, mats, coll)
-        parts += build_label(name, cx, brass, coll)
+        parts += build_label(name, cx, mats, coll)
 
     bpy.context.view_layer.update()
     lo = Vector((1e9,) * 3); hi = Vector((-1e9,) * 3)
