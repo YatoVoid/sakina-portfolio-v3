@@ -290,53 +290,102 @@ def _linen_mat(e08):
     return m
 
 
-def _panel(e08, name, x0, x1, seed, mat):
-    """One curtain stack as a single smooth mesh. u: 0..1 across the stack, v: 0 (rings) .. 1 (hem).
-    Folds are regular at the rings (one crest per ring) and grow deeper and slightly irregular toward the hem, so the
-    bottom edge flares out and curves in side view. Hem line follows the folds."""
-    rnd = random.Random(seed)
-    W = x1 - x0
-    folds = 5
-    nx, nz = 260, 110
-    ph = rnd.uniform(-0.3, 0.3)
-    wob = [rnd.uniform(0, 6.28) for _ in range(4)]
+def _sstep(t):
+    t = max(0.0, min(1.0, t))
+    return t * t * (3 - 2 * t)
+
+
+class _Stack:
+    """One curtain stack as a surface y(u, v), z(u, v), x(u, v). u: 0 at the INNER edge (window side) .. 1 outer edge, v: 0 rings .. 1 hem.
+    Real-fabric behaviour instead of identical cosine bars:
+      - fold widths and depths vary from fold to fold (warped phase, modulated amplitude)
+      - rounded broad folds towards the room, pinched narrow valleys towards the rod (cos + 2nd harmonic)
+      - pinch pleats are regular at the rings and get looser and deeper towards the hem; fold lines lean and drift as they fall
+      - stack flares outward by ~3.5 cm at the hem, hem swings forward 1.6 cm
+      - 6 sets of small cross wrinkles (1-2 mm), thicker double-turned hem, rolled side hems, top edge sags between the rings."""
+
+    def __init__(self, name, x0, x1, seed):
+        r = random.Random(seed)
+        self.name = name
+        self.W = x1 - x0
+        self.sign = -1.0 if name.endswith("L") else 1.0
+        self.xin = x1 if self.sign < 0 else x0
+        self.F = 5
+        self.p = [r.uniform(0, 6.283) for _ in range(10)]
+        self.mw = [(r.uniform(9, 20), r.uniform(0.0006, 0.0017), r.uniform(0, 6.283), r.uniform(-2.5, 2.5)) for _ in range(7)]
+
+    def g(self, u):
+        p = self.p
+        return u + 0.045 * math.sin(2 * math.pi * u + p[0]) + 0.02 * math.sin(2 * math.pi * 2.3 * u + p[1])
+
+    def phi(self, u, v):
+        p = self.p
+        ease = _sstep(v / 0.25)
+        ph = 2 * math.pi * self.F * self.g(u) * (1.0 - 0.10 * v)
+        ph += ease * v * (0.9 * math.sin(2 * math.pi * 0.9 * u + p[2]) + 0.5 * math.sin(2 * math.pi * 1.7 * u + p[3]))
+        return ph
+
+    def fold(self, u, v):
+        ph = self.phi(u, v)
+        return math.cos(ph) - 0.2 * math.cos(2 * ph)          # b: +0.8 broad crest (towards room), -1.2 narrow valley (towards rod)
+
+    def surf(self, u, v):
+        p = self.p
+        ease = _sstep(v / 0.25)
+        amp = (0.020 + 0.032 * v ** 1.3) * (1 + ease * (0.28 * math.sin(2 * math.pi * 2.3 * u + p[4]) + 0.18 * math.sin(2 * math.pi * 3.9 * u + p[5])))
+        b = self.fold(u, v)
+        y = HANG_Y - amp * b - 0.016 * v * v
+        mw = 0.0
+        for k, a, ph, c in self.mw:
+            mw += a * math.cos(2 * math.pi * k * u + ph + c * v * 3.0)
+        y += mw * (0.25 + 0.75 * ease)
+        y -= 0.0035 * _sstep((v - 0.955) / 0.02)                                  # double-turned hem is thicker
+        edge = min(u, 1.0 - u)
+        y -= 0.003 * _sstep(1.0 - edge / 0.02)                                    # side hems roll forward a little
+        x = self.xin + self.sign * self.W * u * (1.0 + 0.095 * v ** 1.5)
+        w = (b + 1.2) / 2.0                                                       # 0 in a valley, 1 on a crest
+        z_hem = (DESK_TOP + 0.04) + 0.014 * w + 0.002 * (0.5 + 0.5 * math.sin(p[6] + u * 11.0))
+        z = Z_TOP + (z_hem - Z_TOP) * v - 0.014 * w * max(0.0, 1.0 - v * 7.0)
+        return x, y, z
+
+    def ring_us(self):
+        """u of every pinch point at the top (phi = pi + 2*pi*k), where a ring + clip goes."""
+        out, prev, n = [], self.phi(0.0, 0.0), 4000
+        for i in range(1, n + 1):
+            u = i / n
+            cur = self.phi(u, 0.0)
+            k0, k1 = math.floor((prev - math.pi) / (2 * math.pi)), math.floor((cur - math.pi) / (2 * math.pi))
+            if k1 > k0:
+                out.append(u - 0.5 / n)
+            prev = cur
+        return [u for u in out if 0.02 < u < 0.98]
+
+
+def _panel(e08, st, mat):
+    nx, nz = 190, 130
     bm = bmesh.new()
     grid = []
     for j in range(nz + 1):
         v = j / nz
-        row = []
-        reg = max(0.0, 1.0 - v * 1.8)                                    # regular pinch pleats only near the rings
-        amp = 0.020 + 0.034 * v ** 1.5 + 0.004 * math.sin(wob[0] + v * 5.0)
-        for i in range(nx + 1):
-            u = i / nx
-            crest = math.cos(2 * math.pi * folds * u + ph)
-            fold = (0.78 * math.cos(2 * math.pi * folds * u + ph + 0.9 * v * math.sin(wob[1] + u * 4.0))
-                    + 0.22 * math.cos(2 * math.pi * (folds * 2 + 1) * u + wob[2] + v * 2.0))
-            f = reg * crest + (1 - reg) * fold
-            y = HANG_Y + amp * f
-            xx = x0 + W * (u + 0.03 * math.sin(2 * math.pi * folds * u + ph) / folds * (1.0 - 0.4 * v))
-            # top edge: dips a little between the rings; hem: follows the folds so the bottom edge curves
-            z_top = Z_TOP - 0.012 * (1.0 - abs(crest)) * (1.0 - v)
-            z_hem = HEM_Z + 0.020 * (0.5 - 0.5 * f) + 0.006 * math.sin(wob[3] + u * 9.0)
-            zz = z_top + (z_hem - z_top) * v
-            row.append(bm.verts.new((xx, y, zz)))
-        grid.append(row)
+        grid.append([bm.verts.new(st.surf(i / nx, v)) for i in range(nx + 1)])
+    flip = st.sign > 0                                      # keep face normals pointing into the room for both stacks
     for j in range(nz):
         for i in range(nx):
-            bm.faces.new((grid[j][i], grid[j][i + 1], grid[j + 1][i + 1], grid[j + 1][i]))
+            f = (grid[j][i], grid[j][i + 1], grid[j + 1][i + 1], grid[j + 1][i])
+            bm.faces.new(f[::-1] if flip else f)
     bm.normal_update()
-    me = bpy.data.meshes.new(name)
+    me = bpy.data.meshes.new(st.name)
     bm.to_mesh(me)
     bm.free()
-    o = bpy.data.objects.new(name, me)
+    o = bpy.data.objects.new(st.name, me)
     me.materials.append(mat)
-    for p in me.polygons:
-        p.use_smooth = True
+    for pl in me.polygons:
+        pl.use_smooth = True
     bpy.data.collections["Window"].objects.link(o)
     sol = o.modifiers.new("Thick", 'SOLIDIFY')
     sol.thickness = 0.004
     sol.offset = 1.0
-    return o, (folds, ph)
+    return o
 
 
 def _ring(name, x, mat):
@@ -395,16 +444,15 @@ def _curtains():
         e08._box(f"Rod_Bracket_P{i}", x - 0.0125, x + 0.0125, WALL - 0.005, WALL, ROD_Z - 0.022, ROD_Z + 0.022, black, 0.002)
     n_rings = 0
     for name, x0, x1, seed in STACKS:
-        o, (folds, ph) = _panel(e08, name, x0, x1, seed, linen)
-        # one ring above every pleat crest (crests of cos(2*pi*folds*u + ph) are at u = (k - ph/2pi)/folds)
-        W = x1 - x0
-        for k in range(folds + 1):
-            u = (k - ph / (2 * math.pi)) / folds
-            if 0.0 <= u <= 1.0:
-                _ring(f"Rod_Ring_{name[-1]}{k}", x0 + W * (u + 0.03 * math.sin(2 * math.pi * folds * u + ph) / folds), black)
-                n_rings += 1
+        st = _Stack(name, x0, x1, seed)
+        _panel(e08, st, linen)
+        for k, u in enumerate(st.ring_us()):
+            x, y, z = st.surf(u, 0.0)
+            _ring(f"Rod_Ring_{name[-1]}{k}", x, black)
+            e08._box(f"Rod_Clip_{name[-1]}{k}", x - 0.0055, x + 0.0055, y - 0.004, y + 0.004, Z_TOP - 0.024, Z_TOP + 0.012, black, 0.0015)
+            n_rings += 1
     bpy.context.view_layer.update()
-    print(f"e17: curtains rebuilt (removed {len(removed)} old), linen stacks {[(n, a, b) for n, a, b, _ in STACKS]}, {n_rings} rings, hem z {HEM_Z:.2f}", flush=True)
+    print(f"e17: curtains rebuilt (removed {len(removed)} old), linen stacks {[(n, a, b) for n, a, b, _ in STACKS]}, {n_rings} rings, hem low point z {DESK_TOP + 0.04:.2f}", flush=True)
 
 
 def apply():
