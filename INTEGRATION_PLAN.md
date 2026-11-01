@@ -1,6 +1,6 @@
 # Integration plan — Sakina Portfolio V3 (master integration session)
 
-Branch: `integration/v3-master` (cut from `main` @ `57bdb1d`). Status: **plan only — nothing merged yet.**
+Branch: `integration/v3-master` (cut from `main` @ `57bdb1d`). Status: **stage 1 done (desk + window view integrated); `round3` (incl. the approved CRT) is held until it is finished.**
 Owner: master integration session. Production (`main`, Netlify) is not touched until Sakina approves.
 
 ## Hard limits for this session
@@ -86,3 +86,48 @@ Changes needed in the bake code (integration branch only):
 - Run inside desktop **Blender 5.2.x** (`blender -b scene.blend --python run_bake.py`), not pip `bpy`.
 - Output: one lightmap PNG per bake group + a baked `.blend`; the GLB export/splice stays in this pipeline
   after the bake is returned.
+
+
+---
+
+## Status log
+
+### Approvals received (Sakina, 2026-10-31 23:46 CT)
+
+| Item | Decision |
+|---|---|
+| `components/detailed-assets` → desk | Approved |
+| `components/detail-assets` → window_view | Approved |
+| CRT | Use the `round3` version (`e05_crt_vcr.py`); `components/crt` is **not** integrated |
+| `round3` | **In progress — not merged** (it also carries e01–e07 and the OIDN denoise / bake changes) |
+
+### Stage 1 (done): desk + window view on top of `main`
+
+- Merged `components/detailed-assets` and `components/detail-assets` into this branch. The only conflicts were
+  `components/README.md` and `components/.gitignore`; both were combined without dropping content (the
+  `*/export/*.blend` ignore rule was left out so the desk's source .blend stays trackable).
+- `pipeline/edits/e08_desk_detail.py`: replaces the 43 `Desk_*` meshes with the 5 component meshes at (0.20, 1.65, 0).
+- `pipeline/edits/e09_window_view.py`: adds the photo backdrop in a new, non-baked collection `WindowView`; its two
+  images are packed in the .blend. `Outside` stays in the file (the photo sits in front of it).
+- `pipeline/build_scene.py` `EDITS` is currently `e01, e08, e09`. **When `round3` is merged it must become
+  `e01 … e07, e08, e09`** (round 3 owns e01–e07; resolve that one line by hand).
+- Tools: `pipeline/tools/scene_check.py` (integrity report vs. a baseline) and
+  `pipeline/tools/preview_integration.py` (low-sample unbaked previews).
+
+Measured results (`previews/integration/scene_check_interim.json`, interim scene vs. the `main`+e01 baseline):
+
+- Lights, cameras and render settings: **0 changes** (7 lights, 10 cameras, scene camera, engine, view transform).
+- Desk: top surface 0.720 m (unchanged), footprint 2.90 × 0.70 m; all 37 props over the desk keep their exact
+  previous gap to the top (0.0 mm; nothing floats). Worst new contact: `Rolodex_Base` sinks 0.08 mm into the top.
+- Duplicates created by the edits: none. Every mesh is in exactly one collection. No external texture paths.
+- Overlaps inside the new desk (frame/top, brass/frame, drawer box/frame) are joinery of the approved component.
+
+Previews (unbaked Cycles, 24 samples, live scene lights — not the lightmap look): `previews/integration/`.
+
+### Still to do
+
+1. Merge `round3` when it is finished and approved; set `EDITS` as above; re-run build, checks and previews.
+2. Lightmap UV layer + per-group UV coverage report (no group has the `Lightmap` layer in the source scene yet;
+   the bake script creates it at bake time with `smart_project`).
+3. Bake kit for the NVIDIA laptop (device selection, cross-platform OIDN, `run_bake.py`, manifest, README).
+   Waits for `round3` because it changes `bake_lightmaps.py`.
