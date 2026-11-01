@@ -1,5 +1,5 @@
 {
-  "triangles": 6192,
+  "triangles": 6072,
   "vertices": 3210,
   "materials": [
     "Desk_Brass_baked",
@@ -23,5 +23,5 @@
     0.6988,
     0.7203
   ],
-  "glb_bytes": 615336
+  "glb_bytes": 1603868
 }
