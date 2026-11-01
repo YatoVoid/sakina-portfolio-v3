@@ -1,6 +1,6 @@
 # Integration plan — Sakina Portfolio V3 (master integration session)
 
-Branch: `integration/v3-master` (cut from `main` @ `57bdb1d`). Status: **desk, window view, mug + coaster, chair and the gallery wall integrated; `round3` and its CRT are held (CRT not approved).**
+Branch: `integration/v3-master` (cut from `main` @ `57bdb1d`). Status: **desk, window view, mug + coaster, chair, the gallery wall and the new wall colour integrated; `round3` and its CRT are held (CRT not approved).**
 Owner: master integration session. Production (`main`, Netlify) is not touched until Sakina approves.
 
 ## Hard limits for this session
@@ -175,3 +175,19 @@ layout and look realistic. Built here as an integration edit (no component branc
   sharpness on the canvases depends on that resolution; consider a higher `Wall_Decor` size for the GPU bake.
 - `round3` conflict: its `e04_left_zone.py` rebuilds the postcards and clock and moves the left wall in to x = -2.30. After that
   merge `e12` will fail its postcard assertion and must be re-targeted to the new wall position.
+
+
+### Stage 4 (2026-11-01): wall colour of the whole room
+
+Sakina's request: all walls should be the wall colour of her reference photo (warm cream plaster, vintage framed gallery wall).
+
+- `pipeline/edits/e13_wall_colour.py`: sampled the reference wall in four regions away from shadow/sun patches: sRGB (207, 197, 183)
+  = #CFC5B7 (regions #CEC4B5 .. #D1C7B9). All 7 wall meshes share the material `WallPlaster`, so one material change covers the room.
+- The old material was near-black over most of the wall (a height blend toward (0.024, 0.015, 0.009) is already 1.0 below z = 2.2 m).
+  New: mottling around the reference colour, soft stains (x0.78), shade only near the ceiling (above 2.45 m) and floor (below 0.35 m).
+  Noise patterns, bump and roughness unchanged. Ceiling, floor, baseboards and window paint untouched.
+- Checks: lights/cameras 0 changes, no new overlaps. `EDITS` is now `e01, e08 .. e13`. This edit only changes a material, so it
+  also works after the `round3` merge.
+- Effect on lighting: lighter walls bounce much more light, so the room gets noticeably brighter and less moody with the same lights.
+  Lights were not changed (they are preserved for the bake). The lit wall in the preview is (83, 70, 58) in a dim area, i.e. darker
+  and warmer than the daylight photo; judge the final look after the GPU bake.
