@@ -74,7 +74,11 @@ if use_new:
         m.translation = Vector((float(os.environ.get("PHOTO_X", "-2.650")), 1.394 + float(os.environ.get("PHOTO_DY", "-0.04")), 0.870))  # world: on top of the monitor, right end
         pol.matrix_world = m
         bd = D.objects.get("Polaroid_Border")           # no white frame: just the photo, cropped tight (no wall/white at the bottom)
-        if bd: D.objects.remove(bd)
+        if bd:                                           # thin white border: 3 mm all round the cropped photo
+            bd.data = bd.data.copy()
+            for v in bd.data.vertices:
+                v.co.x = 0.040 if v.co.x > 0 else -0.040
+                v.co.z = 0.051 if v.co.z > 0 else -0.035   # photo is centred at z +0.008 on the frame
         ph = D.objects["Polaroid_Photo"]
         me = ph.data.copy(); ph.data = me
         W, H = 0.037, 0.040                              # half sizes (m): 7.4 x 8.0 cm print
