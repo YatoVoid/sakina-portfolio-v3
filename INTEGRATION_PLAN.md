@@ -1,6 +1,6 @@
 # Integration plan — Sakina Portfolio V3 (master integration session)
 
-Branch: `integration/v3-master` (cut from `main` @ `57bdb1d`). Status: **stage 1 done (desk + window view integrated); `round3` (incl. the approved CRT) is held until it is finished.**
+Branch: `integration/v3-master` (cut from `main` @ `57bdb1d`). Status: **desk, window view, mug + coaster and chair integrated; `round3` and its CRT are held (CRT not approved).**
 Owner: master integration session. Production (`main`, Netlify) is not touched until Sakina approves.
 
 ## Hard limits for this session
@@ -98,7 +98,7 @@ Changes needed in the bake code (integration branch only):
 |---|---|
 | `components/detailed-assets` → desk | Approved |
 | `components/detail-assets` → window_view | Approved |
-| CRT | Use the `round3` version (`e05_crt_vcr.py`); `components/crt` is **not** integrated |
+| CRT | ~~Use the `round3` version~~ **Superseded 2026-11-01:** CRT is **not approved**; Sakina will decide later. No CRT change is integrated (`components/crt` and `round3` e05 both stay out) |
 | `round3` | **In progress — not merged** (it also carries e01–e07 and the OIDN denoise / bake changes) |
 
 ### Stage 1 (done): desk + window view on top of `main`
@@ -131,3 +131,29 @@ Previews (unbaked Cycles, 24 samples, live scene lights — not the lightmap loo
    the bake script creates it at bake time with `smart_project`).
 3. Bake kit for the NVIDIA laptop (device selection, cross-platform OIDN, `run_bake.py`, manifest, README).
    Waits for `round3` because it changes `bake_lightmaps.py`.
+
+
+### Stage 2 (2026-11-01): mug + coaster and chair
+
+Sakina asked to integrate the mug/coaster and the chair and to see before/after of just those components; CRT ignored.
+
+- Merged `components/detailed-assets` again (clean, no conflicts). It also carried later desk commits (final 2048 px bake
+  and previews); `e08` uses `desk_source.blend`, so no change is needed.
+- `pipeline/edits/e10_mug_coaster.py`: replaces `Mug`, `Mug_Handle`, `Coffee`, `Mug_Stain_A` with `Mug_Body`, `Mug_Coffee`,
+  `Mug_Coaster` at (-0.2305, 1.3995, 0.720), rotZ 180°. `Mug_Stain_B` and `Steam` kept.
+- `pipeline/edits/e11_chair.py`: replaces the `WhiteChair` empty + 17 `Chair_*` meshes with `Chair_Wood`, `Chair_Seat`,
+  `Chair_Nails` in `Desk` at (-0.95, 0.90, 0), rotZ 158°.
+- `EDITS` is now `e01, e08, e09, e10, e11`.
+
+Checks (vs. the desk + window scene): lights, cameras and render settings 0 changes; no duplicates; no external textures.
+Mug: coaster rests on the desk (0.0 mm), mug body seats 0.8 mm into the coaster, coaster clears the notebook by 4 mm and
+`Note_Stack` by 38 mm. Chair: no overlap with the desk or any prop. The only new overlaps are inside the components
+(chair wood/seat/studs, mug/coffee/coaster) and between the mug and the `Steam` effect mesh, which is skipped by the bake and
+the web export.
+
+### Open items that matter for the `round3` merge
+
+- `round3` commit `cec81c4` includes a **chair recline** (it edits the old chair). `e11` asserts the old chair is at
+  (-0.95, 0.90, 0) with rotZ -22°; after `round3` is merged it will fail until the recline is dealt with on purpose.
+- The chair notes warn that the whitewash paint bakes much darker and warmer in the room than in the studio renders.
+- Still unmerged and not approved: `round3` (incl. CRT), `components/detail-assets` `room_refresh` (WIP), `components/crt`.

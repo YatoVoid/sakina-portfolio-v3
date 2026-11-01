@@ -29,6 +29,9 @@ VIEWS = {
     "desk":   (b(0.95, 1.20, -0.55),  b(0.10, 0.76, -1.55), 42),   # desk close-up from the right
     "desk_top": (b(0.55, 0.98, -0.80), b(0.45, 0.72, -1.50), 45),  # tabletop grain + front edge
     "drawer":   (b(0.20, 0.80, -0.62), b(0.20, 0.62, -1.32), 40),  # drawer front, pull, aprons
+    "mug":      (b(-0.02, 0.98, -1.02), b(-0.23, 0.77, -1.40), 36),  # mug + coaster, from the front-right, above the desk
+    "chair":    (b(-0.40, 1.30, 0.15),  b(-0.95, 0.50, -0.90), 52),  # white chair beside the desk, from the front
+    "chair_side": (b(0.45, 1.20, -0.25), b(-0.95, 0.50, -0.90), 50),  # chair seen with the desk edge
 }
 cam_data = D.cameras.new("PreviewCam"); cam = D.objects.new("PreviewCam", cam_data)
 sc.collection.objects.link(cam); sc.camera = cam
