@@ -1,6 +1,6 @@
 export const projects = [
-  {title:"DENTAL-X AI",year:"",summary:"Add a two sentence description of the problem, the data, and the result.",stack:[],link:""},
   {title:"TMAC / MIST-MEP",year:"",summary:"Add a two sentence description of the problem, the data, and the result.",stack:[],link:""},
+  {title:"DENTAL-X AI",year:"",summary:"Add a two sentence description of the problem, the data, and the result.",stack:[],link:""},
   {title:"UNIVERSITY OF HOUSTON",year:"",summary:"Add a two sentence description of the problem, the data, and the result.",stack:[],link:""},
   {title:"BLUTECH CONSULTING",year:"",summary:"Add a two sentence description of the problem, the data, and the result.",stack:[],link:""},
   {title:"SOFTSYNCDEV",year:"",summary:"Add a two sentence description of the problem, the data, and the result.",stack:[],link:""},
@@ -9,8 +9,6 @@ export const projects = [
   {title:"CAN I OWN A HOUSE?",year:"",summary:"Add a two sentence description of the problem, the data, and the result.",stack:[],link:""},
   {title:"RETAIL INVENTORY FORECASTING",year:"",summary:"Add a two sentence description of the problem, the data, and the result.",stack:[],link:""},
   {title:"FINANCIAL SIGN-OFF SYSTEM",year:"",summary:"Add a two sentence description of the problem, the data, and the result.",stack:[],link:""},
-  {title:"SAKINA JOB GS",year:"",summary:"Add a two sentence description of the problem, the data, and the result.",stack:[],link:""},
-  {title:"ORACLE FINANCIAL ETL",year:"",summary:"Add a two sentence description of the problem, the data, and the result.",stack:[],link:""},
   {title:"GAN X-RAY AUGMENTATION",year:"",summary:"Add a two sentence description of the problem, the data, and the result.",stack:[],link:""}
 ];
 

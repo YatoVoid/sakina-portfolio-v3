@@ -98,15 +98,20 @@ def _rebuild_tape(root, centre_xy, yaw):
         c.matrix_world = root.matrix_world @ Matrix.Translation(newp) @ S @ lin
 
 
+# Bottom-tape centre x per stack (round 2, 2026-10-31: "bring the stacks closer" to the monitor and each other).
+# VCR right edge is x = 0.18; left stack bottom starts 2 cm after it; ~3 cm gap between the stacks.
+STACK_BASE_X = {"left": 0.300, "right": 0.596}
+# Right-side props follow the stacks inward (same bake group). Deltas in metres.
+MOVE = {"Phone": (-0.29, 0.0), "Recorder": (-0.07, 0.0), "Floppy": (-0.02, -0.05)}
+
+
 def _tapes():
     D = bpy.data
     for stack, names in STACKS.items():
-        roots = [D.objects[n] for n in names]
-        cx = sum(r.matrix_world.translation.x for r in roots) / len(roots)
-        n = len(roots)
-        for i, r in enumerate(roots):
-            x = cx + (i - (n - 1) / 2) * STEP_X
-            _rebuild_tape(r, x, YAW_DEG[i % len(YAW_DEG)])
+        for i, n in enumerate(names):
+            _rebuild_tape(D.objects[n], STACK_BASE_X[stack] + i * STEP_X, YAW_DEG[i % len(YAW_DEG)])
+    for name, (dx, dy) in MOVE.items():
+        o = D.objects[name]; o.location.x += dx; o.location.y += dy
 
 
 def _vcr():

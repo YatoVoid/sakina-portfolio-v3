@@ -32,3 +32,10 @@ Known pre-existing bug: 6 of 13 tapes open the project of the tape above them (m
   only; the live site stays on `144419e` until a bake is separately requested.
 - 2026-11-01 — Edit #4 (radiator under the desk) built and previewed (`under_desk`, `radiator_close` views). Not baked, not published.
 - 2026-11-01 — Edit #5 (under-desk wires removed) built and previewed. Not baked, not published.
+- 2026-10-31 — **Round 2** (branch `round2`): hero opening camera, orbit-around-the-CRT camera (drag only, limited
+  zoom, kept inside the room), golden pothos, tape stacks closer, IBM PC/AT rebuilt in the corner, night sky.
+  Published to `/preview/` (57bdb1d); live check of the orbit camera still pending (laptop browser needed).
+- 2026-10-31 — **Round 3** (branch `round3`): edits e04–e07 (left wall 0.7 m in, wooden dresser, aged computer,
+  realistic postcards + clock; CRT bezel/funnel/housing + VCR; right nook lounge chair, painted side table, linen
+  floor lamp, wall picture; warm practical lighting with shadow-linked lamp leak). Cycles previews sent.
+  Full re-bake at 64 spp + OIDN (albedo-guided) — parity test: brightness ratio 0.998 vs 192 spp.

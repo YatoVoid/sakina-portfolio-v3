@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import {OrbitControls} from "three/addons/controls/OrbitControls.js";
+import {LookControls} from "./look-controls.js?v=5";
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 import {DRACOLoader} from "three/addons/loaders/DRACOLoader.js";
 import {projects,ibm,notepad,credits} from "./content.js";
@@ -23,28 +23,15 @@ renderer.setClearColor(0x07050a);
 
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(46,1,0.05,7000);
-const HOME={pos:new THREE.Vector3(0.12,0.86,-0.3),target:new THREE.Vector3(0.1,0.98,-1.8)};
+// Opening hero shot (round 2): eye at screen height, 1.4 m from the CRT, looking slightly down at the desk.
+const HOME={pos:new THREE.Vector3(-0.02,1.12,-0.25),target:new THREE.Vector3(-0.02,0.92,-1.65)};
 camera.position.copy(HOME.pos);
 
-const controls=new OrbitControls(camera,canvas);
-controls.enablePan=true;
-controls.panSpeed=0.6;
-controls.enableDamping=true;
-controls.dampingFactor=0.05;
-controls.rotateSpeed=0.7;
-controls.zoomSpeed=0.8;
+// Limited orbit around the current view target (round 2): no cursor parallax, zoom and position kept inside the room.
+const controls=new LookControls(camera,canvas);
 controls.target.copy(HOME.target);
-
-function limitAround(){
-  // Free orbit — no angle restrictions
-  controls.minAzimuthAngle=-Infinity;
-  controls.maxAzimuthAngle=Infinity;
-  controls.minPolarAngle=0.2;
-  controls.maxPolarAngle=Math.PI*0.85;
-  controls.minDistance=0.5;
-  controls.maxDistance=12;
-}
-controls.update();limitAround();
+camera.lookAt(controls.target);
+controls.setFromCamera(true);
 
 const draco=new DRACOLoader();
 draco.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/");
@@ -56,7 +43,10 @@ function setProgress(){
   const p=Math.round((progressRoom*0.9+progressOut*0.1)*100);
   $("loader-fill").style.width=p+"%";$("loader-text").textContent="LOADING "+p+"%";
 }
-const roomP=new Promise((res,rej)=>loader.load("sakina-room-baked.glb",g=>{
+// Per-tape click boxes generated from the Blender scene (pipeline/tools/tape_layout.py).
+let TAPES=[];
+const tapesP=fetch("tapes.json").then(r=>r.json()).then(t=>{TAPES=t.map(d=>({idx:d.idx,box:new THREE.Box3(new THREE.Vector3(...d.min),new THREE.Vector3(...d.max))}))});
+const roomP=new Promise((res,rej)=>loader.load("sakina-room-r3.glb",g=>{
   const maxAniso=renderer.capabilities.getMaxAnisotropy();
   g.scene.traverse(o=>{
     if(!o.isMesh)return;
@@ -67,8 +57,56 @@ const roomP=new Promise((res,rej)=>loader.load("sakina-room-baked.glb",g=>{
   });
   scene.add(g.scene);res();
 },e=>{if(e.lengthComputable){progressRoom=e.loaded/e.total;setProgress()}},rej));
-const outP=new Promise((res,rej)=>loader.load("sakina-outside.glb",g=>{scene.add(g.scene);res()},
+// Night sky behind the city: dark zenith fading to a warm light-pollution haze at the horizon (round 2).
+{
+  const g=new THREE.SphereGeometry(3000,48,24),pos=g.attributes.position,c=new THREE.Color(),col=[];
+  const zen=new THREE.Color(0x05060c),mid=new THREE.Color(0x111528),hor=new THREE.Color(0x5a3620);
+  for(let i=0;i<pos.count;i++){
+    const y=pos.getY(i)/3000;
+    if(y<0)c.copy(hor);else if(y<0.10)c.copy(hor).lerp(mid,y/0.10);else c.copy(mid).lerp(zen,Math.min(1,(y-0.10)/0.5));
+    col.push(c.r,c.g,c.b);
+  }
+  g.setAttribute("color",new THREE.Float32BufferAttribute(col,3));
+  const sky=new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide,depthWrite:false}));
+  sky.renderOrder=-1;scene.add(sky);
+}
+// City lowered 10 m so its lit skyline fills the window behind the monitor (round 2).
+const outP=new Promise((res,rej)=>loader.load("sakina-outside.glb",g=>{g.scene.position.y=-10;scene.add(g.scene);res()},
   e=>{if(e.lengthComputable){progressOut=e.loaded/e.total;setProgress()}},rej));
+
+// Live CRT glass over the baked picture (round 3): scanlines, curved-glass vignette, a soft warm lamp reflection
+// that drifts with the viewing angle, and a slow roll bar. Darkens/adds only a little, so the screen never gets neon.
+// Picture rect from the Blender scene (e05): x -0.16..0.12, height 0.905..1.115, picture surface 1.617 m deep.
+const CRT={cx:-0.02,cy:1.01,w:0.28,h:0.21,z:-1.6135};
+const crtGlass=(()=>{
+  const g=new THREE.PlaneGeometry(CRT.w,CRT.h,24,18),p=g.attributes.position;
+  for(let i=0;i<p.count;i++){const u=p.getX(i)/(CRT.w/2),v=p.getY(i)/(CRT.h/2);p.setZ(i,0.0022*(1-u*u)*(1-v*v))}
+  g.computeVertexNormals();
+  const m=new THREE.ShaderMaterial({
+    uniforms:{uTime:{value:0}},
+    transparent:true,depthWrite:false,
+    blending:THREE.CustomBlending,blendSrc:THREE.OneFactor,blendDst:THREE.OneMinusSrcAlphaFactor,
+    vertexShader:`varying vec2 vUv;varying vec3 vN;varying vec3 vV;
+      void main(){vUv=uv;vec4 wp=modelMatrix*vec4(position,1.0);vN=normalize(mat3(modelMatrix)*normal);
+      vV=normalize(cameraPosition-wp.xyz);gl_Position=projectionMatrix*viewMatrix*wp;}`,
+    fragmentShader:`uniform float uTime;varying vec2 vUv;varying vec3 vN;varying vec3 vV;
+      void main(){
+        float L=vUv.y*170.0;float fw=fwidth(L);
+        float lines=(0.5-0.5*cos(L*6.2831853))*(1.0-smoothstep(0.35,0.9,fw));
+        vec2 c=(vUv-0.5)*vec2(1.0,1.18);float r=dot(c,c);
+        float vig=smoothstep(0.07,0.30,r)*0.55;
+        float roll=fract(vUv.y*0.6-uTime*0.035);roll=smoothstep(0.0,0.06,roll)*(1.0-smoothstep(0.06,0.14,roll));
+        vec2 hp=vec2(0.30,0.80)+vV.xy*vec2(-0.35,-0.25);
+        vec2 d=(vUv-hp)*vec2(2.3,3.6);float hl=exp(-dot(d,d)*2.2)*0.06;
+        float fres=pow(1.0-clamp(dot(normalize(vN),normalize(vV)),0.0,1.0),3.0)*0.10;
+        vec3 add=vec3(1.0,0.84,0.64)*(hl+fres)+vec3(0.75,0.82,1.0)*roll*0.018;
+        float a=clamp(lines*0.17+vig,0.0,0.8)+0.006*sin(uTime*47.0);
+        gl_FragColor=vec4(add,a);
+      }`
+  });
+  const mesh=new THREE.Mesh(g,m);mesh.position.set(CRT.cx,CRT.cy,CRT.z);mesh.renderOrder=2;scene.add(mesh);
+  return m;
+})();
 
 const box=name=>new THREE.Box3().setFromObject(meshes[name]);
 const DESK_TOP=0.72;
@@ -83,23 +121,30 @@ function deskTapeBox(){
   return b;
 }
 let tapeBox;
-function tapeIndex(p){
-  const gap=(tapeBox.min.x+tapeBox.max.x)/2;
-  return p.x<gap?{stack:0,n:6}:{stack:1,n:7};
+// Which tape contains this point: the tape whose box holds it with the most vertical margin (stacked tapes share faces).
+function tapeAt(p){
+  let best=null,bestM=-Infinity;
+  for(const t of TAPES){
+    const b=t.box.clone().expandByScalar(0.004);
+    if(!b.containsPoint(p))continue;
+    const m=Math.min(p.y-t.box.min.y,t.box.max.y-p.y);
+    if(m>bestM){bestM=m;best=t.idx}
+  }
+  return best;
 }
 let VIEWS;
 function buildViews(){
   tapeBox=deskTapeBox();
   const tapes=tapeBox.getCenter(new THREE.Vector3());
   const ibmC=box("Room_Station").getCenter(new THREE.Vector3());
-  ibmC.y+=0.3;
+  ibmC.y+=0.36;                                   // round 3: dresser + computer, aim between keyboard and screen
   const deskBox=box("Room_Desk");
   const deskC=deskBox.getCenter(new THREE.Vector3());
   const note=new THREE.Vector3(-0.45,0.76,-1.36);
   VIEWS={
     home:{target:HOME.target.clone(),pos:HOME.pos.clone()},
     tapes:{target:tapes.clone(),pos:tapes.clone().add(new THREE.Vector3(0,0.35,0.95))},
-    ibm:{target:ibmC.clone().add(new THREE.Vector3(0,-0.05,0)),pos:ibmC.clone().add(new THREE.Vector3(1.15,0.12,0.25))},
+    ibm:{target:ibmC.clone().add(new THREE.Vector3(0,-0.05,0)),pos:ibmC.clone().add(new THREE.Vector3(1.12,0.25,0.42))},
     notepad:{target:note.clone(),pos:note.clone().add(new THREE.Vector3(0.05,0.62,0.55))},
     desk:{target:deskC.clone().add(new THREE.Vector3(0,0.05,0)),pos:deskC.clone().add(new THREE.Vector3(0.1,0.65,1.25))}
   };
@@ -121,7 +166,7 @@ function stepTween(now){
   controls.target.lerpVectors(tween.from.t,tween.to.target,e);
   camera.lookAt(controls.target);
   if(k>=1){
-    tween=null;controls.enabled=true;controls.update();limitAround();
+    const wasHome=tween.name==="home";tween=null;controls.enabled=true;controls.setFromCamera(wasHome);
   }
 }
 
@@ -197,7 +242,6 @@ lofiBtn.addEventListener("click",async()=>{
 
 const ray=new THREE.Raycaster();
 const ptr=new THREE.Vector2();
-const mouse={x:0,y:0,sx:0,sy:0};
 let hover=null;
 function pick(ev){
   const r=canvas.getBoundingClientRect();
@@ -208,17 +252,14 @@ function pick(ev){
   if(!hit)return null;
   const n=hit.object.name;
   if(n==="Room_Tapes"){
-    const {stack,n}=tapeIndex(hit.point);
-    const h=tapeBox.max.y-DESK_TOP;
-    const row=Math.min(n-1,Math.max(0,Math.floor(((tapeBox.max.y-hit.point.y)/h)*n)));
-    return {kind:"tapes",idx:stack===0?row:6+row};
+    const idx=tapeAt(hit.point);
+    return idx===null?null:{kind:"tapes",idx};
   }
   if(n==="Room_Station")return {kind:"ibm"};
   if(Math.hypot(hit.point.x+0.45,hit.point.z+1.36)<0.3&&hit.point.y<0.95)return {kind:"notepad"};
   return null;
 }
 canvas.addEventListener("pointermove",ev=>{
-  mouse.x=(ev.clientX/innerWidth)*2-1;mouse.y=(ev.clientY/innerHeight)*2-1;
   if(ev.pointerType!=="mouse"||tween||ev.buttons)return;
   hover=pick(ev);
   canvas.classList.toggle("hot",!!hover);
@@ -231,7 +272,7 @@ canvas.addEventListener("pointerdown",ev=>{down={x:ev.clientX,y:ev.clientY}});
 canvas.addEventListener("pointerup",ev=>{
   if(!down||tween)return;
   const moved=Math.hypot(ev.clientX-down.x,ev.clientY-down.y);down=null;
-  if(moved>6)return;
+  if(moved>6||controls.clickBlocked)return;     // a drag or pinch is never a click
   const hit=pick(ev);
   if(!hit)return;
   if(hit.kind==="tapes"){flyTo("tapes");openPanel("tapes",hit.idx)}
@@ -242,7 +283,9 @@ function resize(){
   const w=innerWidth,h=innerHeight;
   renderer.setSize(w,h,false);
   camera.aspect=w/h;
-  camera.fov=w/h<1?64:46;
+  // Portrait keeps 64 deg; landscape keeps the same desk width in frame on any screen shape
+  // (38 deg at 2.2:1, ~46 deg at 16:9), clamped to 36-50 deg.
+  camera.fov=w/h<1?64:Math.min(50,Math.max(36,2*Math.atan(0.761/(w/h))*180/Math.PI));
   camera.updateProjectionMatrix();
 }
 addEventListener("resize",resize);resize();
@@ -251,15 +294,11 @@ function frame(now){
   requestAnimationFrame(frame);
   stepTween(now);
   if(controls.enabled)controls.update();
-  if(!reduced){
-    mouse.sx+=(mouse.x-mouse.sx)*0.05;mouse.sy+=(mouse.y-mouse.sy)*0.05;
-    const w=innerWidth,h=innerHeight;
-    camera.setViewOffset(w,h,mouse.sx*w*0.012,mouse.sy*h*0.012,w,h);
-  }
+  crtGlass.uniforms.uTime.value=reduced?0:now/1000;
   renderer.render(scene,camera);
 }
 
-Promise.all([roomP,outP]).then(()=>{
+Promise.all([roomP,outP,tapesP]).then(()=>{
   buildViews();
   const l=$("loader");l.classList.add("done");
   setTimeout(()=>l.remove(),1000);

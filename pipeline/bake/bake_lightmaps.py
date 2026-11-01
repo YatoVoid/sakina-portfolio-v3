@@ -14,9 +14,9 @@ os.makedirs(OUTDIR, exist_ok=True)
 
 GROUP_RES = {"Room": 4096, "Window": 2048, "Desk": 4096, "Station": 4096, "Monitor": 4096,
              "Tapes": 4096, "Keepsakes": 4096, "Lamp": 1024, "Plant": 2048,
-             "Right_Nook": 2048, "Wall_Decor": 4096}
+             "Right_Nook": 4096, "Wall_Decor": 4096, "Floor": 4096}
 COLLECTIONS = ["Room", "Window", "Desk", "Station", "Monitor", "Tapes", "Keepsakes",
-               "Lamp", "Plant", "Right_Nook", "Wall_Decor"]
+               "Lamp", "Plant", "Right_Nook", "Wall_Decor", "Floor"]
 if ONLY:
     COLLECTIONS = [c for c in COLLECTIONS if c in ONLY]
 SKIP_NAMES = ("Glass", "Steam", "Rain", "Sky", "Haze", "Room_")
@@ -32,7 +32,9 @@ def setup_cycles():
     sc.render.engine = 'CYCLES'
     sc.cycles.device = 'CPU'
     sc.cycles.samples = SPP
-    sc.cycles.use_denoising = True
+    # V3: bakes are never denoised by Cycles; its denoise buffers + one untiled 4096^2 bake OOM'd the 8 GB cloud box.
+    sc.cycles.use_denoising = False
+    sc.cycles.use_auto_tile = True; sc.cycles.tile_size = 1024
     sc.cycles.volume_bounces = 0
     w = sc.world.node_tree
     for l in list(w.links):
@@ -184,7 +186,22 @@ def bake_collection(name, objs):
     bpy.ops.object.join()
     joined = vl.objects.active
     t = time.time()
+    alb = None
+    if os.environ.get("DENOISE"):                  # V3: quick albedo bake = OIDN guide (keeps text/texture sharp)
+        alb = D.images.new("LMA_" + name, res, res, alpha=False, float_buffer=True)
+        for nt, n in added:
+            n.image = alb
+        s0 = sc.cycles.samples; sc.cycles.samples = 8
+        bpy.ops.object.bake(type='DIFFUSE', pass_filter={'COLOR'}, margin=8, margin_type='EXTEND', use_clear=True)
+        sc.cycles.samples = s0
+        for nt, n in added:
+            n.image = img
+        log(name, "albedo baked", round(time.time() - t), "s")
     bpy.ops.object.bake(type='COMBINED', margin=8, margin_type='EXTEND', use_clear=True)
+    if os.environ.get("DENOISE"):                  # V3: OIDN on the baked lightmap (Cycles does not denoise bakes)
+        import sys as _s; _s.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools"))
+        from oidn import denoise_image
+        td = time.time(); denoise_image(img, alb); log(name, "OIDN denoised in", round(time.time() - td), "s")
     D.objects.remove(joined, do_unlink=True)
     D.collections.remove(tmp)
     for o in objs:

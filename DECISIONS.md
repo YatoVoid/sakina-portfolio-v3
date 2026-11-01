@@ -73,3 +73,12 @@ Newest last. Each entry: decision — reason.
   Cable_Power, Wire_CRT_Power, Wire_VCR_Power) at desk-top height (world z 0.70); the parts on the desk / behind the equipment,
   all other cables, the phone cord and the wall sockets are untouched. They live in the Monitor and Keepsakes bake groups, so a
   later bake must include those groups. Preview only; no bake, no publish.
+- **2026-10-31 · Round 3: left wall moved from x −3.00 to −2.30.** Sakina wants a moderate gap between the left
+  furniture and the desk (was ~1.3 m, now ~0.55 m). Back-wall degrees/flags slide right to fit; camera room
+  bounds follow.
+- **2026-10-31 · Desk-lamp "leak" light with shadow linking.** A spot at the bulb that the lamp's own shade does not
+  block, so the plant/computer cast soft shaped shadows on the walls (Felix refs). Bulb radius 2.5 cm.
+- **2026-10-31 · CRT glass effects are real-time (web), not baked.** Scanlines/vignette/reflection depend on view
+  angle and would alias or smear in a lightmap; the baked screen stays clean and calmer (no neon blue).
+- **2026-10-31 · Lightmaps: 64 spp + Intel OIDN guided by a baked albedo pass** (Cycles does not denoise bakes).
+  Same brightness as 192 spp (ratio 0.998, Lamp group test), ~3× faster, so a full re-bake fits in one evening.

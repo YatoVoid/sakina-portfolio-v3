@@ -63,7 +63,7 @@ with sync_playwright() as p:
         fails += not ok
         print(f"{'OK  ' if ok else 'FAIL'} tape {t['idx']:2} {t['object']:17} screen=({xy[0]:.0f},{xy[1]:.0f}) expected={want!r} got={got!r}")
     print("CONSOLE ERRORS:", [e for e in errs if "TUNNEL" not in e] or "none")
-    print(f"RESULT: {13 - fails}/13 tapes open the right project")
+    print(f"RESULT: {len(TAPES) - fails}/{len(TAPES)} tapes open the right project")
     b.close()
 srv.shutdown()
 sys.exit(1 if fails else 0)

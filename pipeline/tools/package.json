@@ -1,0 +1,12 @@
+{
+  "name": "v3-pipeline-tools",
+  "private": true,
+  "type": "module",
+  "description": "GLB splice/compress tools for the V3 room (gltf-transform).",
+  "dependencies": {
+    "@gltf-transform/core": "4.1.1",
+    "@gltf-transform/extensions": "4.1.1",
+    "@gltf-transform/functions": "4.1.1",
+    "draco3dgltf": "1.5.7"
+  }
+}

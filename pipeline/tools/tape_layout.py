@@ -3,8 +3,8 @@ Usage: python3 tape_layout.py <scene.blend|-> <out.json>   ('-' = use already-op
 import bpy, json, sys, mathutils
 
 # Order must match web/content.js projects[] (stack 0 top->bottom, then stack 1 top->bottom).
-ORDER = ["Tape_Dental-X", "Tape_Tmac", "Tape_University", "Tape_Blutech", "Tape_Softsyncdev", "Tape_The",
-         "PTape_1", "PTape_2", "PTape_3", "PTape_4", "PTape_5", "PTape_6", "PTape_7"]
+ORDER = ["Tape_Tmac", "Tape_Dental-X", "Tape_University", "Tape_Blutech", "Tape_Softsyncdev", "Tape_The",
+         "PTape_1", "PTape_2", "PTape_3", "PTape_4", "PTape_7"]
 
 
 def layout():

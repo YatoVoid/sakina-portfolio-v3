@@ -1,7 +1,6 @@
 """Cycles preview renders that match the website's framing.
     python3 pipeline/render_preview.py <scene.blend> <out_prefix> [samples]
-Views: 'home' = the site's HOME camera; 'tapes' = close-up of tapes + VCR;
-'chair' = right-wall armchair, front 3/4 view; 'chair_wide' = right side of the room."""
+Views: 'home' = the site's HOME camera; 'tapes' = close-up of tapes + VCR."""
 import bpy, sys, math, mathutils, time
 
 scene_path, prefix = sys.argv[1], sys.argv[2]
@@ -22,22 +21,39 @@ sc.render.image_settings.file_format = 'PNG'
 
 # three.js (x, y, z) Y-up  ->  Blender (x, -z, y)
 b = lambda x, y, z: mathutils.Vector((x, -z, y))
-VIEWS = {
-    "home":  (b(0.12, 0.86, -0.3), b(0.1, 0.98, -1.8), 46),
-    "tapes": (b(0.42, 1.10, -0.78), b(0.42, 0.80, -1.65), 40),
-    "chair": (b(1.95, 1.10, -0.55), b(3.15, 0.52, -1.42), 42),
-    "chair_wide": (b(1.30, 1.45, 0.10), b(3.05, 0.55, -1.55), 62),
-    "home_right": (b(0.12, 0.86, -0.3), b(2.6, 0.85, -2.0), 66),     # site HOME camera position, turned right toward the nook
-    "under_desk": (b(-0.10, 0.50, -0.50), b(-0.10, 0.30, -2.40), 56),   # low camera in front of the desk, looking at the wall gap under it
-    "radiator_close": (b(0.25, 0.22, -1.40), b(0.05, 0.22, -2.45), 46),
-    "bookcase": (b(2.21, 1.15, 0.30), b(2.21, 1.10, -2.50), 72),
-    "nook": (b(1.15, 1.50, 0.35), b(2.65, 0.80, -1.95), 64),
+VIEWS = {   # name: (camera, target, vertical fov, (width, height))
+    "home":  (b(0.12, 0.86, -0.3), b(0.1, 0.98, -1.8), 46, (1280, 720)),       # site HOME before round 2
+    "hero":  (b(-0.02, 1.12, -0.25), b(-0.02, 0.92, -1.65), 38, (1600, 724)),  # new HOME (round 2), 2.21:1 screen
+    "tapes": (b(0.42, 1.10, -0.78), b(0.42, 0.80, -1.65), 40, (1280, 720)),
+    "plant": (b(-0.55, 1.22, -1.05), b(-0.92, 1.02, -1.74), 42, (1280, 720)),
+    "ibm":   (b(-1.75, 1.18, -1.55), b(-2.78, 0.80, -1.97), 40, (1280, 720)),   # IBM corner after the slide
+    "left":  (b(-0.95, 1.24, -1.30), b(-2.05, 0.98, -2.00), 46, (1280, 720)),      # round 3: left dresser + computer
+    "left_wide": (b(0.85, 1.45, 0.75), b(-1.35, 0.95, -1.85), 56, (1600, 900)),     # round 3: spacing left <-> desk
+    "nook":  (b(1.55, 1.35, 0.05), b(3.15, 0.85, -1.75), 52, (1280, 720)),         # round 3: right nook
+    "tv":    (b(-0.02, 1.00, -1.02), b(-0.02, 0.96, -1.62), 40, (1280, 720)),      # round 3: CRT + VCR close-up
+    "window": (b(-0.05, 1.25, -0.55), b(-0.10, 1.35, -2.50), 62, (1280, 720)),    # round 4: window + curtains
+    "rod": (b(-0.10, 1.95, -0.95), b(-0.20, 2.40, -2.50), 52, (1280, 720)),        # round 4: rod, end cap, header
+    "floor": (b(0.25, 0.62, 0.55), b(0.55, 0.0, -1.35), 64, (1280, 720)),          # round 4: floor planks, low and raking like the reference
+    "floor_left": (b(-0.4, 0.55, -0.15), b(-1.7, 0.0, -2.2), 64, (1280, 720)),    # round 4: floor beside the dresser
+    "bars": (b(-0.10, 1.52, -1.25), b(-0.105, 1.58, -2.48), 38, (1280, 720)),         # round 4: window cross + handle
+    "plant2": (b(-0.45, 1.20, -0.98), b(-0.90, 1.08, -1.72), 44, (1280, 720)),       # round 4: alocasia close-up
+    # views added by the bookcase/chair/radiator branch (edit2/edit3), default size
+    "chair": (b(1.95, 1.10, -0.55), b(3.15, 0.52, -1.42), 42, (1280, 720)),
+    "chair_wide": (b(1.30, 1.45, 0.10), b(3.05, 0.55, -1.55), 62, (1280, 720)),
+    "home_right": (b(0.12, 0.86, -0.3), b(2.6, 0.85, -2.0), 66, (1280, 720)),
+    "under_desk": (b(-0.10, 0.50, -0.50), b(-0.10, 0.30, -2.40), 56, (1280, 720)),
+    "radiator_close": (b(0.25, 0.22, -1.40), b(0.05, 0.22, -2.45), 46, (1280, 720)),
+    "bookcase": (b(2.21, 1.15, 0.30), b(2.21, 1.10, -2.50), 72, (1280, 720)),
+    "orbit_left":  (b(1.296, 1.12, -1.171), b(-0.02, 0.92, -1.65), 38, (1600, 724)),   # HOME, max drag left (az +70)
+    "orbit_right": (b(-1.256, 1.12, -0.993), b(-0.02, 0.92, -1.65), 38, (1600, 724)),  # HOME, max drag right (az -62)
 }
 cam_data = D.cameras.new("PreviewCam"); cam = D.objects.new("PreviewCam", cam_data)
 sc.collection.objects.link(cam); sc.camera = cam
 cam_data.sensor_fit = 'VERTICAL'; cam_data.clip_start = 0.05; cam_data.clip_end = 7000
 ONLY = sys.argv[4].split(",") if len(sys.argv) > 4 else list(VIEWS)
-for name, (pos, tgt, vfov) in [(k, v) for k, v in VIEWS.items() if k in ONLY]:
+for name, (pos, tgt, vfov, (rx, ry)) in [(k, v) for k, v in VIEWS.items() if k in ONLY]:
+    sc.render.resolution_x, sc.render.resolution_y = rx, ry
+    sc.render.resolution_percentage = int(__import__('os').environ.get('PCT', '100'))
     cam.location = pos
     cam.rotation_euler = (tgt - pos).to_track_quat('-Z', 'Y').to_euler()
     cam_data.angle_y = math.radians(vfov)

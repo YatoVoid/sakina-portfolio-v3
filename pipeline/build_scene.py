@@ -9,7 +9,12 @@ import bpy, os, sys, runpy, importlib.util
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WORK = os.environ.setdefault("V3_WORK", "/tmp/v3work")
 os.makedirs(WORK + "/source", exist_ok=True)
-EDITS = ["e01_tapes_vcr", "e05_crt_vcr", "e08_desk_detail", "e09_window_view", "e10_mug_coaster", "e11_chair", "e12_gallery_wall", "e13_wall_colour", "e14_window_reveal"]          # applied in this order; each is pipeline/edits/<name>.py with apply()
+EDITS = [   # PROVISIONAL final order (integration/v3-final); each is pipeline/edits/<name>.py with apply()
+    "e01_tapes_vcr", "e05_crt_vcr", "e08_desk_detail", "e09_window_view", "e10_mug_coaster", "e11_chair",
+    "e12_gallery_wall", "e13_wall_colour", "e14_window_reveal",
+    "e02_club_chair", "e03_antique_bookcase", "e04_radiator", "e05_remove_under_desk_wires",       # bookcase branch (approved 2026-11-01)
+    "e09_floor", "e10_plant_alocasia", "e11_tapes_vhs", "e12_floppy",                              # round3 items approved 2026-11-01
+]
 
 
 def build(upto=None, save=True):
