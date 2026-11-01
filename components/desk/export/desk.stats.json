@@ -1,0 +1,27 @@
+{
+  "triangles": 6192,
+  "vertices": 3210,
+  "materials": [
+    "Desk_Brass_baked",
+    "Desk_DrawerBox_baked",
+    "Desk_Frame_baked",
+    "Desk_Keyhole",
+    "Desk_Top_baked"
+  ],
+  "bbox_min_m": [
+    -1.45,
+    -0.3494,
+    0.0
+  ],
+  "bbox_max_m": [
+    1.45,
+    0.3494,
+    0.7203
+  ],
+  "size_m": [
+    2.9,
+    0.6988,
+    0.7203
+  ],
+  "glb_bytes": 615336
+}
