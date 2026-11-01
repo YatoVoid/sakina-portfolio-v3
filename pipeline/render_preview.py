@@ -27,6 +27,10 @@ VIEWS = {   # name: (camera, target, vertical fov, (width, height))
     "tapes": (b(0.42, 1.10, -0.78), b(0.42, 0.80, -1.65), 40, (1280, 720)),
     "plant": (b(-0.55, 1.22, -1.05), b(-0.92, 1.02, -1.74), 42, (1280, 720)),
     "ibm":   (b(-1.75, 1.18, -1.55), b(-2.78, 0.80, -1.97), 40, (1280, 720)),   # IBM corner after the slide
+    "left":  (b(-0.95, 1.24, -1.30), b(-2.05, 0.98, -2.00), 46, (1280, 720)),      # round 3: left dresser + computer
+    "left_wide": (b(0.85, 1.45, 0.75), b(-1.35, 0.95, -1.85), 56, (1600, 900)),     # round 3: spacing left <-> desk
+    "nook":  (b(1.55, 1.35, 0.05), b(3.15, 0.85, -1.75), 52, (1280, 720)),         # round 3: right nook
+    "tv":    (b(-0.02, 1.00, -1.02), b(-0.02, 0.96, -1.62), 40, (1280, 720)),      # round 3: CRT + VCR close-up
     "orbit_left":  (b(1.296, 1.12, -1.171), b(-0.02, 0.92, -1.65), 38, (1600, 724)),   # HOME, max drag left (az +70)
     "orbit_right": (b(-1.256, 1.12, -0.993), b(-0.02, 0.92, -1.65), 38, (1600, 724)),  # HOME, max drag right (az -62)
 }
@@ -36,6 +40,7 @@ cam_data.sensor_fit = 'VERTICAL'; cam_data.clip_start = 0.05; cam_data.clip_end 
 ONLY = sys.argv[4].split(",") if len(sys.argv) > 4 else list(VIEWS)
 for name, (pos, tgt, vfov, (rx, ry)) in [(k, v) for k, v in VIEWS.items() if k in ONLY]:
     sc.render.resolution_x, sc.render.resolution_y = rx, ry
+    sc.render.resolution_percentage = int(__import__('os').environ.get('PCT', '100'))
     cam.location = pos
     cam.rotation_euler = (tgt - pos).to_track_quat('-Z', 'Y').to_euler()
     cam_data.angle_y = math.radians(vfov)

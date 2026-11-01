@@ -185,6 +185,10 @@ def bake_collection(name, objs):
     joined = vl.objects.active
     t = time.time()
     bpy.ops.object.bake(type='COMBINED', margin=8, margin_type='EXTEND', use_clear=True)
+    if os.environ.get("DENOISE"):                  # V3: OIDN on the baked lightmap (Cycles does not denoise bakes)
+        import sys as _s; _s.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools"))
+        from oidn import denoise_image
+        td = time.time(); denoise_image(img); log(name, "OIDN denoised in", round(time.time() - td), "s")
     D.objects.remove(joined, do_unlink=True)
     D.collections.remove(tmp)
     for o in objs:

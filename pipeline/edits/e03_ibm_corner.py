@@ -106,7 +106,7 @@ def _rebuild():
     sy = (min(v.y for v in tb) + max(v.y for v in tb)) / 2
     sz = (min(v.z for v in tb) + max(v.z for v in tb)) / 2
     for o in list(root.children_recursive):
-        if o.name.startswith(("PC", "KB", "Keyboard2", "CRT2", "Polaroid", "Pin")):
+        if o.name.startswith(("PC", "KB", "Keyboard2", "CRT2", "Pin")):   # Polaroid kept: e04 sticks it on the new monitor
             D.objects.remove(o, do_unlink=True)
     cab = D.objects["Cabinet_Top"]
     cb = [cab.matrix_world @ Vector(c) for c in cab.bound_box]
