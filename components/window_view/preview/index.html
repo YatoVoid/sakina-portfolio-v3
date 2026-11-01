@@ -1,0 +1,34 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Window view preview</title>
+<style>html,body{margin:0;height:100%;background:#07050a;overflow:hidden}canvas{display:block;width:100%;height:100%}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+"three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head><body><canvas id="c"></canvas>
+<script type="module">
+// Component preview only — renders the LIVE baked room (web/sakina-room-baked.glb) exactly like web/main.js
+// (unlit, NoToneMapping, sRGB) with either the live outside city ("?mode=before") or the new window view.
+import * as THREE from "three";
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
+import {DRACOLoader} from "three/addons/loaders/DRACOLoader.js";
+const q = new URLSearchParams(location.search), mode = q.get("mode") || "after";
+const renderer = new THREE.WebGLRenderer({canvas: document.getElementById("c"), antialias: true, preserveDrawingBuffer: true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.NoToneMapping;
+renderer.setClearColor(0x07050a);
+const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(46, 1, 0.05, 7000);
+const draco = new DRACOLoader(); draco.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/");
+const loader = new GLTFLoader(); loader.setDRACOLoader(draco);
+const load = url => new Promise((res, rej) => loader.load(url, res, undefined, rej));
+const room = await load("/web/sakina-room-baked.glb");
+room.scene.traverse(o => { if (o.isMesh) o.material.envMapIntensity = 0; });
+scene.add(room.scene);
+const outside = await load(mode === "before" ? "/web/sakina-outside.glb" : "/components/window_view/export/window_view.glb");
+scene.add(outside.scene);
+function resize(){ const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+  camera.fov = w / h < 1 ? 64 : Math.min(50, Math.max(36, 2 * Math.atan(0.761 / (w / h)) * 180 / Math.PI));
+  camera.updateProjectionMatrix(); }
+window.shot = (pos, target) => { resize(); camera.position.set(...pos); camera.lookAt(new THREE.Vector3(...target));
+  renderer.render(scene, camera); return true; };
+window.ready = true;
+</script></body></html>

@@ -1,44 +1,54 @@
-# Components — detailed standalone assets (parallel session)
+# Components — detailed standalone assets
 
-Branch: `components/detailed-assets` (never merged into `main` without Sakina's approval).
+Merged on `integration/v3-master` from two parallel sessions:
+`components/detailed-assets` (desk, crt) and `components/detail-assets` (window_view).
+Nothing here is loaded by the website; components enter the room only through `pipeline/edits/eNN_*.py`.
 
-This folder holds individual, reference-driven 3D components built in isolation from the room.
-Nothing here is loaded by the website, the room bake, or `pipeline/build_scene.py`.
+## Components
 
-## Ownership boundary (parallel work)
+| Component | Source branch | Status on integration branch |
+|---|---|---|
+| `desk` | `components/detailed-assets` | **Approved** (Sakina, 2026-10-31) — integrated by `e08_desk_detail.py` |
+| `window_view` | `components/detail-assets` | **Approved** (Sakina, 2026-10-31) — integrated by `e09_window_view.py` |
+| `crt` | `components/detailed-assets` | **Not used.** Sakina chose the `round3` CRT (`e05_crt_vcr.py`); this WIP stays unintegrated |
 
-The active room session (branch `round3`) owns — **not touched here**:
+## Ownership boundary (original parallel work)
 
-- Room lighting, baking and denoise: `pipeline/bake/*`, `pipeline/edits/e07_warm_light.py`, `pipeline/tools/oidn.py`
-- Main scene assembly: `pipeline/build_scene.py`, `pipeline/edits/e0*.py`, `assets/sakina-v17.blend`
-- Renderer / site: `web/*` (main.js, index.html, look-controls.js, tapes.json, GLBs)
-- Room previews: `pipeline/render_preview.py`, `pipeline/tests/*`
+The room session (`round3`) owns room lighting/baking/denoise (`pipeline/bake/*`, `e07_warm_light.py`,
+`pipeline/tools/oidn.py`), scene assembly (`pipeline/build_scene.py`, `pipeline/edits/e0*.py`,
+`assets/sakina-v17.blend`), the site (`web/*`) and room previews. The component sessions only added files under
+`components/`.
 
-This folder only adds new files under `components/`.
-
-## Layout
+## Layout (two conventions coexist; file names do not clash)
 
 ```
 components/
-  _lib/                 shared helpers (PBR materials, studio preview rig, GLB export, checks)
+  _lib/                shared helpers. desk/crt use common.py, materials.py, preview.py, woodgrain.py;
+                       window_view uses the package modules export.py, pbr.py, studio.py
+  build.py             runner used by window_view: python3 components/build.py <name> [--samples N] [--no-render]
   <name>/
-    refs/               reference photos + analysis.md (certain vs. inferred)
-    build_<name>.py     Blender Python: geometry + materials -> <name>.blend + <name>.glb
-    materials_<name>.py component-specific PBR materials
-    export/<name>.glb   web asset (real-time PBR, metres, Y-up glTF, origin at base centre)
-    previews/*.jpg      Cycles studio renders (neutral lighting, NOT the room lighting)
-    INTEGRATION.md      size, origin, placement suggestion, bake group, triangle/texture budget
+    build_<name>.py    (desk, crt)  geometry + materials -> <name>.blend + <name>.glb
+    build.py           (window_view) build() creates the component at the origin
+    materials*.py      component PBR materials (procedural, bake-safe)
+    spec.md / INTEGRATION.md   reference analysis, placement, bake group
+    refs/              reference photos
+    export/            GLB / source .blend
+    previews/          phone-friendly JPG renders (neutral studio light, NOT the room lighting)
 ```
+
+## Conventions
+
+- Metres, Z-up, front faces **−Y**, base at z = 0. Part names prefixed `<Name>_`.
+- Materials are procedural Principled BSDF so room bakes use them directly; standalone GLBs get baked textures.
 
 ## Commands
 
 ```bash
-python3 components/<name>/build_<name>.py            # build + export GLB + checks
-python3 components/_lib/preview.py <name> [samples]  # Cycles studio previews (phone-sized JPGs)
+python3 components/desk/build_desk.py                 # desk
+python3 components/build.py window_view --no-render   # window view
 ```
 
-## Integration (later, only after approval)
+## Integration
 
-The room is rendered unlit from Cycles lightmaps. A component enters the room as an edit script
-(`pipeline/edits/eNN_<name>.py`) that appends its collection from `<name>.blend` into the right bake group,
-followed by a re-bake of that group only. The standalone GLB is for review and for any real-time use.
+A room edit appends the component into the right bake collection, then only that bake group is re-baked
+(on the GPU laptop for this release). See `INTEGRATION_PLAN.md` at the repository root.

@@ -1,5 +1,11 @@
+# Union of both component sessions' rules (integration/v3-master).
+# NOTE: "*/export/*.blend" from the window_view session is intentionally NOT kept: the desk's
+# export/desk_source.blend is a tracked source file used by the room build.
 __pycache__/
+*.blend1
+*_before.blend
 **/export/tex/
 **/export/tex_src/
-*_before.blend
-*.blend1
+*/export/*.png
+_selftest/export/
+_selftest/previews/
