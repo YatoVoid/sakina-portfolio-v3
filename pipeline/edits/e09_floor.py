@@ -139,7 +139,7 @@ def floor_mat():
 
     # ---- board tone
     tone = _ramp(nt, r1, [(0.00, "ecc277"), (0.22, "e2a444"), (0.45, "d68a2a"), (0.68, "b86a1e"),
-                          (0.84, "7a4a20"), (1.00, "5c4228")])
+                          (0.84, "8a5628"), (1.00, "755538")])
 
     # ---- cathedral grain: rings about the board's long axis, distorted, centre offset per board
     cx = _math(nt, 'ADD', _math(nt, 'MULTIPLY', um, 60.0), _math(nt, 'MULTIPLY', _math(nt, 'SUBTRACT', r2, 0.5), 14.0))

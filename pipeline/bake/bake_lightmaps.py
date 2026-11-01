@@ -162,6 +162,8 @@ def uv_coverage(objs):
 
 def bake_collection(name, objs):
     res = GROUP_RES.get(name, RES) if not os.environ.get("RES") else RES
+    if os.environ.get("RES_SCALE"):                 # low-res preview bakes: RES_SCALE=0.25 -> 4096 becomes 1024 (min 256)
+        res = max(256, int(res * float(os.environ["RES_SCALE"])))
     img = D.images.new("LM_" + name, res, res, alpha=False, float_buffer=True)
     img.colorspace_settings.name = 'Linear Rec.709'
     mats = {s.material for o in objs for s in o.material_slots if s.material}

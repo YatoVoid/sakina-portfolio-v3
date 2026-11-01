@@ -19,6 +19,7 @@ EDITS = [   # PROVISIONAL final order (integration/v3-final); each is pipeline/e
     "e15_retro_pc", "e16_room_refresh_props",                                                      # retro PC; lamp + remote + calculator
     "e17_window_wall_rework",                                                                      # wider window, linen curtains, desk to wall, pillar + poster out
     "e18_crt_black",                                                                               # CRT reads black, neutral screen light
+    "e20_polish",                                                                                  # gallery centred, standing lamp off the armchair
     "e19_pot_stones_mud",                                                                          # pebbles, grit and mud clods in the plant pot
 ]
 

@@ -24,7 +24,7 @@ renderer.setClearColor(0x07050a);
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(46,1,0.05,7000);
 // Opening hero shot (round 2): eye at screen height, 1.4 m from the CRT, looking slightly down at the desk.
-const HOME={pos:new THREE.Vector3(-0.02,1.12,-0.25),target:new THREE.Vector3(-0.02,0.92,-1.65)};
+const HOME={pos:new THREE.Vector3(-0.02,1.12,-0.73),target:new THREE.Vector3(-0.02,0.92,-2.13)};   // desk moved 0.48 m to the wall (round 5): same 1.4 m from the CRT
 camera.position.copy(HOME.pos);
 
 // Limited orbit around the current view target (round 2): no cursor parallax, zoom and position kept inside the room.
@@ -46,7 +46,7 @@ function setProgress(){
 // Per-tape click boxes generated from the Blender scene (pipeline/tools/tape_layout.py).
 let TAPES=[];
 const tapesP=fetch("tapes.json").then(r=>r.json()).then(t=>{TAPES=t.map(d=>({idx:d.idx,box:new THREE.Box3(new THREE.Vector3(...d.min),new THREE.Vector3(...d.max))}))});
-const roomP=new Promise((res,rej)=>loader.load("sakina-room-r3.glb",g=>{
+const roomP=new Promise((res,rej)=>loader.load("sakina-room-r4lo.glb",g=>{
   const maxAniso=renderer.capabilities.getMaxAnisotropy();
   g.scene.traverse(o=>{
     if(!o.isMesh)return;
@@ -71,13 +71,19 @@ const roomP=new Promise((res,rej)=>loader.load("sakina-room-r3.glb",g=>{
   sky.renderOrder=-1;scene.add(sky);
 }
 // City lowered 10 m so its lit skyline fills the window behind the monitor (round 2).
-const outP=new Promise((res,rej)=>loader.load("sakina-outside.glb",g=>{g.scene.position.y=-10;scene.add(g.scene);res()},
+const outP=new Promise((res,rej)=>loader.load("sakina-outside-r4lo.glb",g=>{g.scene.position.y=-10;scene.add(g.scene);res()},
   e=>{if(e.lengthComputable){progressOut=e.loaded/e.total;setProgress()}},rej));
+
+// Berlin rail-yard night photo behind the window (round 4, approved): two unlit emissive pictures ~80 m away (photo patch + panorama).
+const viewP=new Promise(res=>loader.load("sakina-view-r4lo.glb",g=>{
+  g.scene.traverse(o=>{if(o.isMesh){o.material.side=THREE.DoubleSide;o.material.envMapIntensity=0;o.renderOrder=-1}});
+  scene.add(g.scene);res();
+},undefined,e=>{console.warn("window view failed",e);res()}));
 
 // Live CRT glass over the baked picture (round 3): scanlines, curved-glass vignette, a soft warm lamp reflection
 // that drifts with the viewing angle, and a slow roll bar. Darkens/adds only a little, so the screen never gets neon.
 // Picture rect from the Blender scene (e05): x -0.16..0.12, height 0.905..1.115, picture surface 1.617 m deep.
-const CRT={cx:-0.02,cy:1.01,w:0.28,h:0.21,z:-1.6135};
+const CRT={cx:-0.02,cy:1.01,w:0.28,h:0.21,z:-2.0935};   // round 5: +0.48 m deeper
 const crtGlass=(()=>{
   const g=new THREE.PlaneGeometry(CRT.w,CRT.h,24,18),p=g.attributes.position;
   for(let i=0;i<p.count;i++){const u=p.getX(i)/(CRT.w/2),v=p.getY(i)/(CRT.h/2);p.setZ(i,0.0022*(1-u*u)*(1-v*v))}
@@ -140,7 +146,7 @@ function buildViews(){
   ibmC.y+=0.36;                                   // round 3: dresser + computer, aim between keyboard and screen
   const deskBox=box("Room_Desk");
   const deskC=deskBox.getCenter(new THREE.Vector3());
-  const note=new THREE.Vector3(-0.45,0.76,-1.36);
+  const note=new THREE.Vector3(-0.47,0.76,-1.84);
   VIEWS={
     home:{target:HOME.target.clone(),pos:HOME.pos.clone()},
     tapes:{target:tapes.clone(),pos:tapes.clone().add(new THREE.Vector3(0,0.35,0.95))},
@@ -256,7 +262,7 @@ function pick(ev){
     return idx===null?null:{kind:"tapes",idx};
   }
   if(n==="Room_Station")return {kind:"ibm"};
-  if(Math.hypot(hit.point.x+0.45,hit.point.z+1.36)<0.3&&hit.point.y<0.95)return {kind:"notepad"};
+  if(Math.hypot(hit.point.x+0.47,hit.point.z+1.84)<0.3&&hit.point.y<0.95)return {kind:"notepad"};
   return null;
 }
 canvas.addEventListener("pointermove",ev=>{
@@ -298,7 +304,7 @@ function frame(now){
   renderer.render(scene,camera);
 }
 
-Promise.all([roomP,outP,tapesP]).then(()=>{
+Promise.all([roomP,outP,viewP,tapesP]).then(()=>{
   buildViews();
   const l=$("loader");l.classList.add("done");
   setTimeout(()=>l.remove(),1000);

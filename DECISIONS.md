@@ -82,3 +82,11 @@ Newest last. Each entry: decision — reason.
   angle and would alias or smear in a lightmap; the baked screen stays clean and calmer (no neon blue).
 - **2026-10-31 · Lightmaps: 64 spp + Intel OIDN guided by a baked albedo pass** (Cycles does not denoise bakes).
   Same brightness as 192 spp (ratio 0.998, Lamp group test), ~3× faster, so a full re-bake fits in one evening.
+
+## 2026-11-01 · Round 5 (Sakina, window wall + desk + CRT)
+- **Window** 1.60 m wide (was 1.25), centred on the CRT (x 0.05). Wider (1.89 m) was tried first; the desk and curtains could not follow without a 2.9 m desk, which Sakina said was too long.
+- **Desk** 2.52 m long (was 2.90 m), back edge on the wall. Curtain hem low point is exactly 4 cm above the desk top (she said 2 cm, then 4 cm).
+- **Curtains** off-white linen, two stacks outside the casing, black ring rod with finials and clips. Window sill is 6 cm deep and exactly as wide as the casing.
+- **Blue poster** and the wood pillar next to it removed (no room once the window and curtains widened).
+- **CRT** is black: the blue came from the screen-glow light (14 W blue), not the plastic; light is now 7 W neutral.
+- **Main page** now shows a LOW-RES preview bake (Sakina's explicit request) so she can look at the room from all angles; the final GPU bake replaces it.
