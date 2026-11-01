@@ -223,3 +223,8 @@ Pushed to `integration/v3-master` only. `main` and the live site are unchanged u
 - Checks: lights/cameras unchanged, no new intersections vs previous scene, no duplicates, no external textures; sash gap 4.0 mm, handle plate flush on the stile; only overlaps are the intended embedded reveal liners and the older curtain/sill overlaps. Window area light (y=3.05) is outside the reveal.
 - Previews: `previews/integration/compare_window.jpg` (top, side, front; unbaked 28 spp).
 - Bake note: Window and Room lightmaps must be rebaked (new geometry, narrower glass aperture).
+
+### Low-quality lighting test (2026-11-01, not the final bake)
+- Ran the unchanged `bake_lightmaps.py` on interim6 (all approved edits + window) at RES=512, SPP=16 on the cloud CPU (~5 min), output in scratch only; nothing written to production or committed except `previews/integration/lowres_bake_test.jpg`.
+- Purpose: judge mood/brightness only. Resolution is far too low for detail (curtains, small text, canvas photos are blurry/streaky) — expected.
+- Finding: with cream walls the room reads brighter and flatter than the earlier lamp-lit mood. Decide wall value/exposure before the GPU bake.
