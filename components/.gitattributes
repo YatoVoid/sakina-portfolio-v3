@@ -1,0 +1,3 @@
+# Component exports are small (< 2 MB each); stored as normal git objects (the cloud session cannot upload LFS).
+*.glb binary
+*.blend binary
