@@ -258,7 +258,7 @@ KB_ROWS = [
     ([1, 1], [2.25] + [1] * 10 + [2.75], [1, 1, 1, 1]),
     ([1, 1], [1.5, 1.5, 1.5, 6, 1.5, 1.5, 1.5], [2, 1, 1]),
 ]
-KB_Y = -0.085          # keyboard centre in front of the case (stays on a 47 cm deep cabinet top)
+KB_X, KB_Y = -0.47, 0.005   # keyboard stands to the LEFT of the case (-X local), roughly level with it; mouse stays right of the case
 KB_TILT = 5.0
 
 
@@ -300,7 +300,7 @@ def keyboard(col, m_beige, m_keydark):
     allb = [base] + caps + darks
     for bm in allb:
         tm(bm, lambda p: piv + (R @ (p - piv)).to_3d())
-        tm(bm, lambda p: Vector((p.x, p.y + KB_Y, p.z + 0.001)))
+        tm(bm, lambda p: Vector((p.x + KB_X, p.y + KB_Y, p.z + 0.001)))
     kbd = join("PC_Keyboard", [base], col, m_beige, 40)
     k1 = join("PC_KeysCream", caps, col, m_beige, 40)
     k2 = join("PC_KeysDark", darks, col, m_keydark, 40)

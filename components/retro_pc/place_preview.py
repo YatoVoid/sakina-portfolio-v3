@@ -20,9 +20,36 @@ for o in D.objects:
     if o.name == "Room_Volume":
         o.visible_camera = False
 root = D.objects["Station_Root"]
+import os
+WIDEN = float(os.environ.get("WIDEN", "0.30"))         # extra cabinet width toward the viewer's left (-Y), keyboard lives there
+CY = 1.25
+def _vshift(o, fn):
+    o.data = o.data.copy()
+    mw = o.matrix_world; inv = mw.inverted()
+    for v in o.data.vertices:
+        w = mw @ v.co
+        w.y += fn(w.y)
+        v.co = inv @ w
+    o.data.update()
+def widen(W):
+    for o in list(D.objects):
+        if o.type != "MESH" or o.parent != root or not o.name.startswith(("Cabinet_", "Drawer_")):
+            continue
+        n = o.name
+        cy = sum((o.matrix_world @ Vector(c)).y for c in o.bound_box) / 8
+        if n in ("Cabinet_Body", "Cabinet_Top", "Cabinet_Plinth", "Cabinet_Crown") or n.startswith(("Drawer_Front", "Drawer_Gap")) \
+                or (n.startswith("Drawer_Mould") and n[-1] in "TB"):
+            _vshift(o, lambda y: -W if y < CY else 0.0)
+        elif n.startswith(("Cabinet_Foot", "Drawer_Mould")):
+            _vshift(o, lambda y, d=(-W if cy < CY else 0.0): d)
+        elif n.startswith(("Drawer_Bar", "Drawer_Escutcheon", "Drawer_Keyhole")):
+            _vshift(o, lambda y: -W / 2)
+if use_new:
+    widen(WIDEN)
 if use_new:
     for o in list(D.objects):
-        if o.parent == root and o.name.startswith(("PC_", "CRT2_", "Term_Key_")):
+        if (o.parent == root and o.name.startswith(("PC_", "CRT2_", "Term_Key_"))) or \
+           (o.name.startswith("KB_") and any(c.name == "Station" for c in o.users_collection)):   # old keyboard is not parented to the root
             D.objects.remove(o)
     with D.libraries.load(str(ROOT / "components/retro_pc/export/retro_pc_source.blend")) as (src, dst):
         dst.objects = list(src.objects)
@@ -40,14 +67,14 @@ if use_new:
     root.location.y += shift
     pol = D.objects.get("Polaroid")                   # re-stick the Polaroid on the new monitor's right bezel corner
     if pol:
-        pol.location.x += 0.013
-        pol.location.y -= 0.028
+        pol.location = (0.017, -0.019, 1.091)         # standing on top of the monitor, facing straight (+X, not swivelled)
+        pol.rotation_euler = (0, 0, 0)
     for o in D.objects:                               # preview only: calmer screen glow in the dark room
         for sl in o.material_slots:
             if sl.material and sl.material.name.startswith("PC_Glass"):
                 for n in sl.material.node_tree.nodes:
                     if n.type == "BSDF_PRINCIPLED":
-                        n.inputs["Emission Strength"].default_value = 0.6
+                        n.inputs["Emission Strength"].default_value = 0.35
     bpy.context.view_layer.update()
 
 sc.render.engine = "CYCLES"; sc.cycles.device = "CPU"; sc.cycles.samples = spp; sc.cycles.use_denoising = True
