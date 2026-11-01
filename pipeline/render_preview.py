@@ -1,6 +1,7 @@
 """Cycles preview renders that match the website's framing.
     python3 pipeline/render_preview.py <scene.blend> <out_prefix> [samples]
-Views: 'home' = the site's HOME camera; 'tapes' = close-up of tapes + VCR."""
+Views: 'home' = the site's HOME camera; 'tapes' = close-up of tapes + VCR;
+'chair' = right-wall armchair, front 3/4 view; 'chair_wide' = right side of the room."""
 import bpy, sys, math, mathutils, time
 
 scene_path, prefix = sys.argv[1], sys.argv[2]
@@ -24,6 +25,13 @@ b = lambda x, y, z: mathutils.Vector((x, -z, y))
 VIEWS = {
     "home":  (b(0.12, 0.86, -0.3), b(0.1, 0.98, -1.8), 46),
     "tapes": (b(0.42, 1.10, -0.78), b(0.42, 0.80, -1.65), 40),
+    "chair": (b(1.95, 1.10, -0.55), b(3.15, 0.52, -1.42), 42),
+    "chair_wide": (b(1.30, 1.45, 0.10), b(3.05, 0.55, -1.55), 62),
+    "home_right": (b(0.12, 0.86, -0.3), b(2.6, 0.85, -2.0), 66),     # site HOME camera position, turned right toward the nook
+    "under_desk": (b(-0.10, 0.50, -0.50), b(-0.10, 0.30, -2.40), 56),   # low camera in front of the desk, looking at the wall gap under it
+    "radiator_close": (b(0.25, 0.22, -1.40), b(0.05, 0.22, -2.45), 46),
+    "bookcase": (b(2.21, 1.15, 0.30), b(2.21, 1.10, -2.50), 72),
+    "nook": (b(1.15, 1.50, 0.35), b(2.65, 0.80, -1.95), 64),
 }
 cam_data = D.cameras.new("PreviewCam"); cam = D.objects.new("PreviewCam", cam_data)
 sc.collection.objects.link(cam); sc.camera = cam
