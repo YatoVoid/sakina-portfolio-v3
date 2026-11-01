@@ -1,0 +1,7 @@
+# Rebuilt by components/build.py — the scripts are the source of truth.
+*/export/*.blend
+*/export/*.png
+*.blend1
+__pycache__/
+_selftest/export/
+_selftest/previews/
