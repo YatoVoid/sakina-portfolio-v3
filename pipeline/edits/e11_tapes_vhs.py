@@ -19,10 +19,15 @@ Tape order, object names and heights are unchanged, so tapes.json / click target
 import bpy, bmesh, math, random
 from mathutils import Matrix, Vector
 
-STACKS = {
+STACKS = {   # bottom -> top, round 4c (user 2026-11-01): TMAC moved to the top of the left stack; two tapes removed
+    "left":  ["Tape_The", "Tape_Softsyncdev", "Tape_Blutech", "Tape_University", "Tape_Dental-X", "Tape_Tmac"],
+    "right": ["PTape_7", "PTape_4", "PTape_3", "PTape_2", "PTape_1"],
+}
+ORIG_ORDER = {   # the order e01 positioned the tapes in; its x/y/z slots are reused so the stacks stay tight
     "left":  ["Tape_The", "Tape_Softsyncdev", "Tape_Blutech", "Tape_University", "Tape_Tmac", "Tape_Dental-X"],
     "right": ["PTape_7", "PTape_6", "PTape_5", "PTape_4", "PTape_3", "PTape_2", "PTape_1"],
 }
+REMOVE = ["PTape_5", "PTape_6"]   # "SAKINA JOB OS" and "ORACLE FINANCIAL ETL"
 COLOUR = {   # each tape's own colour (from its V2/V3 body material)
     "Tape_Dental-X": "2f6f73", "Tape_Tmac": "c9a227", "Tape_University": "b3242b", "Tape_Blutech": "2a3a8a",
     "Tape_Softsyncdev": "d9822b", "Tape_The": "3a7a4a", "PTape_1": "14224a", "PTape_2": "1f4a2a", "PTape_3": "4a2468",
@@ -254,6 +259,22 @@ def apply():
     D = bpy.data
     rng = random.Random(SEED)
     _tint_logos()
+    # 1) remember each slot of the original stacks, then delete the removed tapes with all their parts
+    slots = {st: [D.objects[n].location.copy() for n in names] for st, names in ORIG_ORDER.items()}
+    for n in REMOVE:
+        r = D.objects[n]
+        for c in list(r.children_recursive):
+            _remove(c)
+        _remove(r)
+    # 2) put every remaining tape into its slot (bottom -> top) and renumber the spine labels top -> bottom
+    for st, names in STACKS.items():
+        for i, n in enumerate(names):
+            r = D.objects[n]
+            r.location = slots[st][i]
+            num = "%02d" % (len(names) - i)
+            for c in r.children:
+                if c.type == 'FONT' and c.name in (n + "_No", "Tape_Top_No") and (c.name == n + "_No" or n == "Tape_Dental-X"):
+                    c.data.body = num
     for stack, names in STACKS.items():
         J = JITTER[stack]
         for i, n in enumerate(names):
