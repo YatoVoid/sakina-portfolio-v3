@@ -26,7 +26,7 @@ CASE_X, CASE_Y = 2.35, 2.475           # centre of the bookcase back; back sits 
 TABLE_DX = 0.52                         # side table slides to the corner (x 3.20 .. 3.54)
 CHAIR_TURN_DEG = 18.0                   # chair front turned toward the desk (toward the back wall / image-left)
 CHAIR_WALL_X = 3.565                    # chair's rearmost corner x
-CHAIR_YMAX = 1.98                       # chair's +y extent stays in front of the bookcase base (front y ~2.0)
+CHAIR_YMAX = 1.90                       # chair front-left corner stays 4.5 cm clear of the bookcase plinth (front y 1.945)
 LAMP_GAP = 0.04                         # lamp base edge to chair front
 LAMP_LATERAL = -0.32                    # lamp offset toward the room-front side of the chair (negative = away from the table)
 CARTON_SHIFT = (-0.35, -1.45)           # floor carton moves out of the bookcase footprint
