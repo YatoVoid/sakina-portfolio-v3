@@ -14,9 +14,9 @@ os.makedirs(OUTDIR, exist_ok=True)
 
 GROUP_RES = {"Room": 4096, "Window": 2048, "Desk": 4096, "Station": 4096, "Monitor": 4096,
              "Tapes": 4096, "Keepsakes": 4096, "Lamp": 1024, "Plant": 2048,
-             "Right_Nook": 4096, "Wall_Decor": 4096}
+             "Right_Nook": 4096, "Wall_Decor": 4096, "Floor": 4096}
 COLLECTIONS = ["Room", "Window", "Desk", "Station", "Monitor", "Tapes", "Keepsakes",
-               "Lamp", "Plant", "Right_Nook", "Wall_Decor"]
+               "Lamp", "Plant", "Right_Nook", "Wall_Decor", "Floor"]
 if ONLY:
     COLLECTIONS = [c for c in COLLECTIONS if c in ONLY]
 SKIP_NAMES = ("Glass", "Steam", "Rain", "Sky", "Haze", "Room_")

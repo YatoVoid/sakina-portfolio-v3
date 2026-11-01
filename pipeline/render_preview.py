@@ -33,6 +33,8 @@ VIEWS = {   # name: (camera, target, vertical fov, (width, height))
     "tv":    (b(-0.02, 1.00, -1.02), b(-0.02, 0.96, -1.62), 40, (1280, 720)),      # round 3: CRT + VCR close-up
     "window": (b(-0.05, 1.25, -0.55), b(-0.10, 1.35, -2.50), 62, (1280, 720)),    # round 4: window + curtains
     "rod": (b(-0.10, 1.95, -0.95), b(-0.20, 2.40, -2.50), 52, (1280, 720)),        # round 4: rod, end cap, header
+    "floor": (b(0.25, 0.62, 0.55), b(0.55, 0.0, -1.35), 64, (1280, 720)),          # round 4: floor planks, low and raking like the reference
+    "floor_left": (b(-0.4, 0.55, -0.15), b(-1.7, 0.0, -2.2), 64, (1280, 720)),    # round 4: floor beside the dresser
     "orbit_left":  (b(1.296, 1.12, -1.171), b(-0.02, 0.92, -1.65), 38, (1600, 724)),   # HOME, max drag left (az +70)
     "orbit_right": (b(-1.256, 1.12, -0.993), b(-0.02, 0.92, -1.65), 38, (1600, 724)),  # HOME, max drag right (az -62)
 }
