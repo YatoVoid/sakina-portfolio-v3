@@ -191,3 +191,14 @@ Sakina's request: all walls should be the wall colour of her reference photo (wa
 - Effect on lighting: lighter walls bounce much more light, so the room gets noticeably brighter and less moody with the same lights.
   Lights were not changed (they are preserved for the bake). The lit wall in the preview is (83, 70, 58) in a dim area, i.e. darker
   and warmer than the daylight photo; judge the final look after the GPU bake.
+
+
+### Approvals log (update 2026-11-01 10:39 CT)
+
+| Item | Status |
+|---|---|
+| Desk (e08) | Approved 2026-10-31 |
+| Window view (e09) | Approved 2026-10-31 |
+| Wall colour (e13) | **Approved 2026-11-01** (Sakina: "Approved", right after the before/after) |
+| Mug + coaster (e10), chair (e11), gallery wall (e12) | Integrated and previewed at Sakina's request; explicit approval not recorded yet |
+| CRT, `round3` | Not approved, not merged |
