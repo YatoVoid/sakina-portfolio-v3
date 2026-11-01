@@ -22,7 +22,8 @@ No deploys, no merges into `main`. Integration happens only after approval (see 
 
 | Component | Status | Notes |
 |---|---|---|
-| `window_view` | awaiting approval | Berlin rail-yard night photo outside the window (`window_view/spec.md`) |
+| `window_view` | approved, merged on `integration/v3-master` (e09) | Berlin rail-yard night photo outside the window (`window_view/spec.md`) |
+| `room_refresh` | awaiting approval | Realistic lamp, remote, calculator, notebook; window without transom + brass handle; white curved curtains + rod; poster onto the wall post (`room_refresh/spec.md`) |
 
 ## Layout
 

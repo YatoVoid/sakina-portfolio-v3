@@ -99,13 +99,16 @@ def build(coll):
         x = 0.004 + 0.085 * t ** 1.3
         y = CH * 0.40 - (CH * 0.40 + PH / 2) * t
         rib.append(Vector((x, y, ztr(x / PW) + 0.0005)))
-    rib += [Vector((0.091, -PH / 2 - 0.004, CT + 0.004)), Vector((0.094, -PH / 2 - 0.012, 0.0012)),
-            Vector((0.100, -PH / 2 - 0.030, 0.0007)), Vector((0.110, -PH / 2 - 0.048, 0.0006))]
+    # over the tail edge: wrap round the page edge and hang straight down 2.5 cm (the notebook overhangs the desk)
+    rib += [Vector((0.090, -PH / 2 - 0.0015, ztr(0.090 / PW) - 0.001)), Vector((0.0905, -PH / 2 - 0.0028, CT + 0.002)),
+            Vector((0.091, -PH / 2 - 0.0030, -0.006)), Vector((0.0915, -PH / 2 - 0.0028, -0.018))]
     bm = bmesh.new()                                           # flat 6 mm satin strip following the path
     pairs = []
+    side = Vector((0.0042, 0, 0))
     for i, p in enumerate(rib):
         tng = (rib[min(i + 1, len(rib) - 1)] - rib[max(i - 1, 0)]).normalized()
-        side = tng.cross(Vector((0, 0, 1))).normalized() * 0.0042
+        cr = tng.cross(Vector((0, 0, 1)))
+        side = cr.normalized() * 0.0042 if cr.length > 0.2 else side   # vertical drop: keep the last width direction
         pairs.append((bm.verts.new(p - side), bm.verts.new(p + side)))
     for (a1, b1), (a2, b2) in zip(pairs, pairs[1:]):
         bm.faces.new([a1, b1, b2, a2])

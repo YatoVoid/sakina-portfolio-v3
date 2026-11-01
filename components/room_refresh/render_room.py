@@ -32,7 +32,8 @@ VIEWS = {   # name: (camera, target, vertical fov) in Blender coordinates
     "props":   (Vector((-0.24, 0.80, 1.17)), Vector((-0.26, 1.52, 0.80)), 40),
     "window":  (Vector((0.18, 0.35, 1.50)), Vector((0.20, 2.45, 1.42)), 52),
     "lamp":    (Vector((-0.30, 1.18, 0.98)), Vector((-0.50, 1.68, 0.90)), 42),
-    "handle":  (Vector((0.05, 1.95, 1.50)), Vector((-0.10, 2.50, 1.45)), 34),
+    "handle":  (Vector((0.06, 1.98, 1.62)), Vector((-0.10, 2.50, 1.57)), 30),
+    "curtain_hem": (Vector((-1.95, 1.85, 0.80)), Vector((-0.85, 2.42, 0.30)), 48),   # left curtain bottom, beside the desk
 }
 cam = D.objects.new("RefreshCam", D.cameras.new("RefreshCam")); sc.collection.objects.link(cam); sc.camera = cam
 cam.data.sensor_fit = 'VERTICAL'; cam.data.clip_start = 0.02; cam.data.clip_end = 7000
