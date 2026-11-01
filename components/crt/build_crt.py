@@ -331,6 +331,8 @@ def main():
     })
     bpy.ops.wm.save_as_mainfile(filepath=str(C.comp_dir(NAME) / "export" / f"{NAME}_source.blend"),
                                 compress=True)
+    if os.environ.get("SKIP_BAKE") == "1":                 # position/look preview only; bake later
+        return
     tex = C.comp_dir(NAME) / "export" / "tex"
     M.bake_to_images([bez], str(tex), px=TEX_PX, prefix="crt_bezel")
     M.bake_to_images([hou], str(tex), px=TEX_PX, prefix="crt_housing")
