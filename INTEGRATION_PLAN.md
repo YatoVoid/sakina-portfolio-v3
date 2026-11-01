@@ -231,3 +231,12 @@ Pushed to `integration/v3-master` only. `main` and the live site are unchanged u
 
 ### Wall value tuning (2026-11-01, Sakina: "make the room whatever you think is best")
 - `e13_wall_colour.py` now scales the reference albedo by `WALL_SCALE` = **0.60** (same hue). Low-res test bakes at 1.00 / 0.60 / 0.40: `previews/integration/wall_value_test.jpg`. 1.00 too bright/flat, 0.40 murky, 0.60 best. Final value should be re-judged after the GPU bake + Three.js grading.
+
+### Stage 7 (2026-11-01): everything from `edit6-clocks-desk` merged, except the desk shortening
+- Sakina: merge everything except the desk shortening (test it later). `git merge origin/edit6-clocks-desk` (edits #2-#6, #8 incl. the Edit #3 bookcase work, history kept). `e07_desk_shorten.py` is in the tree but NOT in `EDITS` (it targets the V2 desk that e08_desk_detail replaced).
+- New in the scene: club chair (leather from reference photo), antique glazed bookcase + side table/lamp moved 0.5 m (Edit #3), cast-iron radiator under the window, under-desk wires cut (Edit #5), Karachi/Houston wall clocks + name strips (replace flags and the old left-wall clock), University of Houston degree removed, Iqra degree centred between the clocks (Edit #8).
+- Edit order: e01, e02, e03, e04, e05_remove_under_desk_wires, e05_crt_vcr, e08_desk_detail, e09, e10, e11, e12, e13, e14, e06_wall_clocks, e08_degree_center.
+- Checks (`previews/integration/scene_check_all_edits.json`): cameras unchanged; one light moved: `L3_FloorLamp` (3.3, 2.28, 1.6) -> (2.211, 0.659, 1.6), same energy/colour — it follows the floor lamp that Edit #3 relocates; bookcase clears the new desk by 2.9 cm (no overlap, shortening not needed); radiator 36 cm behind the desk; no duplicates; only new intersections are inside the radiator's own parts.
+- Portability fix: `build_scene.py` now packs file-based images; the 4 leather textures were linked to an absolute path and are now inside the .blend.
+- Previews: `previews/integration/compare_all_edits.jpg`.
+- Still NOT merged: `round3`/round4, `components/detailed-assets` (retro_pc), `components/detail-assets` (room_refresh), `integration/v3-final`.

@@ -16,3 +16,19 @@ Known pre-existing bug: 6 of 13 tapes open the project of the tape above them (m
 - 2026-10-31 — **Edit #1 in progress** (tapes shorter + slanted stacks, smaller VCR):
   edit script `pipeline/edits/e01_tapes_vcr.py`; Cycles before/after previews rendered for approval.
   Next after approval: re-bake Tapes, Monitor, Desk groups; per-tape click boxes; publish to `/preview/`.
+- 2026-11-01 — **Edit #2 in progress** (club chair on the right wall): `pipeline/edits/e02_club_chair.py`;
+  Cycles before/after previews rendered for approval (`chair` and `chair_wide` views in `render_preview.py`).
+  Nothing re-baked, nothing published; live site unchanged (`144419e`).
+  Next after approval: decide the leather-detail approach (see DECISIONS.md), re-bake Right_Nook only, publish to `/preview/`.
+- 2026-11-01 — Edit #2 revised: leather rebuilt from the reference photo's pixels (crackle + croc sheets), arms rounder,
+  back cushion and seat more pillowy. New Cycles previews rendered for approval; still nothing re-baked or published.
+- 2026-11-01 — **Edit #3 in progress** (antique bookcase + nook re-arrangement, branch `edit3-bookcase`):
+  `pipeline/edits/e03_antique_bookcase.py`; Cycles previews (`nook`, `bookcase` views) rendered for approval.
+  Nothing re-baked or published; live site unchanged (`144419e`). Web caveat: the glass doors need a decision before the
+  Right_Nook re-bake (transmissive glass does not bake; plan: bake with the doors transparent and add a faint reflective
+  pane in Three.js).
+- 2026-11-01 — Sakina approved the chair / bookcase / side table / lamp / carton positions (see DECISIONS.md). No bake, no GLB,
+  no /preview/ publish, main unchanged. When merging `edit3-bookcase` (which contains e02 + e03), treat the merge as source
+  only; the live site stays on `144419e` until a bake is separately requested.
+- 2026-11-01 — Edit #4 (radiator under the desk) built and previewed (`under_desk`, `radiator_close` views). Not baked, not published.
+- 2026-11-01 — Edit #5 (under-desk wires removed) built and previewed. Not baked, not published.
