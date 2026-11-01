@@ -27,3 +27,6 @@ Known pre-existing bug: 6 of 13 tapes open the project of the tape above them (m
   Nothing re-baked or published; live site unchanged (`144419e`). Web caveat: the glass doors need a decision before the
   Right_Nook re-bake (transmissive glass does not bake; plan: bake with the doors transparent and add a faint reflective
   pane in Three.js).
+- 2026-11-01 — Sakina approved the chair / bookcase / side table / lamp / carton positions (see DECISIONS.md). No bake, no GLB,
+  no /preview/ publish, main unchanged. When merging `edit3-bookcase` (which contains e02 + e03), treat the merge as source
+  only; the live site stays on `144419e` until a bake is separately requested.

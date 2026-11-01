@@ -55,3 +55,8 @@ Newest last. Each entry: decision — reason.
 - **2026-11-01 · Edit #3 follow-up: chair, side table and lamp slid 0.50 m along the right wall away from the bookcase**
   (Sakina: "more to the right, away from the book shelf"). Chair centre now y ~0.76, table y 1.61-1.95; table still on the
   chair's image-left; the carton moved 15 cm further left to stay clear of the lamp base. Parameter `ALONG_WALL` in e03.
+- **2026-11-01 · APPROVED by Sakina: the layout of Edit #2 + Edit #3 (positions only).** Approved as previewed (commit `2c60956`):
+  antique bookcase on the back wall x 1.60-3.10; club chair turned 18 deg toward the desk, centre y ~0.76, back corner on the
+  right wall; side table on the chair's image-left at x 3.20-3.54, y 1.61-1.95; floor lamp 4 cm in front of the chair on its
+  room-front side; carton at x 0.92-1.95, y 0.25-1.08. **This approval covers positions only. It is NOT approval to re-bake,
+  build a new room GLB, publish to /preview/ or change the main page.** Sakina said explicitly: "Don't bake."
