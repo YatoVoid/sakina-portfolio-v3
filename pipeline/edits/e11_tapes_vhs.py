@@ -125,6 +125,43 @@ def band_mat(name, hexcol):
     return m
 
 
+def cream_mat():
+    m = bpy.data.materials.get("VHSCream")
+    if m:
+        return m
+    m = bpy.data.materials.new("VHSCream"); m.use_nodes = True
+    bs = m.node_tree.nodes["Principled BSDF"]
+    bs.inputs["Base Color"].default_value = _lin("f3efe3")
+    bs.inputs["Roughness"].default_value = 0.5; bs.inputs["Specular IOR Level"].default_value = 0.3
+    return m
+
+
+# logos on the coloured spine: single-colour cream silhouettes so every logo reads on every colour.
+# (material, built from the image's own transparency or, for logos on a solid white background, from its darkness)
+LOGO_TINT = {"Logo_blutech": False, "Logo_powerguard360": False, "Logo_softsync-user": True, "Logo_uh-user": True}
+
+
+def _tint_logos():
+    D = bpy.data
+    for name, from_lum in LOGO_TINT.items():
+        m = D.materials.get(name)
+        if m is None:
+            continue
+        nt = m.node_tree
+        bs = next(x for x in nt.nodes if x.type == 'BSDF_PRINCIPLED')
+        tex = next(x for x in nt.nodes if x.type == 'TEX_IMAGE')
+        for l in list(nt.links):
+            if l.to_node == bs and l.to_socket.name in ("Base Color", "Alpha", "Emission Color"):
+                nt.links.remove(l)
+        bs.inputs["Base Color"].default_value = _lin("f3efe3")
+        if from_lum:
+            bw = _N(nt, "ShaderNodeRGBToBW"); nt.links.new(tex.outputs["Color"], bw.inputs["Color"])
+            mr = _N(nt, "ShaderNodeMapRange", in_From_Min=0.62, in_From_Max=0.25, in_To_Min=0.0, in_To_Max=1.0, clamp=True)
+            nt.links.new(bw.outputs["Val"], mr.inputs["Value"]); nt.links.new(mr.outputs["Result"], bs.inputs["Alpha"])
+        else:
+            nt.links.new(tex.outputs["Alpha"], bs.inputs["Alpha"])
+
+
 # ------------------------------------------------------------------------------------------------ geometry
 def shell_mesh(name):
     bm = bmesh.new()
@@ -172,17 +209,22 @@ def _dress(root, rng):
     root.data = shell_mesh(n + "_Shell")
     if old.users == 0:
         D.meshes.remove(old)
-    # drop the old coloured strip + edge line: replaced by one full-length label
+    # round-4b (user reference rieseberg.com): the spine is the tape's COLOUR; the logo sits straight on the colour (no
+    # white panel); only the project name is on a short white strip with coloured space left and right of it.
     for c in list(root.children):
-        if c.name in (n + "_Strip", n + "_StripEdge"):
+        if c.name in (n + "_Strip", n + "_StripEdge", n + "_Panel"):
             _remove(c)
-    lab, band = label_mat(), band_mat(n, col)
+    lab = label_mat()
     fy = FACE_Y
-    # spine label: full length, cream paper, just proud of the shell face
-    _box(n + "_Label", root, -0.0965, 0.0975, fy - 0.0008, fy + 0.0001, -0.0107, 0.0107, lab)
-    # colour stripes along the label, right of the logo panel (panel spans x -0.094 .. -0.035)
-    _box(n + "_LabelBand", root, -0.0335, 0.0965, fy - 0.0012, fy - 0.0007, -0.0105, -0.0052, band)
-    _box(n + "_LabelLine", root, -0.0335, 0.0965, fy - 0.0011, fy - 0.0007, 0.0093, 0.0105, band)
+    _box(n + "_Spine", root, -0.094, 0.094, fy - 0.0006, fy + 0.0001, -0.0107, 0.0107, band_mat(n, col))
+    _box(n + "_Strip", root, -0.032, 0.056, fy - 0.0010, fy - 0.0005, -0.0098, 0.0098, lab)
+    cream = cream_mat()
+    for c in root.children:
+        if c.type == 'FONT' and c.name == n + "_No":
+            c.data.materials.clear(); c.data.materials.append(cream)
+        elif c.type == 'MESH' and "_Icon_" in c.name and c.data.materials and c.data.materials[0].name == "PosterInk":
+            c.data.materials[0] = cream
+    band = band_mat(n, col)
     # top face: smoked window on the back half, flap hinge line
     win = window_mat()
     _box(n + "_Window", root, -0.052, 0.052, 0.004, 0.044, T / 2 - 0.0004, T / 2 + 0.0005, win)
@@ -211,6 +253,7 @@ def _dress(root, rng):
 def apply():
     D = bpy.data
     rng = random.Random(SEED)
+    _tint_logos()
     for stack, names in STACKS.items():
         J = JITTER[stack]
         for i, n in enumerate(names):
