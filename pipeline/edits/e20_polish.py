@@ -42,3 +42,8 @@ def apply():
     for o in parts + lights:
         _move(o, dy=0.30)
     print(f"e20: standing lamp moved +0.30 y ({len(parts)} parts, {len(lights)} light(s): {[l.name for l in lights]})", flush=True)
+
+    st = D.objects.get("Mug_Stain_B")                  # round 5: the dark round "stain" beside the cup read as a hole in the desk
+    if st:
+        D.objects.remove(st, do_unlink=True)
+        print("e20: removed Mug_Stain_B (dark disc beside the coffee cup)", flush=True)

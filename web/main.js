@@ -46,7 +46,7 @@ function setProgress(){
 // Per-tape click boxes generated from the Blender scene (pipeline/tools/tape_layout.py).
 let TAPES=[];
 const tapesP=fetch("tapes.json").then(r=>r.json()).then(t=>{TAPES=t.map(d=>({idx:d.idx,box:new THREE.Box3(new THREE.Vector3(...d.min),new THREE.Vector3(...d.max))}))});
-const roomP=new Promise((res,rej)=>loader.load("sakina-room-r4lo.glb",g=>{
+const roomP=new Promise((res,rej)=>loader.load("sakina-room-r5.glb",g=>{
   const maxAniso=renderer.capabilities.getMaxAnisotropy();
   g.scene.traverse(o=>{
     if(!o.isMesh)return;
@@ -75,7 +75,7 @@ const outP=new Promise((res,rej)=>loader.load("sakina-outside-r4lo.glb",g=>{g.sc
   e=>{if(e.lengthComputable){progressOut=e.loaded/e.total;setProgress()}},rej));
 
 // Berlin rail-yard night photo behind the window (round 4, approved): two unlit emissive pictures ~80 m away (photo patch + panorama).
-const viewP=new Promise(res=>loader.load("sakina-view-r4lo.glb",g=>{
+const viewP=new Promise(res=>loader.load("sakina-view-r5.glb",g=>{
   g.scene.traverse(o=>{if(o.isMesh){o.material.side=THREE.DoubleSide;o.material.envMapIntensity=0;o.renderOrder=-1}});
   scene.add(g.scene);res();
 },undefined,e=>{console.warn("window view failed",e);res()}));

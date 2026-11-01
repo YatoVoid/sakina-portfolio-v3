@@ -52,3 +52,10 @@ Known pre-existing bug: 6 of 13 tapes open the project of the tape above them (m
   views screenshotted (`previews/final/site_*.png`, `pipeline/tests/site_tour.py`). NOT verified on the real Netlify URL (cloud cannot reach it).
   ROLLBACK: `main` before this push was `57bdb1d`; `git revert` the fast-forward range or reset the site to that commit.
   Low-res lightmaps look blotchy on curtains/wood; the final bake (SPP 192, full res, GPU laptop) replaces these files under new names.
+
+- 2026-11-01 — **Round 5b (Sakina's phone feedback on the live low-res site)**: (1) from a high camera the lower window panes were black. Cause: the Berlin photo patch only covers
+  about 44 deg x 29 deg; below it the extension panorama faded to flat dark ground. `components/window_view/panorama.py` now continues the rail yard in ground space
+  (rays below the photo hit the yard nearer: sideways positions kept, so rails fan out toward the viewer), adds ballast grain, sleepers, rails and sodium/white lamps,
+  4096x2048. New file `web/sakina-view-r5.glb` (swapped with `pipeline/tools/swap_pano.mjs`). (2) The dark round disc beside the coffee cup was `Mug_Stain_B`: removed in
+  `e20_polish.py` for the final bake; for the live preview its triangles were cut from the desk group (`pipeline/tools/cut_disc.mjs`; note the Room_Desk node has an 8 deg
+  rotation, so cuts must apply the node transform) -> `web/sakina-room-r5.glb`. `main.js?v=9`. Verified locally only (phone viewport 430x930); not yet on the real Netlify URL.
