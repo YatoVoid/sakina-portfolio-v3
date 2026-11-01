@@ -97,7 +97,7 @@ with sync_playwright() as p:
     check("4 released: no drift", same(cl, cl2, 1e-4))
     shot(pg, "2_max_left")
     drag(pg, 2800, 0); orr = pg.evaluate(ORB)
-    check("8 max right drag limited to -70 deg", abs(orr["az"] + 70) < 1.0, f"az {orr['az']:.2f}")
+    check("8 max right drag limited to -62 deg (plant keeps clear of the lens)", abs(orr["az"] + 62) < 1.0, f"az {orr['az']:.2f}")
     shot(pg, "3_max_right")
     home(pg)
     drag(pg, 0, 1400); od = pg.evaluate(ORB)

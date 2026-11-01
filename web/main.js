@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import {LookControls} from "./look-controls.js?v=4";
+import {LookControls} from "./look-controls.js?v=5";
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 import {DRACOLoader} from "three/addons/loaders/DRACOLoader.js";
 import {projects,ibm,notepad,credits} from "./content.js";
@@ -46,7 +46,7 @@ function setProgress(){
 // Per-tape click boxes generated from the Blender scene (pipeline/tools/tape_layout.py).
 let TAPES=[];
 const tapesP=fetch("tapes.json").then(r=>r.json()).then(t=>{TAPES=t.map(d=>({idx:d.idx,box:new THREE.Box3(new THREE.Vector3(...d.min),new THREE.Vector3(...d.max))}))});
-const roomP=new Promise((res,rej)=>loader.load("sakina-room-r2.glb",g=>{
+const roomP=new Promise((res,rej)=>loader.load("sakina-room-r3.glb",g=>{
   const maxAniso=renderer.capabilities.getMaxAnisotropy();
   g.scene.traverse(o=>{
     if(!o.isMesh)return;
@@ -137,14 +137,14 @@ function buildViews(){
   tapeBox=deskTapeBox();
   const tapes=tapeBox.getCenter(new THREE.Vector3());
   const ibmC=box("Room_Station").getCenter(new THREE.Vector3());
-  ibmC.y+=0.3;
+  ibmC.y+=0.36;                                   // round 3: dresser + computer, aim between keyboard and screen
   const deskBox=box("Room_Desk");
   const deskC=deskBox.getCenter(new THREE.Vector3());
   const note=new THREE.Vector3(-0.45,0.76,-1.36);
   VIEWS={
     home:{target:HOME.target.clone(),pos:HOME.pos.clone()},
     tapes:{target:tapes.clone(),pos:tapes.clone().add(new THREE.Vector3(0,0.35,0.95))},
-    ibm:{target:ibmC.clone().add(new THREE.Vector3(0,-0.05,0)),pos:ibmC.clone().add(new THREE.Vector3(1.15,0.12,0.25))},
+    ibm:{target:ibmC.clone().add(new THREE.Vector3(0,-0.05,0)),pos:ibmC.clone().add(new THREE.Vector3(1.12,0.25,0.42))},
     notepad:{target:note.clone(),pos:note.clone().add(new THREE.Vector3(0.05,0.62,0.55))},
     desk:{target:deskC.clone().add(new THREE.Vector3(0,0.05,0)),pos:deskC.clone().add(new THREE.Vector3(0.1,0.65,1.25))}
   };

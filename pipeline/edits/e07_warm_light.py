@@ -18,7 +18,7 @@ from mathutils import Vector
 KEY = dict(color=(1.0, 0.68, 0.40), energy=55.0, radius=0.025)
 LEAK = dict(color=(1.0, 0.62, 0.36), energy=150.0, radius=0.03, aim=(-1.0, 0.22, 0.12), cone=115.0)
 FLOOR = dict(color=(1.0, 0.70, 0.42), energy=100.0, radius=0.04)
-WALL_A, WALL_B, WALL_DARK = (0.36, 0.25, 0.150), (0.30, 0.205, 0.120), (0.16, 0.105, 0.060)
+WALL_A, WALL_B, WALL_DARK = (0.36, 0.25, 0.150), (0.30, 0.205, 0.120), (0.22, 0.150, 0.090)
 CEIL_A, CEIL_B = (0.20, 0.140, 0.085), (0.12, 0.080, 0.045)
 
 

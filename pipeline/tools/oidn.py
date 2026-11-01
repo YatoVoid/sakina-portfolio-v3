@@ -33,16 +33,19 @@ def _load():
     return L
 
 
-def denoise_rgb(rgb, hdr=True):
+def denoise_rgb(rgb, hdr=True, albedo=None):
     L = _load()
     h, w, _ = rgb.shape
     src = np.ascontiguousarray(rgb, dtype=np.float32); dst = np.empty_like(src)
+    alb = np.ascontiguousarray(np.clip(albedo, 0, 1), dtype=np.float32) if albedo is not None else None
     dev = L.oidnNewDevice(1)                      # OIDN_DEVICE_TYPE_CPU
     L.oidnCommitDevice(dev)
     f = L.oidnNewFilter(dev, b"RT")
     FLOAT3 = 3
     L.oidnSetSharedFilterImage(f, b"color", src.ctypes.data, FLOAT3, w, h, 0, 0, 0)
     L.oidnSetSharedFilterImage(f, b"output", dst.ctypes.data, FLOAT3, w, h, 0, 0, 0)
+    if alb is not None:                           # texture detail guide: keeps labels/text/grain sharp
+        L.oidnSetSharedFilterImage(f, b"albedo", alb.ctypes.data, FLOAT3, w, h, 0, 0, 0)
     L.oidnSetFilterBool(f, b"hdr", hdr)
     L.oidnCommitFilter(f); L.oidnExecuteFilter(f)
     msg = ctypes.c_char_p()
@@ -53,11 +56,16 @@ def denoise_rgb(rgb, hdr=True):
     return dst
 
 
-def denoise_image(img):
-    """In-place denoise of a bpy float image (RGBA)."""
+def _px(img):
     w, h = img.size
     a = np.empty(w * h * 4, np.float32); img.pixels.foreach_get(a)
-    a = a.reshape(h, w, 4)
-    a[:, :, :3] = denoise_rgb(a[:, :, :3])
+    return a.reshape(h, w, 4)
+
+
+def denoise_image(img, albedo_img=None):
+    """In-place denoise of a bpy float image (RGBA), optionally guided by a baked albedo image."""
+    a = _px(img)
+    alb = _px(albedo_img)[:, :, :3] if albedo_img is not None else None
+    a[:, :, :3] = denoise_rgb(a[:, :, :3], albedo=alb)
     img.pixels.foreach_set(a.ravel())
     img.update()
