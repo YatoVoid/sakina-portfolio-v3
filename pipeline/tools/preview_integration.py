@@ -27,6 +27,8 @@ VIEWS = {
     "home":   (b(0.12, 0.86, -0.3),  b(0.10, 0.98, -1.8),  46),   # site HOME camera
     "window": (b(-0.02, 1.12, -0.25), b(-0.10, 1.15, -2.4), 46),   # round-3 opening camera, toward the window
     "desk":   (b(0.95, 1.20, -0.55),  b(0.10, 0.76, -1.55), 42),   # desk close-up from the right
+    "desk_top": (b(0.55, 0.98, -0.80), b(0.45, 0.72, -1.50), 45),  # tabletop grain + front edge
+    "drawer":   (b(0.20, 0.80, -0.62), b(0.20, 0.62, -1.32), 40),  # drawer front, pull, aprons
 }
 cam_data = D.cameras.new("PreviewCam"); cam = D.objects.new("PreviewCam", cam_data)
 sc.collection.objects.link(cam); sc.camera = cam
