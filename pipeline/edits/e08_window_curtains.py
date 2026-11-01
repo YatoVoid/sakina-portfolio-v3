@@ -25,7 +25,7 @@ ROD_Z, ROD_R, ROD_Y = 2.545, 0.0127, 2.36        # rod sits between the fabric a
 HANG_Y = 2.33                                      # fabric centre plane: in front of the sill's front edge (y 2.385), so the
                                                    # curtains hang OVER the sill instead of behind it (round 4 fix)
 FLOOR_GAP = 0.012
-PANELS = [("Curtain_L", -1.17, -0.67, 11), ("Curtain_R", 0.46, 0.96, 23)]    # x0, x1, seed
+PANELS = [("Curtain_L", -0.95, -0.57, 11), ("Curtain_R", 0.36, 0.74, 23)]   # narrower stacks (round 4): the blue poster (x 0.80-1.11) must stay on bare wall    # x0, x1, seed
 
 
 def _coll():
@@ -208,14 +208,14 @@ def _bars(ox, oz, glass_y):
 # ----------------------------------------------------------------------------------------------- rod
 def _rod():
     nk = _nickel()
-    xa, xb = -1.30, 1.09                                            # rod length, wider than the window
+    xa, xb = -1.08, 0.87                                            # rod length: just wider than the stacks (poster stays clear)
     _cyl("Rod", xa, xb, ROD_Y, ROD_Z, ROD_R, nk)
     for side, x in (("L", xa), ("R", xb)):
         sgn = -1 if side == "L" else 1
         # end cap: neck + fat cylinder (as in the reference)
         _cyl(f"Rod_Neck_{side}", x, x + sgn * 0.012, ROD_Y, ROD_Z, ROD_R * 0.8, nk, 24)
         _cyl(f"Rod_Cap_{side}", x + sgn * 0.012, x + sgn * 0.052, ROD_Y, ROD_Z, 0.0215, nk, 40)
-    for i, x in enumerate((-1.19, -0.60, 0.50, 0.99)):              # wall brackets
+    for i, x in enumerate((-1.00, -0.60, 0.40, 0.80)):              # wall brackets
         _box(f"Rod_Bracket_{i}", x - 0.009, x + 0.009, ROD_Y - 0.004, WALL - 0.003, ROD_Z - 0.010, ROD_Z + 0.010, nk, 0.002)
         _box(f"Rod_Bracket_P{i}", x - 0.0125, x + 0.0125, WALL - 0.005, WALL, ROD_Z - 0.022, ROD_Z + 0.022, nk, 0.002)
     print("rod built")
@@ -228,7 +228,7 @@ def _panel(name, x0, x1, seed):
     W = x1 - x0
     nx, nz = 200, 90
     z_top, z_bot = ROD_Z + 0.055, FLOOR_GAP
-    pleats = 5
+    pleats = 4
     ph = [rnd.uniform(-0.25, 0.25) for _ in range(3)]
     wob = [rnd.uniform(0, 6.28) for _ in range(4)]
     bm = bmesh.new(); grid = []
