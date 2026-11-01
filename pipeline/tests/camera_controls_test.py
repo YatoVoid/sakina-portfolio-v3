@@ -39,6 +39,8 @@ def route(pg):
 
 CAM = """()=>{const c=window.__dbg.camera;const d=new window.__dbg.THREE.Vector3();c.getWorldDirection(d);
   return {p:c.position.toArray(),d:d.toArray(),yaw:Math.atan2(-d.x,-d.z)*180/Math.PI,pitch:Math.asin(d.y)*180/Math.PI}}"""
+ORB = """()=>{const c=window.__dbg.camera.position;const t=[-0.02,0.92,-1.65];const x=c.x-t[0],y=c.y-t[1],z=c.z-t[2];
+  const r=Math.hypot(x,y,z);return {az:Math.atan2(x,z)*180/Math.PI,polar:Math.acos(y/r)*180/Math.PI,r,h:c.y}}"""
 PANEL = "document.getElementById('panel').hidden?null:document.getElementById('panel-title').textContent"
 
 
@@ -87,24 +89,23 @@ with sync_playwright() as p:
     time.sleep(1.0); c1 = pg.evaluate(CAM)
     check("1 mouse move without button leaves camera unchanged", same(c0, c1), f"yaw {c1['yaw']:.3f} pitch {c1['pitch']:.3f}")
 
-    # 2/4/7. drag left to the limit, release, settle
-    drag(pg, -1400, 0); cl = pg.evaluate(CAM); time.sleep(0.6); cl2 = pg.evaluate(CAM)
-    check("2 drag left turns view left", cl["yaw"] - c0["yaw"] > 30, f"yaw {c0['yaw']:.1f} -> {cl['yaw']:.1f}")
-    check("7 max left limited to +45 deg", abs(cl["yaw"] - c0["yaw"] - 45) < 1.0, f"delta {cl['yaw'] - c0['yaw']:.2f}")
+    # 2/4/7. drag left: camera swings right around the CRT, to the +70 deg limit; release settles without drift
+    o0 = pg.evaluate(ORB)
+    drag(pg, -1400, 0); ol = pg.evaluate(ORB); cl = pg.evaluate(CAM); time.sleep(0.6); cl2 = pg.evaluate(CAM)
+    check("2 drag left orbits the camera to the right of the CRT", ol["az"] > 30, f"az {o0['az']:.1f} -> {ol['az']:.1f}")
+    check("7 max left drag limited to +70 deg", abs(ol["az"] - 70) < 1.0, f"az {ol['az']:.2f}")
     check("4 released: no drift", same(cl, cl2, 1e-4))
     shot(pg, "2_max_left")
-    # 8. drag right to the limit (from the left limit)
-    drag(pg, 2800, 0); cr = pg.evaluate(CAM)
-    check("8 max right limited to -45 deg", abs(cr["yaw"] - c0["yaw"] + 45) < 1.0, f"delta {cr['yaw'] - c0['yaw']:.2f}")
+    drag(pg, 2800, 0); orr = pg.evaluate(ORB)
+    check("8 max right drag limited to -70 deg", abs(orr["az"] + 70) < 1.0, f"az {orr['az']:.2f}")
     shot(pg, "3_max_right")
     home(pg)
-    # 3/9. vertical
-    drag(pg, 0, -1400); cu = pg.evaluate(CAM)
-    check("3/9 drag up looks up, limited", 17 < cu["pitch"] - c0["pitch"] < 18.9 or cu["pitch"] <= 15.01, f"pitch {c0['pitch']:.1f} -> {cu['pitch']:.1f}")
-    shot(pg, "5_max_up")
-    drag(pg, 0, 2800); cd = pg.evaluate(CAM)
-    check("10 drag down looks down, limited", -30.9 < cd["pitch"] - c0["pitch"] < -29 or cd["pitch"] >= -45.01, f"pitch -> {cd['pitch']:.1f}")
-    shot(pg, "6_max_down")
+    drag(pg, 0, 1400); od = pg.evaluate(ORB)
+    check("9 drag down raises the camera to see the CRT top (polar 35)", abs(od["polar"] - 35) < 1.0, f"polar {o0['polar']:.1f} -> {od['polar']:.1f}, height {od['h']:.2f} m")
+    shot(pg, "5_max_top")
+    drag(pg, 0, -2800); ou = pg.evaluate(ORB)
+    check("10 drag up lowers the camera, stops at polar 90 (eye at CRT-target height)", abs(ou["polar"] - 90) < 1.0, f"polar {ou['polar']:.1f}, height {ou['h']:.2f} m")
+    shot(pg, "6_max_low")
     home(pg)
     # 5/6. zoom limits
     pg.mouse.move(W / 2, H / 2)
@@ -112,12 +113,12 @@ with sync_playwright() as p:
         pg.mouse.wheel(0, 400)
     time.sleep(1.2); co = pg.evaluate(CAM)
     dist = lambda c, t=(-0.02, 0.92, -1.65): math.dist(c["p"], t)
-    check("5 zoom out stops at 1.22x", abs(dist(co) / dist(c0) - 1.22) < 0.02, f"distance {dist(c0):.2f} -> {dist(co):.2f} m")
+    check("5 zoom out stops at 1.20x", abs(dist(co) / dist(c0) - 1.20) < 0.02, f"distance {dist(c0):.2f} -> {dist(co):.2f} m")
     shot(pg, "4_max_zoom_out")
     for _ in range(60):
         pg.mouse.wheel(0, -400)
     time.sleep(1.2); ci = pg.evaluate(CAM)
-    check("6 zoom in stops at 0.70x", abs(dist(ci) / dist(c0) - 0.70) < 0.02, f"distance -> {dist(ci):.2f} m")
+    check("6 zoom in stops at 0.80x", abs(dist(ci) / dist(c0) - 0.80) < 0.02, f"distance -> {dist(ci):.2f} m")
     shot(pg, "7_max_zoom_in")
     home(pg)
     # 13/14. keyboard presets + home
@@ -163,7 +164,7 @@ with sync_playwright() as p:
     for i in range(1, 21):
         touch("touchMove", [(195 - 8 * i, 400)])
     touch("touchEnd", []); time.sleep(1.0); t1 = pg.evaluate(CAM)
-    check("15a one-finger drag turns the view (no click)", t1["yaw"] - t0["yaw"] > 5 and pg.evaluate(PANEL) is None, f"yaw +{t1['yaw'] - t0['yaw']:.1f}")
+    check("15a one-finger drag orbits the view (no click)", abs(t1["yaw"] - t0["yaw"]) > 5 and pg.evaluate(PANEL) is None, f"view yaw change {t1['yaw'] - t0['yaw']:.1f}")
     touch("touchStart", [(150, 400), (240, 400)])
     for i in range(1, 16):
         touch("touchMove", [(150 + 2 * i, 400), (240 - 2 * i, 400)])

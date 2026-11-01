@@ -26,6 +26,7 @@ VIEWS = {   # name: (camera, target, vertical fov, (width, height))
     "hero":  (b(-0.02, 1.12, -0.25), b(-0.02, 0.92, -1.65), 38, (1600, 724)),  # new HOME (round 2), 2.21:1 screen
     "tapes": (b(0.42, 1.10, -0.78), b(0.42, 0.80, -1.65), 40, (1280, 720)),
     "plant": (b(-0.55, 1.22, -1.05), b(-0.92, 1.02, -1.74), 42, (1280, 720)),
+    "ibm":   (b(-1.75, 1.18, -1.55), b(-2.78, 0.80, -1.97), 40, (1280, 720)),   # IBM corner after the slide
 }
 cam_data = D.cameras.new("PreviewCam"); cam = D.objects.new("PreviewCam", cam_data)
 sc.collection.objects.link(cam); sc.camera = cam

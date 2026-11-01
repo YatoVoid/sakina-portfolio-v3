@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import {LookControls} from "./look-controls.js?v=2";
+import {LookControls} from "./look-controls.js?v=4";
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 import {DRACOLoader} from "three/addons/loaders/DRACOLoader.js";
 import {projects,ibm,notepad,credits} from "./content.js";
@@ -27,11 +27,11 @@ const camera=new THREE.PerspectiveCamera(46,1,0.05,7000);
 const HOME={pos:new THREE.Vector3(-0.02,1.12,-0.25),target:new THREE.Vector3(-0.02,0.92,-1.65)};
 camera.position.copy(HOME.pos);
 
-// Drag-to-look camera with limits (round 2): no cursor parallax, no free orbit, zoom and position kept inside the room.
+// Limited orbit around the current view target (round 2): no cursor parallax, zoom and position kept inside the room.
 const controls=new LookControls(camera,canvas);
 controls.target.copy(HOME.target);
 camera.lookAt(controls.target);
-controls.setFromCamera();
+controls.setFromCamera(true);
 
 const draco=new DRACOLoader();
 draco.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/");
@@ -132,7 +132,7 @@ function stepTween(now){
   controls.target.lerpVectors(tween.from.t,tween.to.target,e);
   camera.lookAt(controls.target);
   if(k>=1){
-    tween=null;controls.enabled=true;controls.setFromCamera();
+    const wasHome=tween.name==="home";tween=null;controls.enabled=true;controls.setFromCamera(wasHome);
   }
 }
 
