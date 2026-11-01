@@ -215,3 +215,11 @@ Pushed to `integration/v3-master` only. `main` and the live site are unchanged u
 - Checks (scene_check vs previous interim): lights and cameras unchanged, no new intersections, no duplicates, no external textures. CRT bounds x -0.201..0.161, y 1.585..1.900, z 0.813..1.173; CRT sits 1.0 mm into the VCR, VCR rests on the desk; 0 overlaps with tapes/desk. Monitor group: 191 meshes, 23 materials, 6918 tris.
 - Previews (unbaked, 28 spp): `previews/integration/compare_crt.jpg` plus individual crt/crt_side/home before/after.
 - Later `round3` merge will conflict: e03/e04/e05 add/add, e04 vs e12 (postcard assertion), round3 chair recline vs e11. Resolve by taking e05 as is and dropping e04's postcard/left-wall changes.
+
+### Stage 6 (2026-11-01): recessed double-casement window (e14) — AWAITING APPROVAL
+
+- Request (Sakina, reference phone shot): window should read as two connected sashes in a deep 3D box when seen from above.
+- `pipeline/edits/e14_window_reveal.py`: removes `Frame_*`, `Mullion_*`, `Bead_*` (21 parts); adds `Window_Casing`, `Window_Reveal` (24 cm deep lining to y=2.74), `Window_Frame`, `Sash_L`, `Sash_R` (sash face 11.5 cm behind the wall face, 4 mm gap, 5 cm stiles, transom at old height, room-side glazing beads). `Glass`/`RainLines` refitted and moved to y=2.640; brass handle moved onto the right sash (it floated 4 cm off the old mullion).
+- Checks: lights/cameras unchanged, no new intersections vs previous scene, no duplicates, no external textures; sash gap 4.0 mm, handle plate flush on the stile; only overlaps are the intended embedded reveal liners and the older curtain/sill overlaps. Window area light (y=3.05) is outside the reveal.
+- Previews: `previews/integration/compare_window.jpg` (top, side, front; unbaked 28 spp).
+- Bake note: Window and Room lightmaps must be rebaked (new geometry, narrower glass aperture).
