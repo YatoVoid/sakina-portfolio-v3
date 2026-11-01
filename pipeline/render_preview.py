@@ -32,6 +32,9 @@ VIEWS = {
     "radiator_close": (b(0.25, 0.22, -1.40), b(0.05, 0.22, -2.45), 46),
     "bookcase": (b(2.21, 1.15, 0.30), b(2.21, 1.10, -2.50), 72),
     "nook": (b(1.15, 1.50, 0.35), b(2.65, 0.80, -1.95), 64),
+    "clocks": (b(-1.80, 1.35, -0.95), b(-1.80, 2.0, -2.5), 46),           # back wall: two clocks + labels + degree frames
+    "desk_top": (b(-0.10, 1.55, -0.45), b(-0.10, 0.80, -1.70), 60),       # 3/4 view of the centre desk
+    "desk_high": (b(-0.10, 2.00, -0.90), b(-0.10, 0.70, -1.65), 64),      # from above: layout / spacing check
 }
 cam_data = D.cameras.new("PreviewCam"); cam = D.objects.new("PreviewCam", cam_data)
 sc.collection.objects.link(cam); sc.camera = cam
