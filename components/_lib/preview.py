@@ -17,12 +17,12 @@ from mathutils import Vector
 sys.path.insert(0, str(Path(__file__).parent))
 from common import ROOT, hex_lin  # noqa: E402
 
-VIEWS = {  # azimuth deg (0 = front, +Y toward viewer), elevation deg, distance factor, lens
+VIEWS = {  # azimuth deg (0 = front; front faces -Y as in the room), elevation deg, distance factor, lens
     "hero":   (-35, 18, 1.0, 70),
     "front":  (0, 8, 1.0, 85),
     "side":   (90, 8, 1.0, 85),
     "back":   (160, 20, 1.0, 70),
-    "detail": (-20, 25, 0.42, 100),
+    "detail": (-20, 25, 0.5, 100),
     "mood":   (-30, 14, 1.0, 70),
 }
 
@@ -70,79 +70,121 @@ def setup(objs, mood=False):
     scn.world = world
     s = r  # light scale
     if mood:
-        L = [area("_key", ctr + Vector((-1.4 * s, 0.9 * s, 1.8 * s)), ctr, 0.35 * s, 260 * s * s, "#ffb36b"),
-             area("_cool", ctr + Vector((1.6 * s, 1.2 * s, 0.6 * s)), ctr, 0.8 * s, 25 * s * s, "#7d9cc9")]
+        L = [area("_key", ctr + Vector((-1.4 * s, -0.9 * s, 1.8 * s)), ctr, 0.35 * s, 260 * s * s, "#ffb36b"),
+             area("_cool", ctr + Vector((1.6 * s, -1.2 * s, 0.6 * s)), ctr, 0.8 * s, 25 * s * s, "#7d9cc9")]
     else:
-        L = [area("_key", ctr + Vector((-2.2 * s, 2.4 * s, 2.6 * s)), ctr, 1.6 * s, 420 * s * s),
-             area("_fill", ctr + Vector((2.8 * s, 1.6 * s, 0.9 * s)), ctr, 2.4 * s, 140 * s * s),
-             area("_rim", ctr + Vector((0.6 * s, -2.8 * s, 2.2 * s)), ctr, 1.2 * s, 380 * s * s)]
+        L = [area("_key", ctr + Vector((-2.2 * s, -2.4 * s, 2.6 * s)), ctr, 1.6 * s, 420 * s * s),
+             area("_fill", ctr + Vector((2.8 * s, -1.6 * s, 0.9 * s)), ctr, 2.4 * s, 140 * s * s),
+             area("_rim", ctr + Vector((0.6 * s, 2.8 * s, 2.2 * s)), ctr, 1.2 * s, 380 * s * s)]
     for o in L:
         o["_studio"] = 1
     return ctr, r
 
 
-def camera(ctr, r, az, el, fac, lens):
+def _frame_ok(cam, corners, margin):
+    from bpy_extras.object_utils import world_to_camera_view
+    scn = bpy.context.scene
+    bpy.context.view_layer.update()
+    for c in corners:
+        p = world_to_camera_view(scn, cam, c)
+        if p.z <= 0 or not (margin < p.x < 1 - margin and margin < p.y < 1 - margin):
+            return False
+    return True
+
+
+def camera(ctr, r, az, el, fac, lens, corners=None, target=None, dist=None):
+    """Front = -Y (room convention). Fits the bbox corners in frame (binary search on distance),
+    or uses an explicit target/distance for close-ups."""
     scn = bpy.context.scene
     cam = scn.camera
     if not cam:
         cam = bpy.data.objects.new("_cam", bpy.data.cameras.new("_cam"))
         scn.collection.objects.link(cam); scn.camera = cam
     cam.data.lens = lens
-    cam.data.sensor_width = 36
-    # distance so the bounding sphere fits the shorter (horizontal) frame side with margin
-    fov = 2 * math.atan(18 / lens) * (scn.render.resolution_x / scn.render.resolution_y if
-                                      scn.render.resolution_x < scn.render.resolution_y else 1)
-    d = r / math.sin(fov / 2) * 1.08 * fac
+    cam.data.sensor_fit = "AUTO"
     a, e = math.radians(az), math.radians(el)
-    off = Vector((math.sin(a) * math.cos(e), math.cos(a) * math.cos(e), math.sin(e))) * d
-    tgt = ctr.copy()
-    if fac < 1:  # detail: aim at the upper front third
-        tgt += Vector((0, r * 0.25, r * 0.25))
-    cam.location = tgt + off
-    cam.rotation_euler = (tgt - cam.location).to_track_quat("-Z", "Y").to_euler()
-    cam.data.dof.use_dof = fac < 1
+    dirv = Vector((math.sin(a) * math.cos(e), -math.cos(a) * math.cos(e), math.sin(e)))
+    tgt = Vector(target) if target else ctr.copy()
+
+    def place(d):
+        cam.location = tgt + dirv * d
+        cam.rotation_euler = (tgt - cam.location).to_track_quat("-Z", "Y").to_euler()
+
+    if dist:
+        place(dist)
+    else:
+        lo, hi = r * 0.3, r * 40
+        for _ in range(30):
+            mid = (lo + hi) / 2
+            place(mid)
+            if _frame_ok(cam, corners, 0.06):
+                hi = mid
+            else:
+                lo = mid
+        place(hi * fac)
+    cam.data.dof.use_dof = bool(dist)
     cam.data.dof.focus_distance = (tgt - cam.location).length
-    cam.data.dof.aperture_fstop = 4.0
+    cam.data.dof.aperture_fstop = 5.6
 
 
 def main():
+    """argv: name [spp] [views] [blend_path] [tag]"""
+    import json
     name = sys.argv[1]
     spp = int(sys.argv[2]) if len(sys.argv) > 2 else 96
-    views = sys.argv[3].split(",") if len(sys.argv) > 3 else list(VIEWS)
+    views = sys.argv[3].split(",") if len(sys.argv) > 3 and sys.argv[3] != "all" else None
     d = ROOT / name
-    bpy.ops.wm.open_mainfile(filepath=str(d / "export" / f"{name}.blend"))
+    blend = sys.argv[4] if len(sys.argv) > 4 else str(d / "export" / f"{name}.blend")
+    tag = sys.argv[5] if len(sys.argv) > 5 else ""
+    bpy.ops.wm.open_mainfile(filepath=blend)
     scn = bpy.context.scene
     objs = [o for o in scn.objects if o.type == "MESH" and not o.get("_studio")]
+    extra = json.loads(scn.get("preview_views", "{}"))   # name -> [tx,ty,tz, az, el, dist, lens]
+    allv = dict(VIEWS); allv.update({k: tuple(v) for k, v in extra.items()})
+    views = views or list(allv)
+    lo, hi = bbox(objs)
+    size = hi - lo
+    landscape = size.x > 1.3 * size.z
     scn.render.engine = "CYCLES"
     scn.cycles.device = "CPU"
     scn.cycles.samples = spp
     scn.cycles.use_denoising = True
-    scn.render.resolution_x, scn.render.resolution_y = 1080, 1350
+    scn.render.resolution_x, scn.render.resolution_y = (1440, 1080) if landscape else (1080, 1350)
     scn.render.resolution_percentage = 100
     scn.view_settings.view_transform = "AgX"
     scn.view_settings.look = "AgX - Medium High Contrast"
     scn.render.image_settings.file_format = "JPEG"
     scn.render.image_settings.quality = 90
+    corners = [Vector((x, y, z)) for x in (lo.x, hi.x) for y in (lo.y, hi.y) for z in (lo.z, hi.z)]
     out = []
     for v in views:
-        az, el, fac, lens = VIEWS[v]
+        spec = allv[v]
         ctr, r = setup(objs, mood=(v == "mood"))
-        camera(ctr, r, az, el, fac, lens)
-        p = d / "previews" / f"{name}_{v}.jpg"
+        if len(spec) == 7:
+            tx, ty, tz, az, el, dist, lens = spec
+            camera(ctr, r, az, el, 1, lens, target=(tx, ty, tz), dist=dist)
+        else:
+            az, el, fac, lens = spec
+            if fac < 1:   # generic detail: closer on the upper front
+                camera(ctr, r, az, el, 1, lens, target=(ctr.x, lo.y, hi.z - size.z * 0.2), dist=r * 0.9)
+            else:
+                camera(ctr, r, az, el, fac, lens, corners=corners)
+        p = d / "previews" / f"{name}{('_' + tag) if tag else ''}_{v}.jpg"
         scn.render.filepath = str(p)
         bpy.ops.render.render(write_still=True)
         out.append(p)
-        print("rendered", p)
-    sheet(out, d / "previews" / f"{name}_sheet.jpg")
+        print("rendered", p, flush=True)
+    if len(out) > 1:
+        sheet(out, d / "previews" / f"{name}{('_' + tag) if tag else ''}_sheet.jpg", landscape)
 
 
-def sheet(paths, dst):
+def sheet(paths, dst, landscape=False):
     try:
         from PIL import Image
     except ImportError:
         return
     ims = [Image.open(p) for p in paths]
-    w, h = 540, 675
+    w, h = (720, 540) if landscape else (540, 675)
     cols = 2
     rows = math.ceil(len(ims) / cols)
     S = Image.new("RGB", (w * cols, h * rows), (20, 18, 17))

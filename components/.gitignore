@@ -1,2 +1,5 @@
 __pycache__/
 export/tex/
+export/tex_src/
+*_before.blend
+*.blend1
