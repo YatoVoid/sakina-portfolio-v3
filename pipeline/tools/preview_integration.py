@@ -35,6 +35,8 @@ VIEWS = {
     "wall_close": (b(-1.7, 1.45, 0.00),  b(-3.0, 1.45, -1.25), 40),  # gallery wall close-up
     "wall_head": (b(-1.10, 1.45, -1.00), b(-3.0, 1.45, -1.25), 42),  # head-on to the gallery wall
     "wall_wide": (b(-0.90, 1.30, -0.55), b(-3.0, 1.15, -1.25), 58),  # IBM computer + gallery wall + clock, wide
+    "crt":      (b(0.12, 1.02, -0.80), b(-0.02, 0.99, -1.65), 34),   # CRT front, close
+    "crt_side": (b(0.55, 1.14, -1.00), b(-0.02, 0.97, -1.70), 36),   # CRT 3/4 from the right: bezel depth, funnel, housing
     "chair_side": (b(0.45, 1.20, -0.25), b(-0.95, 0.50, -0.90), 50),  # chair seen with the desk edge
 }
 cam_data = D.cameras.new("PreviewCam"); cam = D.objects.new("PreviewCam", cam_data)

@@ -201,7 +201,17 @@ Sakina's request: all walls should be the wall colour of her reference photo (wa
 | Window view (e09) | Approved 2026-10-31 |
 | Wall colour (e13) | **Approved 2026-11-01** (Sakina: "Approved", right after the before/after) |
 | Mug + coaster (e10), chair (e11), gallery wall / frame layout (e12) | **Approved 2026-11-01 10:41 CT** |
-| CRT, `round3` | Not approved, not merged |
+| CRT (round3 version, e05) | **Approved 2026-11-01** ("Crt is approved too"); integrated in Stage 5 |
 
 **Approved set (2026-11-01 10:41 CT):** desk, window view (city life behind the window), mug + coaster, chair, wall colour, gallery-wall frame layout.
 Pushed to `integration/v3-master` only. `main` and the live site are unchanged until the final integration is approved.
+
+### Stage 5 (2026-11-01): CRT + VCR from `round3` (approved)
+
+- Only three files were cherry-picked from `origin/round3` tip `ceea058df10638b51cfdf2218c38dcadd6e40943`, verbatim:
+  `pipeline/edits/e03_ibm_corner.py`, `e04_left_zone.py`, `e05_crt_vcr.py`. Only **e05** is applied (after e01 in `EDITS`);
+  e03/e04 are imported by e05 only for helpers (`simple_mat`, `_wb`) and are NOT applied.
+- `round3` itself is **not merged**. Unapproved round3 work stays out (left-wall move to x=-2.30, postcard rebuild, chair recline, e01 changes, web/ changes, CRT glass overlay in web/main.js).
+- Checks (scene_check vs previous interim): lights and cameras unchanged, no new intersections, no duplicates, no external textures. CRT bounds x -0.201..0.161, y 1.585..1.900, z 0.813..1.173; CRT sits 1.0 mm into the VCR, VCR rests on the desk; 0 overlaps with tapes/desk. Monitor group: 191 meshes, 23 materials, 6918 tris.
+- Previews (unbaked, 28 spp): `previews/integration/compare_crt.jpg` plus individual crt/crt_side/home before/after.
+- Later `round3` merge will conflict: e03/e04/e05 add/add, e04 vs e12 (postcard assertion), round3 chair recline vs e11. Resolve by taking e05 as is and dropping e04's postcard/left-wall changes.
