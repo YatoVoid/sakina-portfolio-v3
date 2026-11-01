@@ -21,6 +21,9 @@ DESK_X0, DESK_X1_OLD, DESK_Y0, DESK_Y1 = -1.25, 1.65, 1.30, 2.00
 TOP_PAD_X, TOP_PAD_FRONT, TOP_PAD_BACK = 0.05, 0.040, 0.065      # keep-out at the left end / front edge / back (cables run at y>1.95)
 TALL_Y_MIN = 1.62                 # tall things stand in the back half
 RES = 0.005
+REPACK = False                    # user decision: item positions stay exactly as approved, ONLY the desk length shrinks
+END_MARGIN = 0.06                 # desk top extends this far past the right-most item
+REPACK = False                    # user decision 2026-11-01: items keep their exact places; only the desk length is trimmed
 
 # group name -> (name tokens, may be rotated by 90 degrees, tall)
 GROUPS = {
@@ -242,6 +245,14 @@ def validate(rects, x1_new):
 
 def apply():
     found = collect()
+    if not REPACK:
+        right = -9.0
+        for k in list(GROUPS) + list(FIXED):
+            lo, hi = footprint(k, found[k]); right = max(right, hi[0])
+        x1_new = math.ceil((right + END_MARGIN) / 0.01 - 1e-9) * 0.01
+        print(f"e07: items keep their positions; right-most item edge x={right:.3f} -> desk right end {x1_new:.2f} (length {x1_new - DESK_X0:.2f} m, was 2.90)", flush=True)
+        shorten_desk(x1_new)
+        return
     for k, v in found.items():
         print(f"e07: group {k:9s} {len(v):3d} objects", flush=True)
     fp = {k: footprint(k, v) for k, v in found.items() if v}
@@ -258,15 +269,17 @@ def apply():
         print(f"e07:   {key:9s} {hi[0]-lo[0]:.3f} x {hi[1]-lo[1]:.3f}  at x {lo[0]:.3f}..{hi[0]:.3f} y {lo[1]:.3f}..{hi[1]:.3f}", flush=True)
 
     print('e07: fixed rects', [tuple(round(v, 3) for v in r) for r in fixed_rects], 'air', [tuple(round(v, 3) for v in r) for r in air_rects], flush=True)
-    best = None
-    for allow_rot in (False, True):
-        for seed in range(0, 500 if not allow_rot else 1600):
-            res = pack(items, fixed_rects, air_rects, seed, allow_rot)
-            if res and (best is None or res[0] < best[0] - 1e-9):
-                best = (res[0], res[1], allow_rot, seed)
-        if best:
-            print(f"e07: after rotation={allow_rot}: best right edge {best[0]:.3f} (seed {best[3]})", flush=True)
-    R, placed, allow_rot, seed = best
+    if REPACK:
+        best = None
+        for allow_rot in (False, True):
+            for seed in range(0, 500 if not allow_rot else 1600):
+                res = pack(items, fixed_rects, air_rects, seed, allow_rot)
+                if res and (best is None or res[0] < best[0] - 1e-9):
+                    best = (res[0], res[1], allow_rot, seed)
+        R, placed, allow_rot, seed = best
+    else:
+        placed = {}
+        R = max(hi[0] for k, (lo, hi) in fp.items() if k != "Leaf")
     x1_new = math.ceil((R + 0.06) / 0.01 - 1e-9) * 0.01
     print(f"e07: layout right edge {R:.3f} -> new desk right end {x1_new:.2f} (length {x1_new - DESK_X0:.2f} m, was 2.90)", flush=True)
 
