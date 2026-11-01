@@ -14,6 +14,8 @@ EDITS = [   # PROVISIONAL final order (integration/v3-final); each is pipeline/e
     "e12_gallery_wall", "e13_wall_colour", "e14_window_reveal",
     "e02_club_chair", "e03_antique_bookcase", "e04_radiator", "e05_remove_under_desk_wires",       # bookcase branch (approved 2026-11-01)
     "e09_floor", "e10_plant_alocasia", "e11_tapes_vhs", "e12_floppy",                              # round3 items approved 2026-11-01
+    "e08b_curtains_rod",                                                                           # round3 curtains (after e14 window)
+    "e15_retro_pc", "e16_room_refresh_props",                                                      # retro PC; lamp + remote + calculator
 ]
 
 
