@@ -37,4 +37,4 @@ re-bake the `Station` group only, new GLB filename, `/preview/` first. Coordinat
 The monitor screen image is a placeholder (green code). The site's IBM panel/`ibm` camera view uses the `Room_Station` bounding box, which changes slightly.
 
 ## Round 3 addition: monitor power button
-The two small bars under the bezel are replaced by a round power button (`PC_MonPwrRing` dark recess, `PC_MonPwrButton` cream cap) and a green LED (`PC_MonPwrLED`, emissive material `PC_LED_Green`), bottom right of the bezel. They rotate with the monitor swivel. Bake group: `pc_monitor` (rebuild with `python3 components/retro_pc/build_retro_pc.py`; not baked yet).
+The two small bars under the bezel are replaced by a SQUARE RED power button, 4 cm above the bezel bottom (`PC_MonPwrRing` dark square recess, `PC_MonPwrButton` red cap, material `PC_RedButton`) and a green LED (`PC_MonPwrLED`, emissive material `PC_LED_Green`), bottom right of the bezel. They rotate with the monitor swivel. Bake group: `pc_monitor` (rebuild with `python3 components/retro_pc/build_retro_pc.py`; not baked yet).

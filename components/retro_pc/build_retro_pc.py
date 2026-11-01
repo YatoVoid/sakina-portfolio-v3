@@ -235,15 +235,16 @@ def monitor_parts(col, mats, screen_p):
     # badge under the bezel, left; power LED + button right
     ink = flat_mat("PC_Ink", "#4d4638", 0.7)
     t = text_obj("PC_Badge", "SAKINA", 0.0085, (-0.120, MY0 - 0.0022, zb + 0.0115), col, ink, 0.0004)
-    # power button, bottom right of the bezel: round cream cap in a dark recess, small green LED to its left
-    PWX, PWZ = 0.150, zb + 0.0115
+    # power button, bottom right of the bezel, 4 cm above the bottom edge: square red cap in a dark square recess, green LED to its left
+    PWX, PWZ = 0.150, zb + 0.0115 + 0.040
     def cylY(r, depth, x, y, z, seg=40):                      # cylinder along the Y axis, centred at (x, y, z)
         c = bmesh.new()
         bmesh.ops.create_cone(c, cap_ends=True, segments=seg, radius1=r, radius2=r, depth=depth)
         tm(c, lambda q: Vector((x + q.x, y + q.z, z + q.y)))
         return c
-    ring = join("PC_MonPwrRing", [cylY(0.0105, 0.0030, PWX, MY0 - 0.0005, PWZ)], col, m_dark, 40)
-    cap = join("PC_MonPwrButton", [cylY(0.0078, 0.0060, PWX, MY0 - 0.0030, PWZ)], col, m_beige, 40)
+    ring = join("PC_MonPwrRing", [box((0.025, 0.003, 0.025), (PWX, MY0 - 0.0005, PWZ), 0.0015, 2)], col, m_dark, 40)
+    cap = join("PC_MonPwrButton", [box((0.017, 0.006, 0.017), (PWX, MY0 - 0.0030, PWZ), 0.0020, 3)], col,
+               flat_mat("PC_RedButton", "#a8231c", 0.35, 0.0, 0.3), 40)
     led = join("PC_MonPwrLED", [cylY(0.0021, 0.0020, PWX - 0.0225, MY0 - 0.0011, PWZ, 16)], col, M.emissive("PC_LED_Green", "#5dff7a", 4.0), 40)
     pw = ring
     pw_extra = [cap, led]
