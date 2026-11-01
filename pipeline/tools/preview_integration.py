@@ -40,6 +40,8 @@ VIEWS = {
     "win_top":   (b(0.55, 2.35, -0.60), b(-0.10, 1.10, -2.45), 58),   # high angle onto the desk + window (like the reference shot)
     "win_side":  (b(-1.25, 1.55, -1.80), b(-0.10, 1.60, -2.60), 50),   # from the left, shows reveal depth and the two sashes
     "win_front": (b(-0.10, 1.60, -1.40), b(-0.10, 1.60, -2.60), 48),   # straight on
+    "clocks":    (b(-1.80, 1.70, -1.00), b(-1.80, 2.00, -2.50), 52),   # back wall left of the window: clocks + degree frames
+    "back_wall": (b(-0.70, 1.60, -0.20), b(-1.80, 1.90, -2.50), 62),   # wider, same wall with the desk end and curtain
     "chair_side": (b(0.45, 1.20, -0.25), b(-0.95, 0.50, -0.90), 50),  # chair seen with the desk edge
 }
 cam_data = D.cameras.new("PreviewCam"); cam = D.objects.new("PreviewCam", cam_data)
