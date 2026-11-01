@@ -68,3 +68,8 @@ Newest last. Each entry: decision — reason.
   right end. *Inferred:* size, pitch, paint colour. Not visible from the site's HOME camera (the desk top hides it); it shows
   from low orbit angles. The desk's existing hanging cables fall in front of it (pre-existing, unchanged).
   Preview only: no bake, no GLB, no publish (Sakina: "Don't bake").
+- **2026-11-01 · Edit #5: wires removed from underneath the desk only** (Sakina: "remove the wires, they are overlapping, from
+  underneath the desk only"). `pipeline/edits/e05_remove_under_desk_wires.py` cuts the four hanging cables (Cable_Left,
+  Cable_Power, Wire_CRT_Power, Wire_VCR_Power) at desk-top height (world z 0.70); the parts on the desk / behind the equipment,
+  all other cables, the phone cord and the wall sockets are untouched. They live in the Monitor and Keepsakes bake groups, so a
+  later bake must include those groups. Preview only; no bake, no publish.

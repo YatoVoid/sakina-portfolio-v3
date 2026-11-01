@@ -12,7 +12,7 @@ import bpy, os, sys, runpy, importlib.util
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WORK = os.environ.setdefault("V3_WORK", "/tmp/v3work")
 os.makedirs(WORK + "/source", exist_ok=True)
-EDITS = ["e01_tapes_vcr", "e02_club_chair", "e03_antique_bookcase", "e04_radiator"]   # applied in this order; each is pipeline/edits/<name>.py with apply()
+EDITS = ["e01_tapes_vcr", "e02_club_chair", "e03_antique_bookcase", "e04_radiator", "e05_remove_under_desk_wires"]   # applied in this order; each is pipeline/edits/<name>.py with apply()
 
 
 def build(upto=None, save=True, only=None):

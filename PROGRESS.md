@@ -31,3 +31,4 @@ Known pre-existing bug: 6 of 13 tapes open the project of the tape above them (m
   no /preview/ publish, main unchanged. When merging `edit3-bookcase` (which contains e02 + e03), treat the merge as source
   only; the live site stays on `144419e` until a bake is separately requested.
 - 2026-11-01 — Edit #4 (radiator under the desk) built and previewed (`under_desk`, `radiator_close` views). Not baked, not published.
+- 2026-11-01 — Edit #5 (under-desk wires removed) built and previewed. Not baked, not published.
