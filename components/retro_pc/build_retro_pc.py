@@ -235,9 +235,18 @@ def monitor_parts(col, mats, screen_p):
     # badge under the bezel, left; power LED + button right
     ink = flat_mat("PC_Ink", "#4d4638", 0.7)
     t = text_obj("PC_Badge", "SAKINA", 0.0085, (-0.120, MY0 - 0.0022, zb + 0.0115), col, ink, 0.0004)
-    pw = join("PC_MonButtons", [box((0.014, 0.004, 0.006), (0.150, MY0 - 0.002, zb + 0.0115), 0.0012, 2),
-                                box((0.010, 0.004, 0.006), (0.132, MY0 - 0.002, zb + 0.0115), 0.0012, 2)],
-              col, m_dark, 40)
+    # power button, bottom right of the bezel: round cream cap in a dark recess, small green LED to its left
+    PWX, PWZ = 0.150, zb + 0.0115
+    def cylY(r, depth, x, y, z, seg=40):                      # cylinder along the Y axis, centred at (x, y, z)
+        c = bmesh.new()
+        bmesh.ops.create_cone(c, cap_ends=True, segments=seg, radius1=r, radius2=r, depth=depth)
+        tm(c, lambda q: Vector((x + q.x, y + q.z, z + q.y)))
+        return c
+    ring = join("PC_MonPwrRing", [cylY(0.0105, 0.0030, PWX, MY0 - 0.0005, PWZ)], col, m_dark, 40)
+    cap = join("PC_MonPwrButton", [cylY(0.0078, 0.0060, PWX, MY0 - 0.0030, PWZ)], col, m_beige, 40)
+    led = join("PC_MonPwrLED", [cylY(0.0021, 0.0020, PWX - 0.0225, MY0 - 0.0011, PWZ, 16)], col, M.emissive("PC_LED_Green", "#5dff7a", 4.0), 40)
+    pw = ring
+    pw_extra = [cap, led]
     # stand: fixed foot plate + pivot + swivel plate (rotates with the monitor)
     foot = join("PC_StandFoot", [box((0.300, 0.230, 0.007), (0, STAND_Y, CH + 0.004 + 0.0035), 0.0035, 3)], col, m_beige, 40)
     cyl = bmesh.new()
@@ -245,7 +254,7 @@ def monitor_parts(col, mats, screen_p):
     tm(cyl, lambda p: Vector((p.x, STAND_Y + p.y, CH + 0.011 + 0.007 + p.z)))
     pivot = join("PC_StandPivot", [cyl], col, m_beige, 50)
     swivel = join("PC_StandSwivel", [box((0.245, 0.200, 0.010), (0, STAND_Y, MZ0 - 0.005), 0.004, 3)], col, m_beige, 40)
-    return bez, scr, [t, pw, swivel], foot, pivot
+    return bez, scr, [t, pw, cap, led, swivel], foot, pivot
 
 
 # ------------------------------------------------------------------ keyboard + mouse

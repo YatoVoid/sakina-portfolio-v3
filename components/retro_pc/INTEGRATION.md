@@ -35,3 +35,6 @@ Assumed here: toward the viewer's left when facing the wall = room -Y. If she me
 New edit script `pipeline/edits/eNN_station_pc.py` (delete the objects above, append the collection, apply transform, shift `Station_Root`),
 re-bake the `Station` group only, new GLB filename, `/preview/` first. Coordinate with `round3` (it must be merged first).
 The monitor screen image is a placeholder (green code). The site's IBM panel/`ibm` camera view uses the `Room_Station` bounding box, which changes slightly.
+
+## Round 3 addition: monitor power button
+The two small bars under the bezel are replaced by a round power button (`PC_MonPwrRing` dark recess, `PC_MonPwrButton` cream cap) and a green LED (`PC_MonPwrLED`, emissive material `PC_LED_Green`), bottom right of the bezel. They rotate with the monitor swivel. Bake group: `pc_monitor` (rebuild with `python3 components/retro_pc/build_retro_pc.py`; not baked yet).

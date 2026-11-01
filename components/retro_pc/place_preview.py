@@ -116,6 +116,7 @@ VIEWS = {   # pos, target, vertical fov  (Blender coords)
     "ibm":  ((-1.55, 1.55, 0.98), (-2.80, 1.25, 0.80), 46),      # like the site's IBM view (from the room side)
     "room": ((-0.40, 0.10, 1.45), (-2.85, 1.30, 0.70), 58),      # wider, shows the cabinet against the wall
     "top":  ((-2.50, 1.25, 3.2), (-2.50, 1.25, 0.0), 40),
+    "pwr": ((-2.15, 1.45, 0.80), (-2.70, 1.37, 0.71), 30),
     "close": ((-1.95, 1.22, 0.93), (-2.72, 1.24, 0.88), 40),     # like the reference screenshot: monitor + photo on its right side
 }
 for v in views:
