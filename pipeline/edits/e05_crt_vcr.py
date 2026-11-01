@@ -57,6 +57,10 @@ def _bezel(coll, plastic):
          (0, 12, 13, 1), (1, 13, 14, 2), (2, 14, 15, 3), (3, 15, 12, 0),  # outer sides
          (12, 15, 14, 13)]                                              # back
     o = _mesh("CRT_Bezel", v, f, coll, plastic)
+    # funnel faces get a near-black matte material: the picture lit them up like a white frame (web test)
+    o.data.materials.append(simple_mat("CRTFunnel", "0a0a0a", 0.7))
+    for p in o.data.polygons[4:8]:
+        p.material_index = 1
     bm = bmesh.new(); bm.from_mesh(o.data); bmesh.ops.recalc_face_normals(bm, faces=bm.faces); bm.to_mesh(o.data); bm.free()
     _bevel(o, 0.007, 3)
     return o
@@ -126,6 +130,21 @@ def _screen_colours():
     led.inputs["Strength"].default_value = 8.0                       # was 20: glowing dots, not lasers
 
 
+def _crt_plastic():
+    """Charcoal TV plastic: darker than the shared BlackPlastic (which read mid-grey with heavy speckle on the bezel),
+    fine stipple texture, satin gloss."""
+    m = bpy.data.materials.get("CRTPlastic")
+    if m:
+        return m
+    m = simple_mat("CRTPlastic", "121211", 0.58)   # darker + rougher: baked sheen made it read grey
+    nt = m.node_tree; bs = nt.nodes["Principled BSDF"]
+    tc = nt.nodes.new("ShaderNodeTexCoord"); nz = nt.nodes.new("ShaderNodeTexNoise"); nz.inputs["Scale"].default_value = 1500.0
+    bp = nt.nodes.new("ShaderNodeBump"); bp.inputs["Strength"].default_value = 0.04; bp.inputs["Distance"].default_value = 0.0003
+    nt.links.new(tc.outputs["Object"], nz.inputs["Vector"]); nt.links.new(nz.outputs["Fac"], bp.inputs["Height"])
+    nt.links.new(bp.outputs["Normal"], bs.inputs["Normal"])
+    return m
+
+
 def _crt():
     D = bpy.data
     coll = D.collections["Monitor"]
@@ -133,7 +152,7 @@ def _crt():
         if o.name in ("CRT_Front", "CRT_Back", "CRT_Glass", "CRT_Panel", "CRT_PanelRim") or \
                 o.name.startswith(("CRT_Lip_", "CRT_Screw_", "CRT_TopVent_")):
             D.objects.remove(o, do_unlink=True)
-    plastic = D.materials["BlackPlastic"]
+    plastic = _crt_plastic()
     vent = simple_mat("VentBlack", "060606", 0.9)
     _bezel(coll, plastic)
     _housing(coll, plastic, vent)
