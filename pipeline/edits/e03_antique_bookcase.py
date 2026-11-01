@@ -23,13 +23,14 @@ E2 = importlib.util.module_from_spec(_s); _s.loader.exec_module(E2)
 
 # ------------------------------------------------------------------ placement (world, metres; back wall y=2.5, right wall x=3.58)
 CASE_X, CASE_Y = 2.35, 2.475           # centre of the bookcase back; back sits on the back-wall baseboard
-TABLE_DX = 0.52                         # side table slides to the corner (x 3.20 .. 3.54)
+TABLE_DX = 0.52                         # side table slides to the right wall (x 3.20 .. 3.54)
+ALONG_WALL = -0.50                      # chair + table slide this far along the right wall, away from the bookcase (-y = toward the room front)
 CHAIR_TURN_DEG = 18.0                   # chair front turned toward the desk (toward the back wall / image-left)
 CHAIR_WALL_X = 3.565                    # chair's rearmost corner x
-CHAIR_YMAX = 1.90                       # chair front-left corner stays 4.5 cm clear of the bookcase plinth (front y 1.945)
+CHAIR_YMAX = 1.90 + ALONG_WALL                       # chair front-left corner stays 4.5 cm clear of the bookcase plinth (front y 1.945)
 LAMP_GAP = 0.04                         # lamp base edge to chair front
 LAMP_LATERAL = -0.32                    # lamp offset toward the room-front side of the chair (negative = away from the table)
-CARTON_SHIFT = (-0.35, -1.45)           # floor carton moves out of the bookcase footprint
+CARTON_SHIFT = (-0.50, -1.45)           # floor carton moves out of the bookcase footprint
 
 # ------------------------------------------------------------------ bookcase dimensions (local)
 CORN_W, CORN_D = 1.50, 0.56
@@ -436,7 +437,7 @@ def apply():
 
     # 3. side table (+ its books) -> back-right corner
     table = [o for o in D.objects if o.name.startswith(("SideTable", "TableBook"))]
-    move_group(table, Matrix.Translation((TABLE_DX, 0, 0)))
+    move_group(table, Matrix.Translation((TABLE_DX, ALONG_WALL, 0)))
 
     # 4. club chair: turned toward the desk, back corner on the right wall, in front of the bookcase base
     root = D.objects["Chair_Root"]

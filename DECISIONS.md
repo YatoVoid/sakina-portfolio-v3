@@ -52,3 +52,6 @@ Newest last. Each entry: decision — reason.
   bookcase footprint to the floor in front of it.
   *Interpretation to confirm with Sakina:* "left" is read as seen from the room (table on the chair's image-left, chair turned
   toward image-left); "lamp in front of the chair, 4 cm" is read as base edge 4 cm from the chair's front plane.
+- **2026-11-01 · Edit #3 follow-up: chair, side table and lamp slid 0.50 m along the right wall away from the bookcase**
+  (Sakina: "more to the right, away from the book shelf"). Chair centre now y ~0.76, table y 1.61-1.95; table still on the
+  chair's image-left; the carton moved 15 cm further left to stay clear of the lamp base. Parameter `ALONG_WALL` in e03.
