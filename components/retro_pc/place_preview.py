@@ -71,7 +71,7 @@ if use_new:
     if pol:
         bpy.context.view_layer.update()
         m = pol.matrix_world.copy()                    # keep its orientation (faces +X), only move it
-        m.translation = Vector((-2.682, 1.394, 0.870))  # world: on top of the monitor, right end
+        m.translation = Vector((-2.682, 1.394 + float(os.environ.get("PHOTO_DY", "-0.04")), 0.870))  # world: on top of the monitor, right end
         pol.matrix_world = m
         pol.rotation_euler = (0, 0, 0)                 # upright, no lean: faces straight into the room
         bpy.context.view_layer.update()
