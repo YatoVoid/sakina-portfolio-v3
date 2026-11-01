@@ -38,7 +38,7 @@ def _speck(g, pos, scale, rmin, rmax, dens, stretch=(1, 1, 1), seed=0.0):
     sep = g.N.new("ShaderNodeSeparateColor")
     g.L.new(vor.outputs["Color"], sep.inputs[0])
     rad = g.math("MULTIPLY_ADD", g.math("POWER", sep.outputs["Red"], 2.5), rmax - rmin, rmin)
-    jitter = g.math("MULTIPLY", g.math("SUBTRACT", g.noise(pos, 1800.0, 1.0), 0.5), 0.07)
+    jitter = g.math("MULTIPLY", g.math("SUBTRACT", g.noise(pos, 1800.0, 1.0), 0.5), 0.035)
     d = g.math("ADD", vor.outputs["Distance"], jitter)
     mask = g.ramp(d, g.math("ADD", rad, 0.025), g.math("SUBTRACT", rad, 0.025))
     return g.math("MULTIPLY", mask, g.math("LESS_THAN", sep.outputs["Green"], dens))
@@ -48,9 +48,9 @@ def speckled_glaze(name, coffee_z, axis=(0.0, 0.0), density=1.0):
     m, g, b, pos = _base(name)
     x, y, z = g.xyz(pos)
     # --- speckles
-    a = _speck(g, pos, 330.0, 0.16, 0.30, 1.0 * density, stretch=(1, 1, 0.8), seed=3.1)   # fine, dense
-    s = _speck(g, pos, 170.0, 0.14, 0.26, 1.0 * density, stretch=(1, 1, 0.6), seed=7.7)   # medium, streaked
-    r = _speck(g, pos, 95.0, 0.12, 0.22, 1.0 * density, stretch=(1.2, 1, 0.5), seed=11.3)  # bold, streaked
+    a = _speck(g, pos, 330.0, 0.13, 0.23, 1.0 * density, stretch=(1, 1, 0.85), seed=3.1)   # fine, dense
+    s = _speck(g, pos, 170.0, 0.09, 0.17, 0.8 * density, stretch=(1, 1, 0.7), seed=7.7)    # small, slightly streaked
+    r = _speck(g, pos, 95.0, 0.08, 0.14, 0.6 * density, stretch=(1.1, 1, 0.55), seed=11.3)  # few larger, streaked
     sp = g.math("MAXIMUM", g.math("MAXIMUM", a, s), r)
 
     # --- glaze tone: warm white, soft low-frequency drift, slightly creamier where the glaze pools
@@ -126,8 +126,8 @@ def wood_slice(name, pith=(-0.007, 0.005)):
     wob = g.math("MULTIPLY", g.math("SUBTRACT", g.noise(pos, 38.0, 3.0), 0.5), 0.006)
     ph = g.math("FRACT", g.math("MULTIPLY", g.math("ADD", dist, wob), 430.0))      # ~24 rings over 55 mm
     late = g.ramp(ph, 0.70, 0.99)
-    base = g.mix(g.ramp(g.noise(pos, 20.0, 3.0), 0.3, 0.7), hex_lin("#c9a672"), hex_lin("#b48a58"))
-    col = g.mix(g.math("MULTIPLY", late, 0.30), base, hex_lin("#8f6a40"))
+    base = g.mix(g.ramp(g.noise(pos, 20.0, 3.0), 0.3, 0.7), hex_lin("#b08a5a"), hex_lin("#9c7447"))
+    col = g.mix(g.math("MULTIPLY", late, 0.35), base, hex_lin("#7a5430"))
     fibre = g.noise(g.mapping(pos, (1400, 1400, 1400)), 1.0, 3.0)
     col = g.mix(g.math("MULTIPLY", g.ramp(fibre, 0.55, 0.8), 0.35), col, hex_lin("#bda070"))
     # one radial drying crack from the pith
