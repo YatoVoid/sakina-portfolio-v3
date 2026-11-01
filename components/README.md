@@ -11,6 +11,7 @@ Nothing here is loaded by the website; components enter the room only through `p
 | `desk` | `components/detailed-assets` | **Approved** (Sakina, 2026-10-31) — integrated by `e08_desk_detail.py` |
 | `window_view` | `components/detail-assets` | **Approved** (Sakina, 2026-10-31) — integrated by `e09_window_view.py` |
 | `crt` | `components/detailed-assets` | **Not used.** Sakina chose the `round3` CRT (`e05_crt_vcr.py`); this WIP stays unintegrated |
+| `room_refresh` | `components/detail-assets` | **Partly approved** (Sakina, 2026-11-01): lamp, calculator, remote only. Window, curtains, poster and notebook are NOT used (e14 window and round3 curtains win) |
 
 ## Ownership boundary (original parallel work)
 
