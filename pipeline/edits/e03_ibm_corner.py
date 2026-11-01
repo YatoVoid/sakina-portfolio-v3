@@ -121,7 +121,9 @@ def _rebuild():
     red = _mat("IBMRed", _srgb("c2301f"), 0.4)
     badge = _mat("IBMBadge", _srgb("2b3a66"), 0.35)
     led = _mat("IBMLed", _srgb("6be36b"), 0.3, emit=_srgb("6be36b"), strength=2.0)
-    glass = screen_mat or _mat("IBMScreen", _srgb("121614"), 0.15)
+    # Dark green-black CRT glass with a faint phosphor glow (the old screen material needs UVs this glass does not have).
+    glass = _mat("IBMScreen", (0.006, 0.014, 0.010), 0.30, emit=(0.010, 0.045, 0.022), strength=1.0)
+    glass.node_tree.nodes["Principled BSDF"].inputs["Specular IOR Level"].default_value = 0.25
     B = Builder(coll, root)
 
     # --- system unit -------------------------------------------------------------------------------------------
@@ -155,7 +157,8 @@ def _rebuild():
     B.box("IBM_Bezel_B", (bx0, sy - hw, zc - hh), (bx1, sy + hw, zc - sh), beige, bevel=0.006)
     B.box("IBM_Bezel_L", (bx0, sy - hw, zc - sh), (bx1, sy - sw, zc + sh), beige, bevel=0.004)
     B.box("IBM_Bezel_R", (bx0, sy + sw, zc - sh), (bx1, sy + hw, zc + sh), beige, bevel=0.004)
-    B.box("IBM_Bezel_Lip", (bx0 - 0.004, sy - sw - 0.006, zc - sh - 0.006), (bx1 - 0.008, sy + sw + 0.006, zc + sh + 0.006), beige2)
+    # inner lip sits BEHIND the glass (a solid lip in front hid the screen in the first render)
+    B.box("IBM_Bezel_Lip", (bx0 - 0.004, sy - sw - 0.006, zc - sh - 0.006), (bx1 - 0.0125, sy + sw + 0.006, zc + sh + 0.006), beige2)
     # slightly curved CRT glass, recessed 1 cm
     verts, faces, nu, nv = [], [], 16, 12
     for i in range(nu + 1):
@@ -250,7 +253,7 @@ def _rebuild():
 
     B.finish()
     # screen light: centred on the new glass, just in front of it
-    lt = D.objects["L5_IBM_Screen"]; lt.location = (bx1 + 0.08, sy, zc)
+    lt = D.objects["L5_IBM_Screen"]; lt.location = (bx1 + 0.10, sy, zc - 0.12)   # below centre: no hotspot reflected in the glass
     print("IBM rebuilt: objects", len(B.objs), "keys", len(light) + len(dark))
 
 

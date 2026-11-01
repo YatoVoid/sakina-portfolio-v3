@@ -18,9 +18,9 @@ from mathutils import Vector, Matrix
 
 SHIFT_X = 0.10
 SEED = 23
-N_CROWN = 72
-VINES = [  # (azimuth deg: 0 = +x/lamp, 90 = back, 180 = left, 270 = front), length m, leaves
-    (125, 0.34, 6), (160, 0.48, 8), (190, 0.42, 7), (215, 0.55, 9), (240, 0.30, 5), (100, 0.26, 4), (175, 0.24, 4)]
+N_CROWN = 120
+VINES = [  # (azimuth deg: 0 = +x/lamp, 90 = back, 180 = left, 270 = front), length m, leaves (~every 3.5 cm)
+    (125, 0.34, 10), (160, 0.48, 14), (190, 0.42, 12), (215, 0.55, 15), (240, 0.30, 9), (100, 0.26, 7), (175, 0.24, 7)]
 # Keep-out boxes (world, Blender coords): lamp, pencil cup, calculator, CD player. (xmin,ymin,zmin, xmax,ymax,zmax)
 KEEP_OUT = [(-0.635, 1.55, 0.70, -0.30, 1.85, 1.30), (-0.86, 1.40, 0.70, -0.74, 1.52, 0.95),
             (-0.75, 1.51, 0.70, -0.61, 1.67, 0.77), (-1.10, 1.30, 0.70, -0.91, 1.50, 0.78)]
@@ -104,11 +104,11 @@ def _pothos_material():
     tone = N.new("ShaderNodeTexNoise"); tone.inputs["Scale"].default_value = 3.0
     Lk.new(comb.outputs[0], tone.inputs["Vector"])
     green = N.new("ShaderNodeMix"); green.data_type = 'RGBA'
-    green.inputs[6].default_value = (0.055, 0.20, 0.025, 1)      # deep green
-    green.inputs[7].default_value = (0.16, 0.42, 0.05, 1)        # lime green
+    green.inputs[6].default_value = (0.09, 0.30, 0.03, 1)        # green
+    green.inputs[7].default_value = (0.25, 0.55, 0.06, 1)        # lime green
     Lk.new(tone.outputs["Fac"], green.inputs["Factor"])
     vari = N.new("ShaderNodeMix"); vari.data_type = 'RGBA'
-    vari.inputs[7].default_value = (0.62, 0.66, 0.20, 1)         # yellow-cream variegation
+    vari.inputs[7].default_value = (0.75, 0.75, 0.25, 1)         # yellow-cream variegation
     Lk.new(green.outputs[2], vari.inputs[6]); Lk.new(ramp.outputs["Color"], vari.inputs["Factor"])
     # lighter midrib
     mid = N.new("ShaderNodeMath"); mid.operation = 'SUBTRACT'; mid.inputs[1].default_value = 0.5
@@ -201,13 +201,13 @@ def apply():
         tries += 1
         az = rng.uniform(-math.pi, math.pi); out = Vector((math.cos(az), math.sin(az), 0))
         u = rng.random()
-        reach = rim_r * (0.15 + 0.95 * u ** 0.6)
-        height = 0.03 + 0.17 * (1 - u ** 1.3) + rng.uniform(-0.02, 0.02)
+        reach = rim_r * (0.10 + 1.0 * u ** 0.7)
+        height = 0.02 + 0.12 * (1 - u ** 1.5) + rng.uniform(-0.015, 0.015)
         attach = Vector((cx, cy, top)) + out * reach + Vector((0, 0, height))
         pitch = math.radians(rng.uniform(-15, 20) - 40 * u)          # outer leaves tip outward and down
         tip = Vector((out.x * math.cos(pitch), out.y * math.cos(pitch), math.sin(pitch)))
-        base = Vector((cx, cy, top)) + out * reach * 0.5
-        if add_leaf(attach, tip, rng.uniform(0.055, 0.095), math.radians(rng.uniform(-25, 25)), base):
+        base = attach - tip * 0.035 - Vector((0, 0, 0.02))           # short petiole, hidden inside the mound
+        if add_leaf(attach, tip, rng.uniform(0.045, 0.075), math.radians(rng.uniform(-25, 25)), base):
             placed += 1
 
     # Trailing vines: over the rim, down the pot, onto the desk.
@@ -227,7 +227,7 @@ def apply():
             bow = 0.035 * math.sin(math.pi * t) + 0.02 * t
             path.append(Vector((cx, cy, max(z, desk + 0.004))) + out * (rim_r + 0.015 + bow)
                         + side * 0.02 * math.sin(3 * t + i))
-        rest = max(0.0, length - hang)
+        rest = min(0.10, max(0.0, length - hang))                    # short run on the desk (bare stems looked wrong)
         for s in range(1, 4):
             path.append(path[-1] + out * rest / 3 + side * rng.uniform(-0.015, 0.015) + Vector((0, 0, 0)))
             path[-1].z = desk + 0.004
@@ -237,10 +237,12 @@ def apply():
         # leaves along the vine, alternating sides, getting smaller toward the tip
         seg = [(path[k], path[k + 1]) for k in range(1, len(path) - 1)]
         for j in range(n):
-            a, b = seg[min(len(seg) - 1, int((j + 0.6) / n * len(seg)))]
+            t = (j + 0.5) / n                                         # spread leaves over the whole vine, tip included
+            a, b = seg[min(len(seg) - 1, int(t * len(seg)))]
+            a = a.lerp(b, (t * len(seg)) % 1.0)
             along = (b - a).normalized()
             sgn = 1 if j % 2 else -1
             tipdir = (out * 0.6 + side * sgn * 0.7 + Vector((0, 0, -0.15 if a.z > desk + 0.03 else 0.05))).normalized()
             attach = a + side * sgn * 0.008 + out * 0.012
-            add_leaf(attach, tipdir, rng.uniform(0.05, 0.075) * (1 - 0.3 * j / n), math.radians(rng.uniform(-30, 30)))
+            add_leaf(attach, tipdir, rng.uniform(0.045, 0.065) * (1 - 0.3 * j / n), math.radians(rng.uniform(-30, 30)))
     print("PLANT pothos leaves", n_leaf)
