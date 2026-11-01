@@ -60,3 +60,11 @@ Newest last. Each entry: decision — reason.
   right wall; side table on the chair's image-left at x 3.20-3.54, y 1.61-1.95; floor lamp 4 cm in front of the chair on its
   room-front side; carton at x 0.92-1.95, y 0.25-1.08. **This approval covers positions only. It is NOT approval to re-bake,
   build a new room GLB, publish to /preview/ or change the main page.** Sakina said explicitly: "Don't bake."
+- **2026-11-01 · Edit #4: cast-iron column radiator under the centre desk** (Sakina's Rieseberg-style reference). Script
+  `pipeline/edits/e04_radiator.py` (independent of e02/e03; parts go to the Desk collection = Desk bake group).
+  1.10 m x 0.53 m x 0.12 m, 24 rounded sections in two rows, top cap, bottom rail, 4 feet, two cream pipes from the right end
+  into the floor with floor rings, brass valve + bleed screw; dark warm-bronze satin paint. Back against the back wall
+  (y 2.48), centred in the open wall gap between the curtains (x -0.66 .. 0.48). *Certain:* sections, caps, pipes at the
+  right end. *Inferred:* size, pitch, paint colour. Not visible from the site's HOME camera (the desk top hides it); it shows
+  from low orbit angles. The desk's existing hanging cables fall in front of it (pre-existing, unchanged).
+  Preview only: no bake, no GLB, no publish (Sakina: "Don't bake").
