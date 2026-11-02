@@ -102,6 +102,9 @@ const roomP=new Promise((res,rej)=>loader.load("sakina-room-agx.glb",g=>{
            for(int i=0;i<16;i++){if(i<uBn&&all(greaterThan(vWP,uBmin[i]-vec3(.004)))&&all(lessThan(vWP,uBmax[i]+vec3(.004)))){inTape=1.;tcol=uBcol[i];}}
            float tl=dot(totalEmissiveRadiance,vec3(.2126,.7152,.0722));
            float darkW=(1.0-smoothstep(.05,.30,tl))*inTape;
+           vec2 ts=1.0/vec2(textureSize(emissiveMap,0));float nb=0.,nc=0.;
+           for(int k=0;k<12;k++){float a=float(k)*0.5236;vec2 o=vec2(cos(a),sin(a))*(k<6?2.0:4.5)*ts;vec3 q=texture2D(emissiveMap,vEmissiveMapUv+o).rgb;nb=max(nb,dot(q,vec3(.2126,.7152,.0722)));nc=max(nc,max(q.r,max(q.g,q.b))-min(q.r,min(q.g,q.b)));}
+           darkW*=(1.0-smoothstep(.22,.45,nb))*(1.0-smoothstep(.016,.028,nc));
            float dl=length(vWP-vec3(-0.4,1.06,-2.17));
            float lampL=0.20+0.95/(1.0+2.0*dl*dl);
            vec3 plastic=mix(vec3(dot(tcol,vec3(.3,.59,.11))),tcol,0.82)*lampL*(0.62+3.6*tl);
