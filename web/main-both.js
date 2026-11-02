@@ -352,24 +352,51 @@ const rainU={uTime:{value:0}};
         return vec2(md+dr*r*tf,tr);}
       float Static(vec2 uv,float t){uv*=38.;vec2 id=floor(uv);uv=fract(uv)-.5;vec3 n=N13(id.x*107.45+id.y*3543.654);vec2 p=(n.xy-.5)*.7;float d=length(uv-p);float f=Saw(.025,fract(t+n.z));return smoothstep(.3,0.,d)*fract(n.z*10.)*f;}
       void main(){
-        float t=uTime*.18;vec2 uv=(vUv-.5)*vec2(1.5,1.3)*1.7;
-        float st=Static(uv*1.0,t);vec2 dr=DropLayer(uv,t)+DropLayer(uv*1.85+7.2,t)*.8;
-        float m=clamp(st+dr.x,0.,1.);m=smoothstep(.55,.9,m)*.45;
+        float t=uTime*.2;vec2 uv=(vUv-.5)*vec2(1.5,1.3)*1.7;
+        float st=Static(uv*1.5,t);vec2 dr=DropLayer(uv*1.2,t)*.8+DropLayer(uv*2.1+7.2,t)*.6;
+        float m=clamp(st+dr.x,0.,1.);m=smoothstep(.5,.88,m)*.5;
         vec2 g=vec2(dFdx(m),dFdy(m));float hl=clamp(dot(normalize(g+1e-6),normalize(vec2(-.6,.8)))*length(g)*40.,0.,1.);
-        float body=m*.03;
+        float body=m*.045;
         float streak=0.;
         for(int k=0;k<3;k++){
-          float fk=float(k);float cols=60.+fk*38.;float sp=.9+fk*.45;
-          vec2 q=vec2(uv.x+uv.y*.12,uv.y);
-          float col=floor(q.x*cols);float rr=N(col+1.+fk*17.);float xx=fract(q.x*cols)-.5;
-          float yy=fract(q.y*(.35+fk*.1)+uTime*(sp+rr*.6)+rr*9.);
-          streak+=smoothstep(.06-fk*.012,.0,abs(xx))*smoothstep(0.,.08,yy)*smoothstep(.45,.08,yy)*step(.5-fk*.05,rr)*(.20-fk*.04);
+          float fk=float(k);float cols=48.+fk*29.;float sp=1.15+fk*.5;
+          vec2 q=vec2(uv.x+uv.y*.1+sin(uv.y*3.+fk*2.)*.01,uv.y);
+          float col=floor(q.x*cols);float rr=N(col+1.+fk*17.);float xx=fract(q.x*cols+(N(col+7.)-.5)*.5)-.5;
+          float len=.18+N(col+3.+fk)*.3;
+          float yy=fract(q.y*(.3+fk*.08)+uTime*(sp+rr*.7)+rr*9.);
+          streak+=smoothstep(.07-fk*.01,.0,abs(xx))*smoothstep(0.,.06,yy)*smoothstep(len,.02,yy)*step(.58,rr)*(.3-fk*.05);
         }
-        vec3 c=vec3(.55,.66,.9)*(body+streak)+vec3(1.,.93,.82)*hl*.22*m;
+        vec3 c=vec3(.55,.66,.9)*(body+streak)+vec3(1.,.93,.82)*hl*.3*m;
         gl_FragColor=vec4(c,1.);
       }`});
   const mesh=new THREE.Mesh(new THREE.PlaneGeometry(1.5,1.3),m);
   mesh.position.set(0.05,1.6,-2.636);mesh.renderOrder=3;scene.add(mesh);
+}
+
+// Steam over the coffee. Mug_Coffee surface: three.js x -0.236, y 0.809, z -1.883. The Blender steam curves are not exported.
+const steamU={uTime:{value:0},uPx:{value:700}};
+{
+  const N=36,pos=new Float32Array(N*3),seed=new Float32Array(N*4);
+  for(let i=0;i<N;i++){seed[i*4]=Math.random();seed[i*4+1]=Math.random();seed[i*4+2]=Math.random();seed[i*4+3]=Math.random()}
+  const g=new THREE.BufferGeometry();
+  g.setAttribute("position",new THREE.BufferAttribute(pos,3));
+  g.setAttribute("seed",new THREE.BufferAttribute(seed,4));
+  const m=new THREE.ShaderMaterial({uniforms:steamU,transparent:true,depthWrite:false,
+    vertexShader:`uniform float uTime,uPx;attribute vec4 seed;varying float vA;
+      void main(){
+        float life=3.4+seed.x*1.6;float ph=fract(uTime/life+seed.y);
+        float h=ph*0.2;
+        float sway=sin(ph*6.2831*1.3+seed.z*6.2831)*(0.006+ph*0.022);
+        float sway2=cos(ph*6.2831*0.9+seed.w*6.2831)*(0.004+ph*0.018);
+        vec3 p=vec3(-0.236+(seed.z-.5)*0.03+sway+ph*0.012,0.812+h,-1.883+(seed.w-.5)*0.03+sway2);
+        vec4 mv=viewMatrix*vec4(p,1.0);
+        gl_Position=projectionMatrix*mv;
+        gl_PointSize=uPx*(0.02+ph*0.06+seed.x*0.012)/-mv.z;
+        vA=smoothstep(0.,.14,ph)*(1.-smoothstep(.45,1.,ph))*(.5+seed.x*.5);
+      }`,
+    fragmentShader:`varying float vA;
+      void main(){float d=length(gl_PointCoord-.5)*2.;float a=smoothstep(1.,0.,d);a*=a;gl_FragColor=vec4(vec3(.95,.92,.88),a*vA*.4);}`});
+  const pts=new THREE.Points(g,m);pts.frustumCulled=false;pts.renderOrder=2;scene.add(pts);
 }
 
 // Tape logos: the baked lightmap cannot hold them (each logo quad got a ~140x10 px lightmap island), so they are drawn as
@@ -563,12 +590,24 @@ function go(name){
   else if(name==="ibm"){flyTo("ibm");openPanel("ibm")}
   else if(name==="notepad"){flyTo("notepad");openPanel("notepad")}
   else if(name==="pad")liftPad();
+  else if(name==="power")toggleTv();
   else if(name==="desk"){flyTo("desk");closePanel()}
   else if(name==="clocks"){flyTo("clocks");closePanel()}
   else{flyTo("home");closePanel()}
 }
 
-document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.view)));
+document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>{
+  if(document.documentElement.classList.contains("crt-gating"))return;
+  if(b.closest(".menu")&&b.dataset.view==="pad"&&padOpen()){dropPad(true);return}
+  go(b.dataset.view);
+}));
+$("home-link").addEventListener("click",()=>{if(!document.documentElement.classList.contains("crt-gating"))go("home")});
+const menuLinks=[...document.querySelectorAll(".menu [data-view]")];let menuCur="";
+function syncMenu(){
+  const cur=padOpen()?"pad":panelState?.kind==="ibm"?"ibm":"";
+  if(cur===menuCur)return;menuCur=cur;
+  menuLinks.forEach(b=>b.dataset.view===cur?b.setAttribute("aria-current","page"):b.removeAttribute("aria-current"));
+}
 $("panel-close").addEventListener("click",()=>go("home"));
 $("btn-credits").addEventListener("click",()=>{panelState?.kind==="credits"?closePanel():openPanel("credits")});
 addEventListener("keydown",e=>{
@@ -579,6 +618,7 @@ addEventListener("keydown",e=>{
   else if(k==="n")go("pad");
   else if(k==="z")go("desk");
   else if(k==="k")go("clocks");
+  else if(k==="p")go("power");
   else if(k==="escape"){go("home")}
 });
 
@@ -595,6 +635,51 @@ lofiBtn.addEventListener("click",async()=>{
   lofiBtn.setAttribute("aria-pressed",String(on));
 });
 
+
+function moveHint(h,ev){
+  const flip=ev.clientX>innerWidth*0.55;
+  h.style.setProperty("--tx",(flip?ev.clientX-12:ev.clientX+12)+"px");h.style.setProperty("--fx",flip?"-100%":"0%");
+  h.style.setProperty("--ty",ev.clientY+14+"px");
+}
+// Every clickable thing says what a click does, in the hint that follows the cursor.
+function tipFor3d(h){
+  switch(h.kind){
+    case"tapes":return "CLICK TO OPEN: "+projects[h.idx].title;
+    case"ibm":return "CLICK TO USE THE IBM PC";
+    case"pad":return "CLICK TO LIFT THE WORK NOTES";
+    case"power":return tv.on?"CLICK TO TURN OFF THE TV":"CLICK TO TURN ON THE TV";
+    default:return "CLICK TO OPEN THE NOTEPAD";
+  }
+}
+const VIEW_TIPS={tapes:"CLICK TO LOOK AT THE TAPES · KEY T",ibm:"CLICK TO USE THE IBM PC · KEY I",pad:"CLICK TO LIFT THE WORK NOTES · KEY N",desk:"CLICK TO ZOOM IN ON THE DESK · KEY Z",
+  clocks:"CLICK TO LOOK AT THE CLOCKS · KEY K",
+  power:()=>(tv.on?"CLICK TO TURN OFF THE TV":"CLICK TO TURN ON THE TV")+" · KEY P"};
+function tipFor(el){
+  if(el.id==="pad-scrim")return "CLICK ANYWHERE TO PUT THE PAPER BACK DOWN";
+  const b=el.closest("button,a");if(!b)return null;
+  if(b.dataset.tip)return b.dataset.tip;
+  if(b.dataset.view){const t=VIEW_TIPS[b.dataset.view];return typeof t==="function"?t():t||null}
+  switch(b.id){
+    case"pad-close":return "CLICK TO PUT THE PAPER BACK DOWN · ESC";
+    case"panel-close":return "CLICK TO CLOSE AND GO BACK TO THE DESK · ESC";
+    case"btn-credits":return "CLICK TO SEE THE CREDITS";
+    case"btn-sound":return audio.rainOn?"CLICK TO TURN THE RAIN SOUND OFF":"CLICK TO TURN THE RAIN SOUND ON";
+    case"btn-lofi":return audio.lofiOn?"CLICK TO STOP THE LO-FI MUSIC":"CLICK TO PLAY LO-FI MUSIC";
+  }
+  const t=b.textContent.trim();
+  if(t.startsWith("<"))return "CLICK FOR THE PREVIOUS TAPE";
+  if(t.startsWith("NEXT"))return "CLICK FOR THE NEXT TAPE";
+  if(b.tagName==="A")return "CLICK TO OPEN THIS LINK IN A NEW TAB";
+  return null;
+}
+document.addEventListener("pointermove",ev=>{
+  if(ev.pointerType!=="mouse"||ev.target===canvas)return;
+  const h=$("hint"),t=tipFor(ev.target);
+  moveHint(h,ev);
+  if(t){h.textContent=t;h.classList.add("show")}else h.classList.remove("show");
+});
+document.addEventListener("pointerleave",()=>$("hint").classList.remove("show"));
+
 const ray=new THREE.Raycaster();
 const ptr=new THREE.Vector2();
 let hover=null;
@@ -603,11 +688,12 @@ function pick(ev){
   ptr.set(((ev.clientX-r.left)/r.width)*2-1,-((ev.clientY-r.top)/r.height)*2+1);
   ray.setFromCamera(ptr,camera);
   const targets=["Room_Tapes","Room_Station","Room_Desk"].map(n=>meshes[n]).filter(Boolean);
-  targets.push(padMesh);
+  targets.push(padMesh,tvButton.hit);
   const hit=ray.intersectObjects(targets,false)[0];
   if(!hit)return null;
   const n=hit.object.name;
   if(n==="Pad")return {kind:"pad"};
+  if(n==="TvPower")return {kind:"power"};
   if(n==="Room_Tapes"){
     const idx=tapeAt(hit.point);
     return idx===null?null:{kind:"tapes",idx};
@@ -621,7 +707,8 @@ canvas.addEventListener("pointermove",ev=>{
   hover=pick(ev);
   canvas.classList.toggle("hot",!!hover);
   const h=$("hint");
-  if(hover){h.textContent=hover.kind==="tapes"?"TAPES":hover.kind==="ibm"?"IBM PC":hover.kind==="pad"?"WORK":"NOTEPAD";h.classList.add("show")}
+  moveHint(h,ev);
+  if(hover){h.textContent=tipFor3d(hover);h.classList.add("show")}
   else h.classList.remove("show");
 });
 let down=null;
@@ -643,7 +730,7 @@ composer.addPass(bloom);
 composer.addPass(new OutputPass());
 function resize(){
   const w=innerWidth,h=innerHeight;
-  renderer.setSize(w,h,false);composer.setSize(w,h);
+  renderer.setSize(w,h,false);composer.setSize(w,h);steamU.uPx.value=h*renderer.getPixelRatio()/(2*Math.tan(camera.fov*Math.PI/360));
   camera.aspect=w/h;
   // Portrait keeps 64 deg; landscape keeps the same desk width in frame on any screen shape
   // (38 deg at 2.2:1, ~46 deg at 16:9), clamped to 36-50 deg.
@@ -658,7 +745,7 @@ function frame(now){
   if(controls.enabled)controls.update();
   stepPad(now);
   crtGlass.uniforms.uTime.value=reduced?0:now/1000;
-  crtLive.uTime.value=reduced?0:now/1000;if(now-(crtScreen.last||0)>50){crtScreen.last=now;crtScreen.draw(reduced?0:now)}rainU.uTime.value=reduced?0:now/1000;
+  crtLive.uTime.value=reduced?0:now/1000;if(now-(crtScreen.last||0)>50){crtScreen.last=now;crtScreen.draw(reduced?0:now)}rainU.uTime.value=reduced?0:now/1000;steamU.uTime.value=reduced?3:now/1000;windU.uTime.value=reduced?0:now/1000;stepTv(now);syncMenu();if(clock.tex)drawClock(reduced?0:Math.floor((now-clock.t0)/1000));
   composer.render();
 }
 
@@ -686,8 +773,147 @@ function hideSheet(){
   console.log("pad-sheet removed triangles",JSON.stringify(removed));
 }
 
+// Curtains sway in the wind. The baked light stays fixed; only the vertices move. Curtain_L/R sit at x -1.21..-0.83 and 0.92..1.31, z -2.47..-2.33.
+const windU={uTime:{value:0}};
+function setupWind(){
+  const mesh=meshes.Room_Window,mat=mesh&&mesh.material;if(!mat)return;
+  const g=mesh.geometry,pos=g.attributes.position,a=new Float32Array(pos.count*2);let n=0;
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+    if(z<-2.49||z>-2.32)continue;
+    const left=x>-1.23&&x<-0.82,right=x>0.91&&x<1.32;if(!left&&!right)continue;
+    const h=Math.min(1,Math.max(0,(2.45-y)/(2.45-0.76)));
+    const free=left?(x+1.2)/0.37:(1.3-x)/0.37;
+    a[i*2]=Math.pow(h,1.6)*(0.4+0.6*Math.min(1,Math.max(0,free)));a[i*2+1]=left?0:2.1;n++;
+  }
+  g.setAttribute("aWind",new THREE.BufferAttribute(a,2));
+  mat.onBeforeCompile=sh=>{
+    sh.uniforms.uTime=windU.uTime;
+    sh.vertexShader="uniform float uTime;attribute vec2 aWind;\n"+sh.vertexShader.replace("#include <begin_vertex>",`#include <begin_vertex>
+      float wt=uTime;float gust=0.55+0.45*sin(wt*0.43+aWind.y)*sin(wt*0.29+1.3);
+      float sw=sin(wt*1.15-aWind.x*2.6+aWind.y+position.x*2.2)+0.5*sin(wt*2.1-aWind.x*4.1+position.x*3.3);
+      transformed.z+=aWind.x*0.2*(0.45+0.45*sw*gust);
+      transformed.x+=aWind.x*0.12*sin(wt*0.95-aWind.x*2.2+aWind.y)*(0.5+0.5*gust);`);
+  };
+  mat.needsUpdate=true;
+  console.log("curtain wind vertices",n);
+}
+
+// Plant: leaves and stems sway in the same wind as the curtains. The pot, soil and stones (below y 0.936) stay still.
+function setupPlant(){
+  const mesh=meshes.Room_Plant,mat=mesh&&mesh.material;if(!mat)return;
+  const g=mesh.geometry,pos=g.attributes.position,a=new Float32Array(pos.count),v=new THREE.Vector3();let n=0;
+  mesh.updateWorldMatrix(true,false);
+  for(let i=0;i<pos.count;i++){
+    v.fromBufferAttribute(pos,i).applyMatrix4(mesh.matrixWorld);
+    const up=Math.min(1,Math.max(0,(v.y-0.93)/0.3)),out=Math.min(1,Math.hypot(v.x+0.9,v.z+2.04)/0.5);
+    const w=up*up*(3-2*up)*(0.25+0.75*out);
+    a[i]=w;if(w>0)n++;
+  }
+  g.setAttribute("aSway",new THREE.BufferAttribute(a,1));
+  const prev=mat.onBeforeCompile;
+  mat.onBeforeCompile=(sh,r)=>{
+    if(prev)prev(sh,r);
+    sh.uniforms.uTime=windU.uTime;
+    sh.vertexShader="uniform float uTime;attribute float aSway;\n"+sh.vertexShader.replace("#include <begin_vertex>",`#include <begin_vertex>
+      vec3 wp0=(modelMatrix*vec4(position,1.0)).xyz;float ph=wp0.x*4.1+wp0.z*3.3+wp0.y*1.7;
+      float gu=0.55+0.45*sin(uTime*0.43)*sin(uTime*0.29+1.3);
+      vec3 dw=vec3(sin(uTime*1.35+ph)*0.6+sin(uTime*2.7+ph*1.7)*0.25,sin(uTime*1.9+ph*1.3)*0.22,cos(uTime*1.15+ph*0.8)*0.5+0.18)*aSway*0.07*(0.5+0.8*gu);
+      transformed+=transpose(mat3(modelMatrix))*dw;`);
+  };
+  mat.needsUpdate=true;
+  console.log("plant sway vertices",n);
+}
+
+// TV power: the VCR's red key (VCR_Btn_5, x .1397..1525, y .7430..7520, z -2.047) is redrawn a little larger and switches the CRT off and on.
+// The screen collapses to a line, then a dot, then goes dark; switching it back on runs the same thing in reverse.
+const tv={off:0,dir:0,on:true,last:0};
+const tvU={uOff:{value:0}};
+const tvScreen=(()=>{
+  const W=CRT.w*1.04,H=CRT.h*1.05;
+  const m=new THREE.ShaderMaterial({uniforms:tvU,transparent:true,depthWrite:false,
+    vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+    fragmentShader:`uniform float uOff;varying vec2 vUv;
+      float ease(float x){return x<.5?2.*x*x:1.-pow(-2.*x+2.,2.)/2.;}
+      void main(){
+        vec2 q=vUv-.5;vec2 p=q*vec2(${W.toFixed(4)},${H.toFixed(4)});
+        float r=.016;float d=length(max(abs(p)-vec2(${W.toFixed(4)},${H.toFixed(4)})*.5+r,0.))-r;float mask=smoothstep(.0015,-.0015,d);
+        float e1=ease(clamp(uOff/.55,0.,1.)),e2=ease(clamp((uOff-.55)/.25,0.,1.)),fade=clamp((uOff-.8)/.2,0.,1.);
+        float hh=mix(.5,.004,e1),hw=mix(.5,.012,e2);
+        float inside=smoothstep(hw+.012,hw-.004,abs(q.x))*smoothstep(hh+.004,hh-.002,abs(q.y));
+        float glow=e1*e1*e1*(1.-fade);
+        vec3 inC=mix(vec3(1.5,1.65,2.0),vec3(.01,.012,.018),fade);
+        float inA=mix(glow*.92,1.,fade);
+        vec3 col=mix(vec3(.01,.012,.018),inC,inside);
+        float a=mix(.985,inA,inside)*mask;
+        gl_FragColor=vec4(col,a);
+      }`});
+  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(W,H),m);
+  mesh.position.set(CRT.cx,CRT.cy,CRT.z+0.0035);mesh.renderOrder=1.5;mesh.visible=false;mesh.name="TvScreen";scene.add(mesh);
+  return mesh;
+})();
+const tvButton=(()=>{
+  const cv=document.createElement("canvas");cv.width=256;cv.height=176;const x=cv.getContext("2d");
+  const rr=(px,py,w,h,r)=>{x.beginPath();x.roundRect(px,py,w,h,r)};
+  rr(2,2,252,172,34);x.fillStyle="#2a0a08";x.fill();
+  const g=x.createLinearGradient(0,10,0,166);g.addColorStop(0,"#ff4a36");g.addColorStop(.55,"#e02a1c");g.addColorStop(1,"#a81610");
+  rr(10,10,236,156,28);x.fillStyle=g;x.fill();
+  x.fillStyle="rgba(255,255,255,.28)";rr(24,18,208,30,15);x.fill();
+  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;
+  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(0.0188,0.0129),new THREE.MeshBasicMaterial({map:t}));
+  mesh.position.set(0.1461,0.7475,-2.0461);mesh.renderOrder=2;mesh.name="TvPowerBtn";scene.add(mesh);
+  const hit=new THREE.Mesh(new THREE.PlaneGeometry(0.034,0.024),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
+  hit.position.set(0.1461,0.7475,-2.0455);hit.name="TvPower";scene.add(hit);
+  return {mesh,hit};
+})();
+function setTv(on){
+  tv.on=on;tv.dir=on?-1:1;tvScreen.visible=true;
+}
+function toggleTv(){setTv(!tv.on)}
+function stepTv(now){
+  const dt=Math.min(.1,(now-tv.last)/1000);tv.last=now;
+  if(!tv.dir)return;
+  const dur=reduced?0.01:(tv.dir>0?1.0:0.8);
+  tv.off=Math.min(1,Math.max(0,tv.off+tv.dir*dt/dur));
+  tvU.uOff.value=tv.off;
+  const f=1-Math.min(1,Math.max(0,(tv.off-.05)/.5));
+  spill.material.opacity=f;spill.visible=f>0.01;
+  tvButton.mesh.material.color.setScalar(1-0.55*Math.min(1,tv.off*3));
+  if(tv.off<=0){tv.dir=0;tvScreen.visible=false}
+  else if(tv.off>=1)tv.dir=0;
+}
+
+// VCR display: the baked "23:05" is part of the lightmap, so a live readout is drawn over the plate (VCR_LCD, x .085...146, y .7615...7915, z -2.0475).
+const clock={tex:null,ctx:null,key:"",t0:performance.now()};
+function setupClock(){
+  const cv=document.createElement("canvas");cv.width=640;cv.height=300;
+  clock.ctx=cv.getContext("2d");
+  clock.tex=new THREE.CanvasTexture(cv);clock.tex.colorSpace=THREE.SRGBColorSpace;clock.tex.anisotropy=8;
+  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(0.040,0.0187),new THREE.MeshBasicMaterial({map:clock.tex}));
+  mesh.position.set(0.11555,0.77745-0.0044,-2.0465);mesh.renderOrder=2;mesh.name="VcrClock";scene.add(mesh);
+  drawClock(0);
+}
+function drawClock(sec){
+  const total=23*3600+5*60+sec,s=total%60,mi=Math.floor(total/60)%60,h=Math.floor(total/3600)%24;
+  const key=h+":"+mi+":"+s;if(key===clock.key)return;clock.key=key;
+  const c=clock.ctx,p=n=>String(n).padStart(2,"0");
+  c.fillStyle="#020802";c.fillRect(0,0,640,300);
+  c.fillStyle=CLOCK_INK;c.textBaseline="alphabetic";c.textAlign="left";
+  c.font="190px 'DejaVu Sans Mono',Menlo,Consolas,monospace";
+  const cw=c.measureText("0").width,x0=(640-cw*5)/2,base=205;
+  c.fillText(p(h),x0,base);c.fillText(p(mi),x0+cw*3,base);
+  if(s%2===0)c.fillText(":",x0+cw*2,base);
+  c.font="62px 'DejaVu Sans Mono',Menlo,Consolas,monospace";c.textAlign="right";
+  c.fillText(p(s),x0+cw*5,285);
+  clock.tex.needsUpdate=true;
+}
+const CLOCK_INK="#cdeeee";
+
 Promise.all([roomP,outP,viewP,tapesP]).then(()=>{
   hideSheet();
+  try{setupWind()}catch(e){console.warn("wind failed",e)}
+  try{setupPlant()}catch(e){console.warn("plant failed",e)}
+  try{setupClock()}catch(e){console.warn("clock failed",e)}
   buildViews();
   const l=$("loader");l.classList.add("done");
   setTimeout(()=>l.remove(),1000);

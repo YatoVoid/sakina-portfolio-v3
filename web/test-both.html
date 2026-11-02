@@ -8,11 +8,12 @@
 <meta name="theme-color" content="#0d0906">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Mono:wght@400;500&family=Archivo:wdth,wght@62..125,400..900&family=VT323&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Mono:wght@400;500&family=VT323&family=Caveat:wght@600&family=Archivo:wdth,wght@62..125,400..900&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 fill=%27%230d0906%27/%3E%3Crect x=%273%27 y=%273%27 width=%2710%27 height=%277%27 fill=%27%23e0a04a%27/%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="crt-gate.css">
 <link rel="stylesheet" href="pad.css">
+<link rel="stylesheet" href="felix-ui.css?v=2">
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
 </script>
@@ -28,7 +29,12 @@
 <canvas id="scene" aria-label="Interactive 3D model of Sakina's desk. Use the buttons below or the keys T, I, N and Z to move between areas."></canvas>
 
 <header class="brand">
-  <h1>SAKINA SAIFUDDIN</h1>
+  <h1><button type="button" class="name" id="home-link" data-tip="CLICK TO GO BACK TO THE DESK">Sakina Saifuddin</button></h1>
+  <nav class="menu" aria-label="Site">
+    <button type="button" data-view="ibm" data-tip="CLICK TO GO TO THE IBM PC: ABOUT ME">ABOUT</button>
+    <button type="button" data-view="pad" data-tip="CLICK TO OPEN THE WORK NOTES">WORK</button>
+    <a href="https://askksakina.netlify.app" target="_blank" rel="noopener" data-tip="CLICK TO CHAT ABOUT MY RESUME (OPENS IN A NEW TAB)">ASK</a>
+  </nav>
   <p>DATA SCIENTIST · UNIVERSITY OF HOUSTON</p>
 </header>
 
@@ -48,6 +54,7 @@
     <li><button data-view="pad"><kbd>N</kbd> Work</button></li>
     <li><button data-view="clocks"><kbd>K</kbd> Clocks</button></li>
     <li><button data-view="desk"><kbd>Z</kbd> Zoom desk</button></li>
+    <li><button data-view="power"><kbd>P</kbd> TV</button></li>
   </ul>
   <ul class="toggles">
     <li><button id="btn-credits">CREDITS</button></li>
@@ -68,7 +75,7 @@
 
 <div class="scan" aria-hidden="true"></div>
 <script type="module" src="crt-gate.js"></script>
-<script type="module" src="main-both.js?v=9"></script>
+<script type="module" src="main-both.js?v=10"></script>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="nightgrade" color-interpolation-filters="sRGB">
 <feComponentTransfer><feFuncR type="gamma" amplitude="1.0" exponent="1.0" offset="0.012"/><feFuncG type="gamma" amplitude="1.0" exponent="1.03" offset="0.010"/><feFuncB type="gamma" amplitude="1.0" exponent="1.0" offset="0.016"/></feComponentTransfer></filter></svg>
 <div id="tint"></div><div id="vig"></div><canvas id="grain" width="1280" height="720"></canvas>
