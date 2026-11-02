@@ -18,6 +18,7 @@
 </script>
 <style>
 #scene{filter:url(#nightgrade) saturate(1.08) contrast(0.97) brightness(1.08)}
+.scan{display:none}
 #grain{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;mix-blend-mode:overlay;opacity:.3}
 #vig{position:fixed;inset:0;pointer-events:none;z-index:4;background:radial-gradient(ellipse 75% 70% at 50% 58%,rgba(0,0,0,0) 55%,rgba(6,3,14,.22) 88%,rgba(6,3,14,.4) 100%)}
 #tint{position:fixed;inset:0;pointer-events:none;z-index:4;mix-blend-mode:soft-light;background:linear-gradient(180deg,rgba(40,50,120,.30),rgba(255,150,60,.12) 70%)}
@@ -66,7 +67,7 @@
 
 <div class="scan" aria-hidden="true"></div>
 <script type="module" src="crt-gate.js"></script>
-<script type="module" src="main-both.js?v=3"></script>
+<script type="module" src="main-both.js?v=4"></script>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="nightgrade" color-interpolation-filters="sRGB">
 <feComponentTransfer><feFuncR type="gamma" amplitude="1.0" exponent="1.0" offset="0.012"/><feFuncG type="gamma" amplitude="1.0" exponent="1.03" offset="0.010"/><feFuncB type="gamma" amplitude="1.0" exponent="1.0" offset="0.016"/></feComponentTransfer></filter></svg>
 <div id="tint"></div><div id="vig"></div><canvas id="grain" width="1280" height="720"></canvas>

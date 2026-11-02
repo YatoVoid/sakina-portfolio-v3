@@ -268,8 +268,8 @@ const crtScreen=(()=>{
       const line="▮".repeat(20)+"  100%";g.textAlign="center";g.fillText(line,480,392);g.textAlign="left";
     }else if(mode==="tape"){
       paintBg(g);osd("■ STOP",60,82);osd("VIDEO",900,82,"right");
-      if(Math.floor(t/700)%2===0)osd("INSERT TAPE",480,380,"center");
-      osd("PICK A TAPE FROM THE DESK",480,440,"center");
+      if(Math.floor(t/700)%2===0)osd("INSERT TAPE",480,372,"center",84);
+      osd("PICK A TAPE FROM THE DESK",480,450,"center",44);
     }else{
       g.setTransform(1,0,0,1,0,0);g.drawImage(still,0,0);g.setTransform(K,0,0,K,0,0);
       orbits(t);
