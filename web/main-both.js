@@ -232,7 +232,7 @@ const crtScreen=(()=>{
   const still=document.createElement("canvas");still.width=W;still.height=H;
   const tex=new THREE.CanvasTexture(cv);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=4;
   const INK="#f4f5ff",BIG=["SAKINA","SAIFUDDIN"],SUB="PORTFOLIO  ·  CH 00";
-  const paintBg=c=>{const r=c.createRadialGradient(960*.48,720*.42,0,960*.48,720*.42,960*.62);r.addColorStop(0,"#5d7ddb");r.addColorStop(.45,"#4c6ac9");r.addColorStop(1,"#3a55b3");c.fillStyle=r;c.fillRect(0,0,960,720)};
+  const paintBg=c=>{const r=c.createRadialGradient(960*.48,720*.42,0,960*.48,720*.42,960*.62);r.addColorStop(0,"#5471d0");r.addColorStop(.45,"#4c6ac9");r.addColorStop(1,"#4560bd");c.fillStyle=r;c.fillRect(0,0,960,720)};
   let mode="loading",lastAct=0,modeT=0;
   const setMode=(m,t)=>{mode=m;modeT=t};
   const poke=()=>{if(document.getElementById("crt-gate"))return;lastAct=performance.now();if(mode!=="name")setMode("name",lastAct)};
@@ -260,7 +260,8 @@ const crtScreen=(()=>{
   };
   const draw=t=>{
     g.setTransform(1,0,0,1,0,0);g.setTransform(K,0,0,K,0,0);
-    if(mode==="name"&&performance.now()-lastAct>10000)setMode("tape",performance.now());
+    if(mode==="loading"&&!document.getElementById("crt-gate")){lastAct=performance.now();setMode("name",lastAct)}
+    if(mode==="name"&&performance.now()-lastAct>6000)setMode("tape",performance.now());
     if(mode==="loading"){
       paintBg(g);osd("▶▶ LOADING",60,82);osd("CH 00",900,82,"right");
       g.font="44px VT323";g.textAlign="left";g.fillStyle="#f4f5ff";
