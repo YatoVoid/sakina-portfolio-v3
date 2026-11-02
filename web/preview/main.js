@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import {LookControls} from "./look-controls.js?v=5";
+import {LookControls} from "./look-controls.js?v=6";
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 import {DRACOLoader} from "three/addons/loaders/DRACOLoader.js";
 import {projects,ibm,notepad,credits} from "./content.js";
@@ -75,7 +75,7 @@ const outP=new Promise((res,rej)=>loader.load("../sakina-outside-r4lo.glb",g=>{g
   e=>{if(e.lengthComputable){progressOut=e.loaded/e.total;setProgress()}},rej));
 
 // Berlin rail-yard night photo behind the window (round 4, approved): two unlit emissive pictures ~80 m away (photo patch + panorama).
-const viewP=new Promise(res=>loader.load("../sakina-view-r8.glb",g=>{
+const viewP=new Promise(res=>loader.load("../sakina-view-r9.glb",g=>{
   g.scene.traverse(o=>{if(o.isMesh){o.material.side=THREE.DoubleSide;o.material.envMapIntensity=0;o.renderOrder=-1}});
   scene.add(g.scene);res();
 },undefined,e=>{console.warn("window view failed",e);res()}));

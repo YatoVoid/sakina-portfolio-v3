@@ -12,7 +12,7 @@
 import * as THREE from "three";
 
 const D2R = THREE.MathUtils.degToRad;
-const HOME_LIMITS = { azLeft: D2R(62), azRight: D2R(70), polarMin: D2R(35), polarMax: D2R(90) };   // camera-left swing stops 0.5 m short of the plant
+const HOME_LIMITS = { azLeft: D2R(62), azRight: D2R(70), polarMin: D2R(72.5), polarMax: D2R(90) };   // round 5f: steepest tilt = where the window photo ends (see photoPolarMin). camera-left swing stops 0.5 m short of the plant
 const PRESET_LIMITS = { az: D2R(35), polarSpan: D2R(20), polarMin: D2R(35), polarMax: D2R(95) };
 const DOLLY_MIN = 0.80, DOLLY_MAX = 1.20;
 const RAD_PER_PX = 0.0042;                         // full drag across ~600 px swings 145 deg (the whole HOME range)
@@ -47,6 +47,7 @@ export class LookControls {
     this._dist = off.length();
     this._az0 = Math.atan2(off.x, off.z);
     this._polar0 = Math.acos(THREE.MathUtils.clamp(off.y / this._dist, -1, 1));
+    this._home = home;
     if (home) {
       this._lim = { azMin: -HOME_LIMITS.azLeft, azMax: HOME_LIMITS.azRight,
                     polarMin: HOME_LIMITS.polarMin - this._polar0, polarMax: HOME_LIMITS.polarMax - this._polar0 };
@@ -58,9 +59,18 @@ export class LookControls {
     this._az = this._gAz = 0; this._polar = this._gPolar = 0; this._dolly = this._gDolly = 1;
   }
 
+  // Round 5f: the window photo ends ~13 deg below eye level. The steeper the camera swings sideways, the sooner a ray through the
+  // window's bottom edge leaves the photo, so the allowed tilt shrinks with |azimuth|: 72.5 deg (straight on) .. 78 deg (60 deg sideways).
+  _photoPolarMin() {
+    if (!this._home) return this._lim.polarMin;
+    const az = Math.abs(this._az0 + this._gAz), t = Math.min(1, az / D2R(60));
+    return Math.max(this._lim.polarMin, D2R(72.5 + 5.5 * t) - this._polar0);
+  }
+
   update() {
     const now = performance.now(), dt = Math.min(0.1, (now - this._last) / 1000); this._last = now;
     if (!this.enabled) return;
+    this._gPolar = Math.max(this._gPolar, this._photoPolarMin());     // re-apply after sideways swings
     const k = 1 - Math.exp(-dt * 14);              // responsive, settles in ~0.3 s, no long drift
     this._az += (this._gAz - this._az) * k;
     this._polar += (this._gPolar - this._polar) * k;
@@ -95,7 +105,7 @@ export class LookControls {
     if (this._start && Math.hypot(e.clientX - this._start.x, e.clientY - this._start.y) > DRAG_THRESHOLD) this.clickBlocked = true;
     if (!this.clickBlocked) return;
     this._gAz = THREE.MathUtils.clamp(this._gAz - dx * RAD_PER_PX, this._lim.azMin, this._lim.azMax);
-    this._gPolar = THREE.MathUtils.clamp(this._gPolar - dy * RAD_PER_PX, this._lim.polarMin, this._lim.polarMax);
+    this._gPolar = THREE.MathUtils.clamp(this._gPolar - dy * RAD_PER_PX, this._photoPolarMin(), this._lim.polarMax);
   }
 
   _up(e) {
