@@ -4,6 +4,8 @@ import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 import {DRACOLoader} from "three/addons/loaders/DRACOLoader.js";
 import {projects,ibm,notepad,credits} from "./content.js";
 import {Ambience} from "./audio.js";
+import {pad} from "./pad-content.js";
+import {makePadTexture,PAD,UNDER} from "./pad-texture.js";
 import {EffectComposer} from "three/addons/postprocessing/EffectComposer.js";
 import {RenderPass} from "three/addons/postprocessing/RenderPass.js";
 import {UnrealBloomPass} from "three/addons/postprocessing/UnrealBloomPass.js";
@@ -49,14 +51,15 @@ function setProgress(){
   $("loader-fill").style.width=p+"%";$("loader-text").textContent="LOADING "+p+"%";
 }
 // Per-tape click boxes generated from the Blender scene (pipeline/tools/tape_layout.py).
+const TAPE_PAL=[0xc9a227,0x1f8f73,0xa8281f,0x2a4a9a,0xd9631c,0x2f7d3a,0x1f2f63,0x3a8a4a,0x7a3b8c,0xd0541d,0xa02a3c,0x1c6f8a,0x8a7a2a];
 let TAPES=[];
-const tapeBoxU={min:{value:Array.from({length:16},()=>new THREE.Vector3(1e9,1e9,1e9))},max:{value:Array.from({length:16},()=>new THREE.Vector3(-1e9,-1e9,-1e9))},n:{value:0}};
-const tapesP=fetch("tapes.json").then(r=>r.json()).then(t=>{TAPES=t.map(d=>({idx:d.idx,box:new THREE.Box3(new THREE.Vector3(...d.min),new THREE.Vector3(...d.max))}));TAPES.slice(0,16).forEach((t,i)=>{tapeBoxU.min.value[i].copy(t.box.min);tapeBoxU.max.value[i].copy(t.box.max)});tapeBoxU.n.value=Math.min(16,TAPES.length)});
+const tapeBoxU={min:{value:Array.from({length:16},()=>new THREE.Vector3(1e9,1e9,1e9))},max:{value:Array.from({length:16},()=>new THREE.Vector3(-1e9,-1e9,-1e9))},n:{value:0},col:{value:Array.from({length:16},()=>new THREE.Color(0x333333))}};
+const tapesP=fetch("tapes.json").then(r=>r.json()).then(t=>{TAPES=t.map(d=>({idx:d.idx,box:new THREE.Box3(new THREE.Vector3(...d.min),new THREE.Vector3(...d.max))}));TAPES.slice(0,16).forEach((t,i)=>{tapeBoxU.min.value[i].copy(t.box.min);tapeBoxU.max.value[i].copy(t.box.max)});tapeBoxU.n.value=Math.min(16,TAPES.length);TAPES.slice(0,16).forEach((t,i)=>tapeBoxU.col.value[i].set(TAPE_PAL[t.idx%TAPE_PAL.length]))});
 // Reflections: a 360 degree capture of the baked room (rendered in Blender at desk height) filters into the environment map.
 // The baked materials are emission-only, so the environment only adds specular on top: [roughness, strength, metalness] per bake group.
 const REFL=new URLSearchParams(location.search).get("refl")!==null?parseFloat(new URLSearchParams(location.search).get("refl")):1.5;
 const SPEC={
-  Room_Floor:[.42,.4],Room_Desk:[.4,.75],Room_Monitor:[.28,1.1],Room_Lamp:[.32,1.0],Room_Tapes:[.5,.3],Room_Station:[.45,.45],
+  Room_Floor:[.42,.4],Room_Desk:[.4,.75],Room_Monitor:[.28,1.1],Room_Lamp:[.32,1.0],Room_Tapes:[.32,.9],Room_Station:[.45,.45],
   Room_Window:[.5,.4],Room_Plant:[.5,.25],Room_Keepsakes:[.28,1.0,.25],Room_Right_Nook:[.48,.6],Room_Wall_Decor:[.55,.35],Room_Shell:[.8,.12]
 };
 const envReady=new Promise(res=>{
@@ -65,7 +68,48 @@ const envReady=new Promise(res=>{
     const pm=new THREE.PMREMGenerator(renderer);res(pm.fromEquirectangular(tex).texture);tex.dispose();pm.dispose();
   });
 });
-const roomP=new Promise((res,rej)=>loader.load("sakina-room-agx.glb",g=>{
+// Local lift around the IBM corner (the bake leaves it nearly black). Emissive is scaled and a small warm floor is added
+// inside a soft ellipsoid centred on the dresser; nothing outside it changes.
+const IBMQ=new URLSearchParams(location.search).get("ibm");const IBM_K=IBMQ!==null?parseFloat(IBMQ):1.7;
+const IBM_LIFT_NAMES=["Room_Station","Room_Shell","Room_Floor","Room_Wall_Decor"];
+function ibmLift(m){
+  m.onBeforeCompile=sh=>{
+    sh.uniforms.uIbmC={value:new THREE.Vector3(-2.72,0.95,-1.05)};sh.uniforms.uIbmK={value:IBM_K};
+    sh.vertexShader=sh.vertexShader.replace("#include <common>","#include <common>\nvarying vec3 vWP2;")
+      .replace("#include <begin_vertex>","#include <begin_vertex>\nvWP2=(modelMatrix*vec4(transformed,1.0)).xyz;");
+    sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vWP2;uniform vec3 uIbmC;uniform float uIbmK;")
+      .replace("#include <emissivemap_fragment>",`#include <emissivemap_fragment>
+        vec3 d=(vWP2-uIbmC)/vec3(1.35,1.1,1.5);float f=1.0-smoothstep(0.25,1.0,length(d));
+        totalEmissiveRadiance=totalEmissiveRadiance*(1.0+uIbmK*f)+vec3(.010,.006,.003)*f*uIbmK;`)};
+  m.needsUpdate=true;
+}
+
+const HEALREF=parseFloat(new URLSearchParams(location.search).get("pref")||"0.17");
+function heal(m){
+  m.onBeforeCompile=sh=>{
+    sh.uniforms.uHealRef={value:HEALREF};
+    sh.vertexShader=sh.vertexShader.replace("#include <common>","#include <common>\nvarying vec3 vWP3;")
+      .replace("#include <begin_vertex>","#include <begin_vertex>\nvWP3=(modelMatrix*vec4(transformed,1.0)).xyz;");
+    sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vWP3;uniform float uHealRef;")
+      .replace("#include <emissivemap_fragment>",`#include <emissivemap_fragment>
+        vec3 hd=(vWP3-vec3(-0.80,0.80,-1.95))/vec3(0.22,0.19,0.22);float hw=1.0-smoothstep(0.7,1.0,length(hd));
+        if(hw>0.0){
+          float hx=smoothstep(0.045,0.075,length(vWP3.xz-vec2(-0.70,-1.94)));hw*=hx;
+          vec2 ts=1.0/vec2(textureSize(emissiveMap,0));vec3 qs[24];float ls[24];float mean=0.;
+          for(int r=0;r<3;r++)for(int k=0;k<8;k++){float a=float(k)*0.7854+float(r)*0.3;vec2 o=vec2(cos(a),sin(a))*(18.0+float(r)*14.0)*ts;
+            vec3 q=texture2D(emissiveMap,vEmissiveMapUv+o).rgb;float ql=dot(q,vec3(.2126,.7152,.0722));qs[r*8+k]=q;ls[r*8+k]=ql;mean+=ql;}
+          mean/=24.;vec3 acc=vec3(0.);float cnt=0.;
+          for(int i=0;i<24;i++){if(ls[i]>=mean*1.15){acc+=qs[i];cnt+=1.;}}
+          vec3 best=cnt>0.?acc/cnt:totalEmissiveRadiance;
+          totalEmissiveRadiance=mix(totalEmissiveRadiance,max(totalEmissiveRadiance,best),hw);
+          float tl2=dot(totalEmissiveRadiance,vec3(.2126,.7152,.0722));
+          float gain=clamp(uHealRef/(tl2+0.002),1.0,24.0);
+          totalEmissiveRadiance*=mix(1.0,gain,hw);
+        }`)};
+  m.needsUpdate=true;
+}
+
+const roomP=new Promise((res,rej)=>loader.load("sakina-room-agx-both.glb",g=>{
   const maxAniso=renderer.capabilities.getMaxAnisotropy();
   g.scene.traverse(o=>{
     if(!o.isMesh)return;
@@ -73,27 +117,33 @@ const roomP=new Promise((res,rej)=>loader.load("sakina-room-agx.glb",g=>{
     const m=o.material;
     if(m.emissiveMap){m.emissiveMap.anisotropy=Math.min(8,maxAniso)}
     if(o.name==="Room_Tapes"){
-      // Muted, darker plastic only inside the 13 tape boxes (the same mesh also holds the phone, papers, floppy and recorder).
-      const TS=new URLSearchParams(location.search).get("tape");const sat=TS!==null?parseFloat(TS):0.52;
+      // Tape cases: the baked black plastic is recoloured per tape (palette below) inside the 13 tape boxes, lit by a lamp falloff.
+      // Cream labels, colour stripes and printed text keep their baked values. The same mesh also holds the phone, papers and recorder, which stay untouched.
       m.onBeforeCompile=sh=>{
-        sh.uniforms.uBmin=tapeBoxU.min;sh.uniforms.uBmax=tapeBoxU.max;sh.uniforms.uBn=tapeBoxU.n;
+        sh.uniforms.uBmin=tapeBoxU.min;sh.uniforms.uBmax=tapeBoxU.max;sh.uniforms.uBn=tapeBoxU.n;sh.uniforms.uBcol=tapeBoxU.col;
         sh.vertexShader=sh.vertexShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;")
           .replace("#include <begin_vertex>","#include <begin_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;");
-        sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;uniform vec3 uBmin[16];uniform vec3 uBmax[16];uniform int uBn;")
+        sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;uniform vec3 uBmin[16];uniform vec3 uBmax[16];uniform vec3 uBcol[16];uniform int uBn;")
           .replace("#include <emissivemap_fragment>",`#include <emissivemap_fragment>
-           float inTape=0.;for(int i=0;i<16;i++){if(i<uBn&&all(greaterThan(vWP,uBmin[i]-vec3(.004)))&&all(lessThan(vWP,uBmax[i]+vec3(.004))))inTape=1.;}
+           float inTape=0.;vec3 tcol=vec3(0.);
+           for(int i=0;i<16;i++){if(i<uBn&&all(greaterThan(vWP,uBmin[i]-vec3(.004)))&&all(lessThan(vWP,uBmax[i]+vec3(.004)))){inTape=1.;tcol=uBcol[i];}}
            float tl=dot(totalEmissiveRadiance,vec3(.2126,.7152,.0722));
-           vec3 muted=mix(vec3(tl),totalEmissiveRadiance,${sat.toFixed(3)})*vec3(.80,.76,.70)*(1.0-.25*smoothstep(.35,.9,tl));
-           totalEmissiveRadiance=mix(totalEmissiveRadiance,muted,inTape);`)};
+           float darkW=(1.0-smoothstep(.05,.30,tl))*inTape;
+           float dl=length(vWP-vec3(-0.4,1.06,-2.17));
+           float lampL=0.20+0.95/(1.0+2.0*dl*dl);
+           vec3 plastic=mix(vec3(dot(tcol,vec3(.3,.59,.11))),tcol,0.82)*lampL*(0.62+3.6*tl);
+           totalEmissiveRadiance=mix(totalEmissiveRadiance,plastic,darkW);`)};
       m.needsUpdate=true;
     }
+    if(IBM_LIFT_NAMES.includes(o.name))ibmLift(m);
+    if(o.name==="Room_Desk"||o.name==="Room_Plant")heal(m);
     const sp=SPEC[o.name];
     if(sp){m.roughness=sp[0];m.metalness=sp[2]||0;if("specularIntensity" in m){m.specularIntensity=1;m.specularColor.setRGB(1,1,1);m.ior=1.5}m.envMapIntensity=sp[1]*REFL;envReady.then(t=>{m.envMap=t;m.needsUpdate=true})}
     else m.envMapIntensity=0;
   });
   // Live shadows on the walls and floor: tiny-intensity point lights at the lamps (they only drive shadow maps; the baked
   // materials are emission-only), and ShadowMaterial copies of the shell and floor that darken only where a caster blocks the lamp.
-  const SH=new URLSearchParams(location.search).get("shadow");const shOpacity=SH!==null?parseFloat(SH):0.42;
+  const SH=new URLSearchParams(location.search).get("shadow");const shOpacity=SH!==null?parseFloat(SH):0.32;
   for(const [n,m] of Object.entries(meshes)){m.castShadow=!["Room_Shell","Room_Floor","Room_Lamp"].includes(n)}
   const mkLight=(x,y,z,far)=>{const l=new THREE.PointLight(0xffffff,0.0001,far,1);l.position.set(x,y,z);l.castShadow=true;
     l.shadow.mapSize.set(1536,1536);l.shadow.radius=7;l.shadow.bias=-0.0006;l.shadow.normalBias=0.02;l.shadow.camera.near=0.05;scene.add(l);return l};
@@ -166,6 +216,15 @@ const crtGlass=(()=>{
 
 // Bright CRT phosphor (additive over the baked text so the text stays readable) plus light spill on the desk.
 const DESK_TOP=0.72;
+const PAPER_TINT=0xc2b296;
+const padMesh=(()=>{
+  const m=new THREE.MeshBasicMaterial({map:makePadTexture(pad),color:PAPER_TINT});
+  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(PAD.w,PAD.h),m);
+  mesh.rotation.order="YXZ";mesh.rotation.set(-Math.PI/2,PAD.rotY,0);
+  mesh.position.set(PAD.x,0.7258,PAD.z);
+  mesh.name="Pad";mesh.renderOrder=1;scene.add(mesh);
+  return mesh;
+})();
 const crtLive=(()=>{
   const u={uTime:{value:0}};
   const m=new THREE.ShaderMaterial({uniforms:u,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
@@ -241,11 +300,16 @@ const rainU={uTime:{value:0}};
 
 // Tape logos: the baked lightmap cannot hold them (each logo quad got a ~140x10 px lightmap island), so they are drawn as
 // textured quads over the baked label windows. Geometry and blend mode come from the Blender scene (pipeline/tools/export_logos.py).
-const LOGO_LIGHT=0.46;
+const LOGO_LIGHT=0.62;
 fetch("logos/logos.json").then(r=>r.json()).then(list=>{
   const tl=new THREE.TextureLoader();
+  const sh=list.find(l=>l.name==="PTape_1_Logo"),dv=[0.0126,-0.0194,0.0436];
+  if(sh)list.push({name:"PTape_2_House",image:null,mode:"alpha",base:[0.03,0.04,0.03],uv:sh.uv,pos:sh.pos.map(p=>[p[0]+dv[0],p[1]+dv[1],p[2]+dv[2]])});
   for(const L of list){
-    const tex=tl.load("logos/"+L.image+".png");tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=8;
+    let tex;
+    if(L.image){tex=tl.load("logos/"+L.image+".png")}
+    else{const c=document.createElement("canvas");c.width=c.height=128;const g=c.getContext("2d");g.fillStyle="#fff";g.beginPath();g.moveTo(64,10);g.lineTo(118,60);g.lineTo(100,60);g.lineTo(100,116);g.lineTo(76,116);g.lineTo(76,80);g.lineTo(52,80);g.lineTo(52,116);g.lineTo(28,116);g.lineTo(28,60);g.lineTo(10,60);g.closePath();g.fill();tex=new THREE.CanvasTexture(c)}
+    tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=8;
     const g=new THREE.BufferGeometry();
     g.setAttribute("position",new THREE.Float32BufferAttribute(L.pos.flat(),3));
     g.setAttribute("uv",new THREE.Float32BufferAttribute(L.uv.flat(),2));
@@ -253,7 +317,7 @@ fetch("logos/logos.json").then(r=>r.json()).then(list=>{
     const mode={img:0,alpha:1,bw:2}[L.mode],mp=L.map||[0,1,0,1];
     const m=new THREE.ShaderMaterial({
       uniforms:{map:{value:tex},uMode:{value:mode},uBase:{value:new THREE.Vector3(base.r,base.g,base.b)},uMap:{value:new THREE.Vector4(...mp)},uLight:{value:LOGO_LIGHT}},
-      transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4,side:THREE.DoubleSide,
+      transparent:true,depthWrite:false,depthTest:L.image!==null,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4,side:THREE.DoubleSide,
       vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
       fragmentShader:`uniform sampler2D map;uniform int uMode;uniform vec3 uBase;uniform vec4 uMap;uniform float uLight;varying vec2 vUv;
         void main(){
@@ -292,7 +356,6 @@ function tapeAt(p){
 }
 let VIEWS;
 function buildViews(){
-  for(const n of ["Room_Station","Room_Wall_Decor","Room_Shell","Room_Desk"]){const b=new THREE.Box3().setFromObject(meshes[n]);console.info("BOX",n,b.min.toArray().map(v=>v.toFixed(2)).join(","),"|",b.max.toArray().map(v=>v.toFixed(2)).join(","))}
   tapeBox=deskTapeBox();
   const tapes=tapeBox.getCenter(new THREE.Vector3());
   const ibmC=box("Room_Station").getCenter(new THREE.Vector3());
@@ -305,6 +368,7 @@ function buildViews(){
     tapes:{target:tapes.clone(),pos:tapes.clone().add(new THREE.Vector3(0,0.35,0.95))},
     ibm:{target:ibmC.clone().add(new THREE.Vector3(0,-0.05,0)),pos:ibmC.clone().add(new THREE.Vector3(1.12,0.25,0.42))},
     notepad:{target:note.clone(),pos:note.clone().add(new THREE.Vector3(0.05,0.62,0.55))},
+    work:{target:tapes.clone().add(new THREE.Vector3(0.24,-0.04,0)),pos:tapes.clone().add(new THREE.Vector3(0.22,0.3,1.12))},
     desk:{target:deskC.clone().add(new THREE.Vector3(0,0.05,0)),pos:deskC.clone().add(new THREE.Vector3(0.1,0.65,1.25))}
   };
 }
@@ -364,11 +428,66 @@ function openPanel(kind,idx=0){
   panel.hidden=false;
 }
 function closePanel(){panel.hidden=true;panelState=null}
+// The pad lifts off the desk and hangs in front of the camera on the right. Its texture and material never change.
+const padScrim=document.createElement("div");padScrim.id="pad-scrim";padScrim.hidden=true;
+const padSr=document.createElement("div");padSr.className="pad-sr";padSr.hidden=true;padSr.setAttribute("role","dialog");padSr.setAttribute("aria-label",pad.title);
+const padClose=document.createElement("button");padClose.type="button";padClose.id="pad-close";padClose.textContent="PUT DOWN · ESC";padClose.hidden=true;
+document.body.append(padScrim,padSr,padClose);
+const padRest={pos:padMesh.position.clone(),quat:padMesh.quaternion.clone()};
+const padLift={k:0,dir:0,t0:0,from:0};
+const _f=new THREE.Vector3(),_r=new THREE.Vector3(),_u=new THREE.Vector3(),_tp=new THREE.Vector3(),_tq=new THREE.Quaternion(),_tilt=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),-0.05);
+function padOpen(){return padLift.dir===1}
+function liftPad(){
+  if(padOpen())return;
+  padSr.replaceChildren(el("h2",pad.title));
+  pad.sections.forEach(s=>{padSr.append(el("h3",s.head));const ul=el("ul");s.items.forEach(t=>ul.append(el("li",t)));padSr.append(ul)});
+  padSr.hidden=false;padScrim.hidden=false;padClose.hidden=false;
+  requestAnimationFrame(()=>{padScrim.classList.add("on");padClose.classList.add("on")});
+  padMesh.renderOrder=999;
+  Object.assign(padLift,{dir:1,t0:performance.now(),from:padLift.k});
+  flyTo("work");
+}
+function dropPad(back=false){
+  if(!padOpen())return;
+  if(back)flyTo("home");
+  padScrim.classList.remove("on");padClose.classList.remove("on");padSr.hidden=true;
+  Object.assign(padLift,{dir:-1,t0:performance.now(),from:padLift.k});
+}
+function stepPad(now){
+  if(!padLift.dir)return;
+  const dur=reduced?1:1300;
+  const p=Math.min(1,(now-padLift.t0)/dur);
+  const target=padLift.dir>0?1:0;
+  const s=padLift.from+(target-padLift.from)*p;
+  padLift.k=s<.5?4*s*s*s:1-Math.pow(-2*s+2,3)/2;
+  camera.updateMatrixWorld();
+  camera.getWorldDirection(_f);_r.crossVectors(_f,camera.up).normalize();_u.crossVectors(_r,_f);
+  _tp.copy(camera.position).addScaledVector(_f,0.5).addScaledVector(_r,0.2);
+  _tq.copy(camera.quaternion).multiply(_tilt);
+  padMesh.position.lerpVectors(padRest.pos,_tp,padLift.k);
+  padMesh.position.y+=Math.sin(Math.PI*padLift.k)*0.06;
+  padMesh.quaternion.slerpQuaternions(padRest.quat,_tq,padLift.k);
+  padMesh.scale.setScalar(1+0.02*padLift.k);
+  padMesh.material.color.set(PAPER_TINT).multiplyScalar(1+0.2*padLift.k);
+  if(p>=1){
+    if(padLift.dir<0){padMesh.position.copy(padRest.pos);padMesh.quaternion.copy(padRest.quat);padMesh.scale.setScalar(1);padMesh.renderOrder=1;padScrim.hidden=true;padClose.hidden=true}
+    if(padLift.dir>0)padLift.t0=-Infinity;else padLift.dir=0;
+  }
+}
+padScrim.addEventListener("click",()=>dropPad(true));
+padClose.addEventListener("click",()=>dropPad(true));
+addEventListener("keydown",e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey||document.getElementById("crt-gate"))return;
+  if(e.key==="Escape"&&padOpen()){e.stopImmediatePropagation();dropPad(true)}
+  else if(e.key.toLowerCase()==="c")padOpen()?dropPad(true):liftPad();
+},true);
 
 function go(name){
+  if(name!=="pad")dropPad();
   if(name==="tapes"){flyTo("tapes");openPanel("tapes",panelState?.kind==="tapes"?panelState.idx:0)}
   else if(name==="ibm"){flyTo("ibm");openPanel("ibm")}
   else if(name==="notepad"){flyTo("notepad");openPanel("notepad")}
+  else if(name==="pad")liftPad();
   else if(name==="desk"){flyTo("desk");closePanel()}
   else{flyTo("home");closePanel()}
 }
@@ -381,7 +500,7 @@ addEventListener("keydown",e=>{
   const k=e.key.toLowerCase();
   if(k==="t")go("tapes");
   else if(k==="i")go("ibm");
-  else if(k==="n")go("notepad");
+  else if(k==="n")go("pad");
   else if(k==="z")go("desk");
   else if(k==="escape"){go("home")}
 });
@@ -407,9 +526,11 @@ function pick(ev){
   ptr.set(((ev.clientX-r.left)/r.width)*2-1,-((ev.clientY-r.top)/r.height)*2+1);
   ray.setFromCamera(ptr,camera);
   const targets=["Room_Tapes","Room_Station","Room_Desk"].map(n=>meshes[n]).filter(Boolean);
+  targets.push(padMesh);
   const hit=ray.intersectObjects(targets,false)[0];
   if(!hit)return null;
   const n=hit.object.name;
+  if(n==="Pad")return {kind:"pad"};
   if(n==="Room_Tapes"){
     const idx=tapeAt(hit.point);
     return idx===null?null:{kind:"tapes",idx};
@@ -423,7 +544,7 @@ canvas.addEventListener("pointermove",ev=>{
   hover=pick(ev);
   canvas.classList.toggle("hot",!!hover);
   const h=$("hint");
-  if(hover){h.textContent=hover.kind==="tapes"?"TAPES":hover.kind==="ibm"?"IBM PC":"NOTEPAD";h.classList.add("show")}
+  if(hover){h.textContent=hover.kind==="tapes"?"TAPES":hover.kind==="ibm"?"IBM PC":hover.kind==="pad"?"WORK":"NOTEPAD";h.classList.add("show")}
   else h.classList.remove("show");
 });
 let down=null;
@@ -458,12 +579,38 @@ function frame(now){
   requestAnimationFrame(frame);
   stepTween(now);
   if(controls.enabled)controls.update();
+  stepPad(now);
   crtGlass.uniforms.uTime.value=reduced?0:now/1000;
   crtLive.uTime.value=reduced?0:now/1000;rainU.uTime.value=reduced?0:now/1000;
   composer.render();
 }
 
+// The old sheet is part of the room's geometry. Taking its triangles out leaves the desk top that was under it.
+function hideSheet(){
+  const c=Math.cos(UNDER.rotY),s=Math.sin(UNDER.rotY),v=new THREE.Vector3(),removed={};
+  const inside=p=>{const dx=p.x-UNDER.x,dz=p.z-UNDER.z,u=dx*c-dz*s,w=dx*s+dz*c;return Math.abs(u)<0.17&&Math.abs(w)<0.12};
+  for(const [name,m] of Object.entries(meshes)){
+    const g=m.geometry,pos=g.attributes.position,idx=g.index;
+    if(!idx)continue;
+    m.updateWorldMatrix(true,false);
+    const keep=[],n=idx.count;
+    for(let i=0;i<n;i+=3){
+      let all=true,hi=false;
+      for(let j=0;j<3;j++){
+        v.fromBufferAttribute(pos,idx.getX(i+j)).applyMatrix4(m.matrixWorld);
+        if(!inside(v))all=false;
+        if(v.y>0.7215&&v.y<0.74)hi=true;
+      }
+      if(all&&hi)removed[name]=(removed[name]||0)+1;
+      else keep.push(idx.getX(i),idx.getX(i+1),idx.getX(i+2));
+    }
+    if(removed[name])g.setIndex(keep);
+  }
+  console.log("pad-sheet removed triangles",JSON.stringify(removed));
+}
+
 Promise.all([roomP,outP,viewP,tapesP]).then(()=>{
+  hideSheet();
   buildViews();
   const l=$("loader");l.classList.add("done");
   setTimeout(()=>l.remove(),1000);
