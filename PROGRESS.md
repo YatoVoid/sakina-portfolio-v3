@@ -59,3 +59,9 @@ Known pre-existing bug: 6 of 13 tapes open the project of the tape above them (m
   4096x2048. New file `web/sakina-view-r5.glb` (swapped with `pipeline/tools/swap_pano.mjs`). (2) The dark round disc beside the coffee cup was `Mug_Stain_B`: removed in
   `e20_polish.py` for the final bake; for the live preview its triangles were cut from the desk group (`pipeline/tools/cut_disc.mjs`; note the Room_Desk node has an 8 deg
   rotation, so cuts must apply the node transform) -> `web/sakina-room-r5.glb`. `main.js?v=9`. Verified locally only (phone viewport 430x930); not yet on the real Netlify URL.
+
+- 2026-11-01 — **Round 5c: window photo zoom (candidate at /preview/, main page NOT changed)**. Sakina rejected the invented rail-yard extension ("blurred, looks like a hallucination") and asked
+  to just zoom the photo instead of limiting the camera angle. The synthetic extension (r5 view GLB, panorama.py changes) is reverted: main again loads `sakina-view-r4lo.glb`
+  (original photo + original pano). `pipeline/tools/zoom_view_photo.mjs` enlarges the photo patch 3.7x in angle space about the horizon / vanishing point -> `web/sakina-view-r6.glb`;
+  the photo then reaches about 43 deg below eye level (was 9), so a steep camera still sees real rails/yard from the photo. Trade-off: the home view shows a tighter crop of the skyline
+  (TV tower and the Arena no longer both fit). `/preview/` serves it (copy of the site with `../` asset paths). Main keeps the disc-removed room (`sakina-room-r5.glb`).

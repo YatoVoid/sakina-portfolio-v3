@@ -29,7 +29,7 @@ PATCH_RADIUS = RADIUS - 0.25   # native-resolution photo sits just in front of t
 # Extension panorama coverage (cylindrical: u linear in yaw, v linear in tan(pitch)).
 PANO_YAW = (-85.0, 85.0)
 PANO_PITCH = (-55.0, 50.0)
-PANO_SIZE = (4096, 2048)
+PANO_SIZE = (2048, 1024)
 
 ALPHA = math.atan((HORIZON_ROW - CY) / F_PX)          # camera pitch in the original photo (looked slightly up)
 PITCH = ALPHA + math.radians(LIFT_DEG)

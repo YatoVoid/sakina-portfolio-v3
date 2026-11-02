@@ -18,7 +18,7 @@ import view as V  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(__file__))
 DS = 2                                   # work on a half-resolution copy (the extension is blurred anyway)
 BLUR_SIGMAS = [0.8, 5, 14, 34]           # half-res px
-BLUR_STEP = 900.0                        # full-res px outside the frame per blur level
+BLUR_STEP = 260.0                        # full-res px outside the frame per blur level
 GRAIN_STD = 3.2                          # 8-bit units, measured sky noise is ~5-7 at full res
 
 
@@ -53,25 +53,7 @@ def build(seed=7):
     thf = fold(th, -th_e, th_e)
     ph_top = np.arctan(V.CY * np.cos(thf) / V.F_PX)                       # top / bottom edge at this column
     ph_bot = -np.arctan((V.PHOTO_H - 1 - V.CY) * np.cos(thf) / V.F_PX)
-    phf = np.clip(ph, ph_bot, ph_top)                        # above: clamp to the edge row (sky gradient)
-    # below the frame: ground-plane continuation. The camera is H m above the tracks; a steeper ray hits the yard
-    # nearer than the bottom edge does. Keep the ground point's sideways position and slide it back to the edge
-    # depth, so rails / lights keep their lateral lines and fan out toward the viewer like the real yard.
-    HCAM = 4.7
-    Z_edge = HCAM * V.F_PX / (V.PHOTO_H - 1 - V.CY)
-    steep = (ph < ph_bot) & (b < -1e-4)
-    tg_ = np.where(steep, HCAM / np.maximum(-b, 1e-4), 0.0)
-    Xg, Zg = a * tg_, c * tg_
-    px_g = V.CX + V.F_PX * Xg / Z_edge
-    px_g = fold(px_g, 0, V.PHOTO_W - 1)                      # beyond the photo's width: mirror the yard sideways
-    below_scale = np.clip(Zg / Z_edge, 0, 1)
-    # distance along the ground (m) behind the edge, used to blur / dim gently
-    ground_d = np.where(steep, Z_edge - Zg, 0.0)
-    wg = np.clip((ph_bot - ph) / 0.04, 0, 1)                 # fade the ground model in over ~2 deg so there is no seam
-    thg = np.arctan((px_g - V.CX) / V.F_PX)
-    thf = np.where(steep, thf * (1 - wg) + thg * wg, thf)
-    ph_bot = np.where(steep, ph_bot, ph_bot)
-    phf = np.where(steep, -np.arctan((V.PHOTO_H - 1 - V.CY) * np.cos(thf) / V.F_PX), phf)
+    phf = np.clip(ph, ph_bot, ph_top)                        # above/below: clamp to the edge row (then heavy blur)
 
     # distances outside the frame, expressed in full-res photo pixels
     dx = np.maximum(0, np.abs(th) - th_e) * V.F_PX
@@ -86,7 +68,7 @@ def build(seed=7):
 
     lev = np.clip(dist / BLUR_STEP, 0, len(levels) - 1)
     vert = dy_top + dy_bot                                   # above/below the frame: reach full blur within ~3 deg
-    lev = np.where(vert > 0, np.maximum(lev, np.clip(0.4 + ground_d / 14.0, 0, 1.6)), lev)
+    lev = np.where(vert > 0, np.maximum(lev, np.clip(2 + vert / 60.0, 0, len(levels) - 1)), lev)
     out = np.zeros((H, W, 3), np.float32)
     for i, L in enumerate(levels):
         w = np.clip(1 - np.abs(lev - i), 0, 1)
@@ -96,55 +78,19 @@ def build(seed=7):
         out += samp * w[..., None]
 
     # darkening away from the photo: sides drift to a dimmer city haze, the sky keeps getting darker upward
-    k_side = np.maximum(0.80, np.exp(-dx / 9000.0))
-    k_up = np.maximum(0.60, np.exp(-dy_top / 4000.0))
-    k_down = np.maximum(0.75, np.exp(-dy_bot / 5000.0))
+    k_side = np.maximum(0.62, np.exp(-dx / 5200.0))
+    k_up = np.maximum(0.50, np.exp(-dy_top / 2600.0))
+    k_down = np.maximum(0.30, np.exp(-dy_bot / 1400.0))
     out *= (k_side * k_up * k_down)[..., None]
 
     # far from the frame: smooth horizontally (hides mirror seams and the photo's corner vignetting) ...
     soft = np.stack([gaussian_filter(out[..., ch], (2, 40), mode="wrap") for ch in range(3)], -1)
-    t = np.maximum(np.clip((dist - 600) / 3000.0, 0, 0.45), np.clip(dy_bot / 400.0, 0, 0.5))[..., None]
+    t = np.clip(dist / 1500.0, 0, 1)[..., None]
     out = out * (1 - t) + soft * t
     # ... and below the photo fade to an even dark ground instead of streaks of the bottom row
     ground = lin[-lin.shape[0] // 7:].reshape(-1, 3).mean(0) * 0.55
-    tg = np.clip(dy_bot / 1e9, 0, 1)[..., None]   # no fade to flat ground any more
+    tg = np.clip(dy_bot / 1500.0, 0, 1)[..., None]
     out = out * (1 - tg) + ground * tg
-
-    # --- steep (ground) region: lift the brightness and add a sparse field of sodium lamps / lit windows so a high
-    # camera looking down still sees a living yard, not a dark smear. Lamps live in ground coordinates (metres).
-    wgr = np.clip((V_ph_bot - ph) / 0.04, 0, 1)[..., None] if False else wg[..., None]
-    out = out * (1 + 3.4 * wgr)
-    rng2 = np.random.default_rng(11)
-    glow = np.zeros((H, W, 3), np.float32)
-    idx = np.where(steep)
-    Xs, Zs = Xg[idx], Zg[idx]
-    for zl in np.arange(2.0, Z_edge + 14, 1.2):
-        for xl in np.arange(-70, 70, 1.7):
-            if rng2.random() > 0.45:
-                continue
-            lx, lz = xl + rng2.uniform(-1.6, 1.6), zl + rng2.uniform(-1.2, 1.2)
-            sig = 0.06 + 0.005 * lz
-            d2 = (Xs - lx) ** 2 + (Zs - lz) ** 2
-            m = d2 < (4 * sig) ** 2
-            if not m.any():
-                continue
-            g = np.exp(-d2[m] / (2 * sig * sig))
-            warm = np.array([1.0, 0.55, 0.20]) if rng2.random() < 0.8 else np.array([0.75, 0.9, 1.0])
-            glow[idx[0][m], idx[1][m]] += (g[:, None] * warm * rng2.uniform(0.5, 1.4)).astype(np.float32)
-    out = out + glow * 1.4 * wgr
-    # ground-space structure so a steep view still reads as a rail yard: ballast grain, sleepers, steel rails
-    Xa, Za = Xs, Zs
-    rng3 = np.random.default_rng(23)
-    grain = np.exp(rng3.normal(0, 0.45, Xa.shape)).astype(np.float32)
-    ph_x = np.mod(Xa, 3.2)
-    rail = np.clip(1 - np.minimum(np.abs(ph_x - 0.0), np.abs(ph_x - 1.435)) / 0.05, 0, 1)
-    in_track = ((ph_x < 1.6)).astype(np.float32)
-    sleeper = (np.mod(Za, 0.62) < 0.22).astype(np.float32) * in_track
-    base = np.array([0.026, 0.022, 0.019], np.float32)
-    tex = (base * (grain * (1 - 0.25 * sleeper))[:, None]) + rail[:, None] * np.array([0.075, 0.075, 0.085], np.float32)
-    lamp_glow = np.clip(glow[idx[0], idx[1]].sum(-1), 0, 1)[:, None]
-    wv = wg[idx][:, None] * 0.6
-    out[idx] = out[idx] * (1 - wv) + (tex * (1 + 1.2 * lamp_glow)) * wv
 
     srgb = np.where(out <= 0.0031308, out * 12.92, 1.055 * np.power(np.maximum(out, 0), 1 / 2.4) - 0.055)
     rng = np.random.default_rng(seed)
