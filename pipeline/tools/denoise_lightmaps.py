@@ -10,6 +10,7 @@ if not hasattr(bpy,"__file__"): bpy.__file__="/app/blender/x/y"
 sc=bpy.context.scene
 names=os.environ["GROUPS"].split(",")
 MODE=os.environ.get("MODE","denoise")
+if os.environ.get("VT"): sc.view_settings.view_transform=os.environ["VT"]; sc.view_settings.look=os.environ.get("LOOK","None"); sc.view_settings.exposure=float(os.environ.get("EXP","0"))
 OUT=os.environ["OUT"]
 print("DN view",sc.view_settings.view_transform,sc.view_settings.look)
 for n in names:
