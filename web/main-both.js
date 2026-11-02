@@ -1,10 +1,11 @@
 import * as THREE from "three";
-import {LookControls} from "./look-controls.js?v=6";
+import {LookControls} from "./look-controls.js?v=7";
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 import {DRACOLoader} from "three/addons/loaders/DRACOLoader.js";
 import {projects,ibm,notepad,credits} from "./content.js";
 import {Ambience} from "./audio.js";
 import {pad} from "./pad-content.js";
+import {makeIbmTerminal} from "./ibm-terminal.js";
 import {makePadTexture,PAD,UNDER} from "./pad-texture.js";
 import {EffectComposer} from "three/addons/postprocessing/EffectComposer.js";
 import {RenderPass} from "three/addons/postprocessing/RenderPass.js";
@@ -460,6 +461,8 @@ function tapeAt(p){
   }
   return best;
 }
+const term=makeIbmTerminal({scene,position:[-2.7225,0.873,-1.195],size:[0.285,0.215],onOpenLink:href=>{if(href.startsWith("mailto:"))location.href=href;else window.open(href,"_blank","noopener")}});
+addEventListener("keydown",e=>{if(e.metaKey||e.ctrlKey||e.altKey||document.getElementById("crt-gate"))return;if(term.onKey(e)){e.preventDefault();e.stopImmediatePropagation()}},true);
 let VIEWS;
 function buildViews(){
   tapeBox=deskTapeBox();
@@ -472,7 +475,7 @@ function buildViews(){
   VIEWS={
     home:{target:HOME.target.clone(),pos:HOME.pos.clone()},
     tapes:{target:tapes.clone(),pos:tapes.clone().add(new THREE.Vector3(0,0.35,0.95))},
-    ibm:{target:ibmC.clone().add(new THREE.Vector3(0,-0.05,0)),pos:ibmC.clone().add(new THREE.Vector3(1.12,0.25,0.42))},
+    ibm:{target:new THREE.Vector3(-2.72,0.873,-1.195),pos:new THREE.Vector3(-2.2,0.9,-1.195)},
     notepad:{target:note.clone(),pos:note.clone().add(new THREE.Vector3(0.05,0.62,0.55))},
     work:{target:tapes.clone().add(new THREE.Vector3(0.24,-0.04,0)),pos:tapes.clone().add(new THREE.Vector3(0.22,0.3,1.12))},
     clocks:{target:new THREE.Vector3(-1.8,2.1,-2.55),pos:new THREE.Vector3(-1.0,1.5,-0.5)},
@@ -591,8 +594,9 @@ addEventListener("keydown",e=>{
 
 function go(name){
   if(name!=="pad")dropPad();
+  if(name!=="ibm")term.setActive(false);
   if(name==="tapes"){flyTo("tapes");openPanel("tapes",panelState?.kind==="tapes"?panelState.idx:0)}
-  else if(name==="ibm"){flyTo("ibm");openPanel("ibm")}
+  else if(name==="ibm"){flyTo("ibm");closePanel();term.setActive(true)}
   else if(name==="notepad"){flyTo("notepad");openPanel("notepad")}
   else if(name==="pad")liftPad();
   else if(name==="power")toggleTv();
@@ -609,7 +613,7 @@ document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",(
 $("home-link").addEventListener("click",()=>{if(!document.documentElement.classList.contains("crt-gating"))go("home")});
 const menuLinks=[...document.querySelectorAll(".menu [data-view]")];let menuCur="";
 function syncMenu(){
-  const cur=padOpen()?"pad":panelState?.kind==="ibm"?"ibm":"";
+  const cur=padOpen()?"pad":term.active?"ibm":"";
   if(cur===menuCur)return;menuCur=cur;
   menuLinks.forEach(b=>b.dataset.view===cur?b.setAttribute("aria-current","page"):b.removeAttribute("aria-current"));
 }
@@ -722,6 +726,13 @@ canvas.addEventListener("pointerup",ev=>{
   if(!down||tween)return;
   const moved=Math.hypot(ev.clientX-down.x,ev.clientY-down.y);down=null;
   if(moved>6||controls.clickBlocked)return;     // a drag or pinch is never a click
+  if(term.active){
+    const r=canvas.getBoundingClientRect();
+    ptr.set(((ev.clientX-r.left)/r.width)*2-1,-((ev.clientY-r.top)/r.height)*2+1);
+    ray.setFromCamera(ptr,camera);
+    const th=ray.intersectObject(term.mesh,false)[0];
+    if(th){term.clickAt(th.uv);return}
+  }
   const hit=pick(ev);
   if(!hit)return;
   if(hit.kind==="tapes"){flyTo("tapes");openPanel("tapes",hit.idx)}
@@ -750,7 +761,7 @@ function frame(now){
   if(controls.enabled)controls.update();
   stepPad(now);
   crtGlass.uniforms.uTime.value=reduced?0:now/1000;
-  crtLive.uTime.value=reduced?0:now/1000;if(now-(crtScreen.last||0)>50){crtScreen.last=now;crtScreen.draw(reduced?0:now)}rainU.uTime.value=reduced?0:now/1000;steamU.uTime.value=reduced?3:now/1000;windU.uTime.value=reduced?0:now/1000;stepTv(now);syncMenu();if(clock.tex)drawClock(reduced?0:Math.floor((now-clock.t0)/1000));
+  crtLive.uTime.value=reduced?0:now/1000;if(now-(crtScreen.last||0)>50){crtScreen.last=now;crtScreen.draw(reduced?0:now)}term.step(now,reduced);rainU.uTime.value=reduced?0:now/1000;steamU.uTime.value=reduced?3:now/1000;windU.uTime.value=reduced?0:now/1000;stepTv(now);syncMenu();if(clock.tex)drawClock(reduced?0:Math.floor((now-clock.t0)/1000));
   composer.render();
 }
 

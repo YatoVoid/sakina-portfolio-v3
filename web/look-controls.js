@@ -18,7 +18,7 @@ const DOLLY_MIN = 0.80, DOLLY_MAX = 1.20;
 const RAD_PER_PX = 0.0042;                         // full drag across ~600 px swings 145 deg (the whole HOME range)
 const DRAG_THRESHOLD = 6;                          // px: below this a press is a click/tap
 // x min follows the left wall (moved to x -2.30 in round 3) with a 35 cm margin
-const ROOM = new THREE.Box3(new THREE.Vector3(-1.95, 0.35, -2.25), new THREE.Vector3(3.3, 2.5, 3.2));
+const ROOM = new THREE.Box3(new THREE.Vector3(-2.45, 0.35, -2.25), new THREE.Vector3(3.3, 2.5, 3.2));
 
 export class LookControls {
   constructor(camera, dom) {
