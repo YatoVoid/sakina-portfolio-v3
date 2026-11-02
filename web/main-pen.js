@@ -82,6 +82,26 @@ function ibmLift(m){
   m.needsUpdate=true;
 }
 
+function heal(m){
+  m.onBeforeCompile=sh=>{
+    sh.vertexShader=sh.vertexShader.replace("#include <common>","#include <common>\nvarying vec3 vWP3;")
+      .replace("#include <begin_vertex>","#include <begin_vertex>\nvWP3=(modelMatrix*vec4(transformed,1.0)).xyz;");
+    sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vWP3;")
+      .replace("#include <emissivemap_fragment>",`#include <emissivemap_fragment>
+        vec3 hd=(vWP3-vec3(-0.80,0.80,-1.95))/vec3(0.17,0.15,0.17);float hw=1.0-smoothstep(0.55,1.0,length(hd));
+        if(hw>0.0){
+          vec2 ts=1.0/vec2(textureSize(emissiveMap,0));vec3 qs[24];float ls[24];float mean=0.;
+          for(int r=0;r<3;r++)for(int k=0;k<8;k++){float a=float(k)*0.7854+float(r)*0.3;vec2 o=vec2(cos(a),sin(a))*(14.0+float(r)*12.0)*ts;
+            vec3 q=texture2D(emissiveMap,vEmissiveMapUv+o).rgb;float ql=dot(q,vec3(.2126,.7152,.0722));qs[r*8+k]=q;ls[r*8+k]=ql;mean+=ql;}
+          mean/=24.;vec3 acc=vec3(0.);float cnt=0.;
+          for(int i=0;i<24;i++){if(ls[i]>=mean){acc+=qs[i];cnt+=1.;}}
+          vec3 best=cnt>0.?acc/cnt:totalEmissiveRadiance;
+          float hx=smoothstep(0.045,0.075,length(vWP3.xz-vec2(-0.70,-1.94)));hw*=hx;
+          totalEmissiveRadiance=mix(totalEmissiveRadiance,max(totalEmissiveRadiance,best),hw*0.95);
+        }`)};
+  m.needsUpdate=true;
+}
+
 const roomP=new Promise((res,rej)=>loader.load("sakina-room-agx2.glb",g=>{
   const maxAniso=renderer.capabilities.getMaxAnisotropy();
   g.scene.traverse(o=>{
@@ -109,6 +129,7 @@ const roomP=new Promise((res,rej)=>loader.load("sakina-room-agx2.glb",g=>{
       m.needsUpdate=true;
     }
     if(IBM_LIFT_NAMES.includes(o.name))ibmLift(m);
+    if(o.name==="Room_Desk"||o.name==="Room_Plant")heal(m);
     const sp=SPEC[o.name];
     if(sp){m.roughness=sp[0];m.metalness=sp[2]||0;if("specularIntensity" in m){m.specularIntensity=1;m.specularColor.setRGB(1,1,1);m.ior=1.5}m.envMapIntensity=sp[1]*REFL;envReady.then(t=>{m.envMap=t;m.needsUpdate=true})}
     else m.envMapIntensity=0;
