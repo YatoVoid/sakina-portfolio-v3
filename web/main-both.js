@@ -168,6 +168,11 @@ const roomP=new Promise((res,rej)=>loader.load("sakina-room-agx-both.glb",g=>{
     const m=new THREE.MeshBasicMaterial({map:t,color:0x0a0405,transparent:true,opacity:0.62,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4});
     const p=new THREE.Mesh(new THREE.PlaneGeometry(2.0,2.0),m);p.rotation.y=Math.PI/2;p.position.set(-2.99,1.7,-1.5);p.renderOrder=1;p.name="LeafShadows";scene.add(p);
   }
+  {
+    const t=new THREE.TextureLoader().load("sakina-photo.jpg");t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;
+    const p=new THREE.Mesh(new THREE.PlaneGeometry(0.074,0.080),new THREE.MeshBasicMaterial({map:t,color:0xcfc2b0}));
+    p.rotation.y=Math.PI/2;p.position.set(-2.6475,0.878,-1.354);p.renderOrder=2;p.name="PolaroidPhoto";scene.add(p);
+  }
   scene.add(g.scene);res();
 },e=>{if(e.lengthComputable){progressRoom=e.loaded/e.total;setProgress()}},rej));
 // Night sky behind the city: dark zenith fading to a warm light-pollution haze at the horizon (round 2).
