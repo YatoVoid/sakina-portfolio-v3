@@ -65,3 +65,4 @@ Known pre-existing bug: 6 of 13 tapes open the project of the tape above them (m
   (original photo + original pano). `pipeline/tools/zoom_view_photo.mjs` enlarges the photo patch 3.7x in angle space about the horizon / vanishing point -> `web/sakina-view-r6.glb`;
   the photo then reaches about 43 deg below eye level (was 9), so a steep camera still sees real rails/yard from the photo. Trade-off: the home view shows a tighter crop of the skyline
   (TV tower and the Arena no longer both fit). `/preview/` serves it (copy of the site with `../` asset paths). Main keeps the disc-removed room (`sakina-room-r5.glb`).
+- 2026-11-01 — Round 5d: /preview/ photo zoom raised 3.7x -> 5.2x (`web/sakina-view-r7.glb`; r6 removed) because the bottom of the lowest panes still showed the dark extension. Photo now reaches about 64 deg below eye level. Main page untouched.
