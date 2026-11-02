@@ -12,7 +12,7 @@
 import * as THREE from "three";
 
 const D2R = THREE.MathUtils.degToRad;
-const HOME_LIMITS = { azLeft: D2R(62), azRight: D2R(70), polarMin: D2R(72.5), polarMax: D2R(90) };   // round 5f: steepest tilt = where the window photo ends (see photoPolarMin). camera-left swing stops 0.5 m short of the plant
+const HOME_LIMITS = { azLeft: D2R(40), azRight: D2R(70), polarMin: D2R(47), polarMax: D2R(90) };   // round 5f: steepest tilt = where the window photo ends (see photoPolarMin). camera-left swing stops 0.5 m short of the plant
 const PRESET_LIMITS = { az: D2R(35), polarSpan: D2R(20), polarMin: D2R(35), polarMax: D2R(95) };
 const DOLLY_MIN = 0.80, DOLLY_MAX = 1.20;
 const RAD_PER_PX = 0.0042;                         // full drag across ~600 px swings 145 deg (the whole HOME range)
@@ -59,12 +59,13 @@ export class LookControls {
     this._az = this._gAz = 0; this._polar = this._gPolar = 0; this._dolly = this._gDolly = 1;
   }
 
-  // Round 5f: the window photo ends ~13 deg below eye level. The steeper the camera swings sideways, the sooner a ray through the
-  // window's bottom edge leaves the photo, so the allowed tilt shrinks with |azimuth|: 72.5 deg (straight on) .. 78 deg (60 deg sideways).
+  // Round 5g: the window photo (zoom 3.2, anchored on the METRO sign) covers yaw -89..+52 deg and reaches 34 deg below eye level. Computed in the cloud for
+  // dolly 0.8-1.2: every ray through the window stays inside the photo for azimuth -40..+70 deg when the tilt (polar angle) is at least
+  // 47 + 16 (az/70)^2 deg. Swinging sideways raises the allowed minimum a little, so the camera can never look past the photo's edge.
   _photoPolarMin() {
     if (!this._home) return this._lim.polarMin;
-    const az = Math.abs(this._az0 + this._gAz), t = Math.min(1, az / D2R(60));
-    return Math.max(this._lim.polarMin, D2R(72.5 + 5.5 * t) - this._polar0);
+    const t = Math.min(1, Math.abs(this._az0 + this._gAz) / D2R(70));
+    return Math.max(this._lim.polarMin, D2R(47 + 16 * t * t) - this._polar0);
   }
 
   update() {

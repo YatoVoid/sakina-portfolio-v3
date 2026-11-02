@@ -7,8 +7,8 @@ Zoom factor: env V3_VIEW_ZOOM (default 5.2).
 import bpy, math, os
 
 C = (-0.02, 1.12, -0.25)          # hero eye, three.js
-S = float(os.environ.get("V3_VIEW_ZOOM", "1.3"))
-ANCHOR_PX = float(os.environ.get("V3_VIEW_ANCHOR_PX", "1680"))   # photo column kept in place = the METRO sign
+S = float(os.environ.get("V3_VIEW_ZOOM", "3.2"))
+ANCHOR_PX = float(os.environ.get("V3_VIEW_ANCHOR_PX", "1700"))   # photo column kept in place = the METRO sign
 TH0 = math.radians(-2.5) + math.atan((ANCHOR_PX - 1288) / 3200)
 H0 = 79.75 * math.tan(math.radians(4))
 
