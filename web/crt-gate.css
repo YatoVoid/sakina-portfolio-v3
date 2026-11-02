@@ -11,8 +11,8 @@ html.crt-gating .brand,html.crt-gating .bar,html.crt-gating #hint{visibility:hid
 #crt-gate .mid{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:.32em}
 #crt-gate .cta{display:none;font-size:1.05em;letter-spacing:.06em}
 #crt-gate .meter{display:flex;align-items:center;gap:.4em;font-size:.7em}
-#crt-gate .bar{display:block;width:8em;height:.46em;background:repeating-linear-gradient(90deg,rgba(255,255,255,.26) 0 .31em,transparent .31em .4em)}
-#crt-gate .bar i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,#f4f5ff 0 .31em,transparent .31em .4em)}
+#crt-gate .cg-bar{display:block;width:8em;height:.46em;background:repeating-linear-gradient(90deg,rgba(255,255,255,.26) 0 .31em,transparent .31em .4em)}
+#crt-gate .cg-bar i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,#f4f5ff 0 .31em,transparent .31em .4em)}
 #crt-gate .pc{min-width:2.3em;font-variant-numeric:tabular-nums}
 #crt-gate.ready .lb{opacity:0}
 #crt-gate.ready .cta{display:block;animation:cg-blink 1.4s steps(1) infinite}
@@ -41,3 +41,5 @@ html.crt-gating .brand,html.crt-gating .bar,html.crt-gating #hint{visibility:hid
 @keyframes cg-out{0%{opacity:1;filter:brightness(1.6)}20%{opacity:.4}40%{opacity:0}100%{opacity:0}}
 @keyframes cg-static{0%{opacity:.9;transform:translate(0,0)}17%{opacity:.75;transform:translate(-7%,4%)}34%{opacity:.85;transform:translate(5%,-6%)}51%{opacity:.6;transform:translate(-3%,7%)}68%{opacity:.35;transform:translate(6%,2%)}85%{opacity:.12}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){#crt-gate,#crt-gate .pic,#crt-gate .glass::after,#crt-gate.ready .cta,#crt-gate.out .pic,#crt-gate.out .noise{animation:none;transition:none}}
+
+#crt-gate.ready{background:transparent}

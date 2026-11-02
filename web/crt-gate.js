@@ -8,13 +8,13 @@ if(loader){
   gate.setAttribute("role","status");
   gate.innerHTML=`<button type="button" class="enter" aria-label="Enter the room" disabled></button>
 <div class="scr"><div class="pic"><span class="lb">▶▶ LOADING</span><span class="ch">CH 00</span>
-<div class="mid"><p class="cta">CLICK TO ENTER</p><div class="meter"><span class="bar"><i></i></span><span class="pc">0%</span></div>
+<div class="mid"><p class="cta">CLICK TO ENTER</p><div class="meter"><span class="cg-bar"><i></i></span><span class="pc">0%</span></div>
 <button type="button" class="snd on" role="switch" aria-checked="true"><span>SOUND</span><b><i class="s-on">ON</i><i class="s-off">OFF</i></b></button></div></div>
 <div class="noise"></div><div class="glass"></div></div>`;
   document.body.prepend(gate);
 
   const $=s=>gate.querySelector(s);
-  const bar=$(".bar i"),pc=$(".pc"),lb=$(".lb"),snd=$(".snd"),enter=$(".enter"),scr=$(".scr");
+  const bar=$(".cg-bar i"),pc=$(".pc"),lb=$(".lb"),snd=$(".snd"),enter=$(".enter"),scr=$(".scr");
   const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const c=document.createElement("canvas");c.width=c.height=128;
