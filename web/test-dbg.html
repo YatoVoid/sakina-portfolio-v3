@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sakina Saifuddin | Data Scientist</title>
+<meta name="description" content="Portfolio of Sakina Saifuddin, data scientist at the University of Houston.">
+<meta name="theme-color" content="#0d0906">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 fill=%27%230d0906%27/%3E%3Crect x=%273%27 y=%273%27 width=%2710%27 height=%277%27 fill=%27%23e0a04a%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<style>
+#scene{filter:url(#nightgrade) saturate(1.25) contrast(1.04) brightness(1.05)}
+#grain{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;mix-blend-mode:overlay;opacity:.5}
+#vig{position:fixed;inset:0;pointer-events:none;z-index:4;background:radial-gradient(ellipse 75% 70% at 50% 58%,rgba(0,0,0,0) 55%,rgba(6,3,14,.22) 88%,rgba(6,3,14,.4) 100%)}
+#tint{position:fixed;inset:0;pointer-events:none;z-index:4;mix-blend-mode:soft-light;background:linear-gradient(180deg,rgba(40,50,120,.30),rgba(255,150,60,.12) 70%)}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="Interactive 3D model of Sakina's desk. Use the buttons below or the keys T, I, N and Z to move between areas."></canvas>
+
+<header class="brand">
+  <h1>SAKINA SAIFUDDIN</h1>
+  <p>DATA SCIENTIST · UNIVERSITY OF HOUSTON</p>
+</header>
+
+<aside id="panel" class="panel" role="dialog" aria-labelledby="panel-title" hidden>
+  <button class="close" id="panel-close" aria-label="Close panel">ESC</button>
+  <p class="eyebrow" id="panel-eyebrow"></p>
+  <h2 id="panel-title"></h2>
+  <div id="panel-body"></div>
+</aside>
+
+<div id="hint" class="hint" aria-hidden="true"></div>
+
+<nav class="bar" aria-label="Scene controls">
+  <ul class="keys">
+    <li><button data-view="tapes"><kbd>T</kbd> Tapes</button></li>
+    <li><button data-view="ibm"><kbd>I</kbd> IBM PC</button></li>
+    <li><button data-view="notepad"><kbd>N</kbd> Notepad</button></li>
+    <li><button data-view="desk"><kbd>Z</kbd> Zoom desk</button></li>
+  </ul>
+  <ul class="toggles">
+    <li><button id="btn-credits">CREDITS</button></li>
+    <li><button id="btn-sound" aria-pressed="false">SOUND OFF</button></li>
+    <li><button id="btn-lofi" aria-pressed="false">LO-FI</button></li>
+  </ul>
+</nav>
+
+<div id="loader" class="loader" role="status">
+  <p class="loader-title">SAKINA SAIFUDDIN</p>
+  <div class="loader-track"><div id="loader-fill"></div></div>
+  <p id="loader-text">LOADING 0%</p>
+</div>
+
+<div id="nogl" class="nogl" hidden>
+  <p>This site needs WebGL. Enable hardware acceleration or try another browser.</p>
+</div>
+
+<div class="scan" aria-hidden="true"></div>
+<script type="module" src="main-dbg.js?v=1"></script>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="nightgrade" color-interpolation-filters="sRGB">
+<feComponentTransfer><feFuncR type="gamma" amplitude="1.0" exponent="1.10" offset="0.008"/><feFuncG type="gamma" amplitude="1.0" exponent="1.14" offset="0.007"/><feFuncB type="gamma" amplitude="1.0" exponent="1.08" offset="0.012"/></feComponentTransfer></filter></svg>
+<div id="tint"></div><div id="vig"></div><canvas id="grain" width="1280" height="720"></canvas>
+<script>
+(()=>{const c=document.getElementById("grain"),x=c.getContext("2d"),d=x.createImageData(c.width,c.height);
+const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
+function draw(){const b=d.data;for(let i=0;i<b.length;i+=4){const v=128+(Math.random()-.5)*230|0;b[i]=v;b[i+1]=v*0.97|0;b[i+2]=v*0.9|0;b[i+3]=255}x.putImageData(d,0,0)}
+draw();if(!reduced)setInterval(draw,1000/12);})();
+</script>
+</body>
+</html>
