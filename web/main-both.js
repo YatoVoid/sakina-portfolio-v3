@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import {LookControls} from "./look-controls.js?v=5";
+import {LookControls} from "./look-controls.js?v=6";
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 import {DRACOLoader} from "three/addons/loaders/DRACOLoader.js";
 import {projects,ibm,notepad,credits} from "./content.js";
@@ -443,6 +443,7 @@ function buildViews(){
     ibm:{target:ibmC.clone().add(new THREE.Vector3(0,-0.05,0)),pos:ibmC.clone().add(new THREE.Vector3(1.12,0.25,0.42))},
     notepad:{target:note.clone(),pos:note.clone().add(new THREE.Vector3(0.05,0.62,0.55))},
     work:{target:tapes.clone().add(new THREE.Vector3(0.24,-0.04,0)),pos:tapes.clone().add(new THREE.Vector3(0.22,0.3,1.12))},
+    clocks:{target:new THREE.Vector3(-1.8,2.1,-2.55),pos:new THREE.Vector3(-1.0,1.5,-0.5)},
     desk:{target:deskC.clone().add(new THREE.Vector3(0,0.05,0)),pos:deskC.clone().add(new THREE.Vector3(0.1,0.65,1.25))}
   };
 }
@@ -563,6 +564,7 @@ function go(name){
   else if(name==="notepad"){flyTo("notepad");openPanel("notepad")}
   else if(name==="pad")liftPad();
   else if(name==="desk"){flyTo("desk");closePanel()}
+  else if(name==="clocks"){flyTo("clocks");closePanel()}
   else{flyTo("home");closePanel()}
 }
 
@@ -576,6 +578,7 @@ addEventListener("keydown",e=>{
   else if(k==="i")go("ibm");
   else if(k==="n")go("pad");
   else if(k==="z")go("desk");
+  else if(k==="k")go("clocks");
   else if(k==="escape"){go("home")}
 });
 

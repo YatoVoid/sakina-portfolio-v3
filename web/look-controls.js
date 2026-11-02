@@ -12,7 +12,7 @@
 import * as THREE from "three";
 
 const D2R = THREE.MathUtils.degToRad;
-const HOME_LIMITS = { azLeft: D2R(62), azRight: D2R(70), polarMin: D2R(35), polarMax: D2R(90) };   // camera-left swing stops 0.5 m short of the plant
+const HOME_LIMITS = { azLeft: D2R(38), azRight: D2R(70), polarMin: D2R(35), polarMax: D2R(90) };   // camera-left swing stops 0.5 m short of the plant
 const PRESET_LIMITS = { az: D2R(35), polarSpan: D2R(20), polarMin: D2R(35), polarMax: D2R(95) };
 const DOLLY_MIN = 0.80, DOLLY_MAX = 1.20;
 const RAD_PER_PX = 0.0042;                         // full drag across ~600 px swings 145 deg (the whole HOME range)
