@@ -1,188 +1,133 @@
-export const MENU_TITLE = "SAKINA SAIFUDDIN";
-
-export const sections = [
-  {
-    key: "ABOUT ME",
-    lines: [
-      "SAKINA SAIFUDDIN",
-      "Healthcare ML researcher.",
-      "Data Science and AI graduate student at the University of Houston, Houston, Texas.",
-      "",
-      "I am a graduate student and research assistant working on machine learning problems in healthcare.",
-      "",
-      "My path into data science was not a straight line. I spent over four years in social media management, taught myself programming and worked as a software engineer on the MERN stack, then moved into business intelligence for one of Pakistan's largest banks.",
-      "",
-      "A research project at Iqra University on classifying harmful brain activity from EEG data raised the questions I work on now: how reliable are models in high-stakes domains, and how do we apply AI responsibly in healthcare."
-    ]
-  },
-  {
-    key: "EXPERIENCE",
-    intro: "6 ROLES. PRESS A NUMBER TO OPEN ONE.",
-    items: [
-      {
-        key: "Graduate Research Assistant",
-        meta: "Biomedical Imaging Lab, University of Houston",
-        when: "Feb 2026 - Present, Houston, Texas",
-        lines: [
-          "Working under Prof. Labate Demetrio on identifying neuronal soma location and morphology from fluorescence microscopy images.",
-          "Building image-processing and analysis workflows in ImageJ/Fiji to measure neuronal structures across 1,000+ images.",
-          "Helping with data preparation, feature extraction and result validation for healthcare machine learning research."
-        ]
-      },
-      {
-        key: "Marketing Analyst",
-        meta: "A.D. Bruce Religion Center, University of Houston",
-        when: "Aug 2025 - Present, Houston, Texas",
-        lines: [
-          "Marketing 3+ weekly programs (Free Wednesday Lunches, Good Morning Mondays, LEGO stress events) to raise student turnout.",
-          "Creating and scheduling 10-15 social posts a week.",
-          "Content strategy that improved average event reach by 25-30%.",
-          "Hosting and managing 5+ on-campus activations a month."
-        ]
-      },
-      {
-        key: "Associate Business Intelligence",
-        meta: "BluTech Consulting (consulting for UBL)",
-        when: "Apr 2025 - Aug 2025, Karachi, Pakistan",
-        lines: [
-          "Streamlined reporting for UBL through dashboards and analysis.",
-          "Built 10+ interactive Power BI and Tableau dashboards for strategic initiatives.",
-          "Used SQL, Teradata SQL and HiveQL to clean and transform 500K+ records.",
-          "Cut reporting turnaround by 25% by finding performance trends and bottlenecks."
-        ]
-      },
-      {
-        key: "MERN Stack Developer",
-        meta: "SoftSyncDev",
-        when: "Aug 2023 - Apr 2025, Karachi, Pakistan",
-        lines: [
-          "Built a React Native app from scratch with Expo Go, TypeScript, a Node.js backend and AWS S3 for real-time video streaming, plus an AI chatbot.",
-          "Wrote RESTful APIs in Node.js.",
-          "Optimized APIs and databases for 40% faster data retrieval.",
-          "Developed and deployed 5+ full-stack MERN projects."
-        ]
-      },
-      {
-        key: "Undergraduate Teaching Assistant",
-        meta: "Iqra University",
-        when: "Aug 2023 - May 2024, Karachi, Pakistan",
-        lines: [
-          "Evaluated 100+ student assignments and projects (DBMS, CSC331).",
-          "Helped 40+ students fix Java errors (OOP, CSC231).",
-          "Mentored students one-on-one, improving pass rates by 15%."
-        ]
-      },
-      {
-        key: "Performance Analyst",
-        meta: "The Walnut Agency",
-        when: "Aug 2022 - Aug 2025, Karachi, Pakistan",
-        lines: [
-          "Managed 70+ client accounts across industries and grew engagement by 60%+ through organic strategy.",
-          "Optimized campaigns from performance metrics, lifting conversions by 25%.",
-          "Coordinated content and influencer partnerships for 30% higher reach.",
-          "Delivered every campaign on time."
-        ]
-      }
-    ]
-  },
-  {
-    key: "EDUCATION",
-    lines: [
-      "MASTER OF SCIENCE, ENGINEERING DATA SCIENCE & AI",
-      "University of Houston, Houston, TX",
-      "Aug 2025 - Present",
-      "Coursework: Software Engineering, Predictive Data Analytics, Intro to Machine Learning, Big Data Analytics, Database Management, Applied Neural Networks, Data Visualization, Data Structures and Algorithms, Intro to Data Science, Statistical Modeling.",
-      "",
-      "BACHELORS IN COMPUTER SCIENCE",
-      "Iqra University, Pakistan",
-      "Jan 2021 - Jan 2025",
-      "GPA 3.71 / 4.0. Gold Medalist."
-    ]
-  },
-  {
-    key: "PROJECTS",
-    intro: "PRESS A NUMBER TO OPEN ONE. MORE ON THE TAPES (KEY T).",
-    items: [
-      {
-        key: "HMS Harmful Brain Activity Classification",
-        meta: "Iqra University",
-        when: "Python, Keras, CNN, EfficientNetB2",
-        lines: [
-          "CNN and EfficientNetB2 models that classify harmful brain activity (seizure vs non-seizure) from EEG spectrograms.",
-          "Trained on a Kaggle dataset of 54,000 images, with probabilistic predictions evaluated by Kullback-Leibler divergence."
-        ]
-      },
-      {
-        key: "Handwritten Digit Recognition",
-        meta: "Iqra University, deep learning course",
-        when: "Python, TensorFlow, Scikit-learn",
-        lines: [
-          "98.7% accuracy on the MNIST dataset and 95% on unseen images."
-        ]
-      },
-      {
-        key: "Titanic Survival Prediction",
-        meta: "University of Houston",
-        when: "Python, Scikit-learn, Naive Bayes",
-        lines: [
-          "Predicts passenger survival from demographic and travel features.",
-          "Naive Bayes classification for probability-based outcome estimation."
-        ]
-      },
-      {
-        key: "Global University Rankings 2020-2025",
-        meta: "University of Houston",
-        when: "Python, Selenium, Pandas, Seaborn",
-        lines: [
-          "Collected and analysed CWUR ranking data for 2020-2025.",
-          "Compared university and country performance over time and studied the key ranking factors."
-        ]
-      },
-      {
-        key: "Busy Bodies",
-        meta: "SoftSyncDev",
-        when: "React Native, Expo Go, Node.js, TypeScript, AWS S3",
-        lines: [
-          "A fitness app deployed on iOS where users build custom workout routines.",
-          "AWS S3 stores large video files and streams them in real time."
-        ]
-      }
-    ]
-  },
-  {
-    key: "SKILLS",
-    lines: [
-      "LANGUAGES",
-      "Python, SQL (Hive, Teradata, Oracle), JavaScript, TypeScript, C#, .NET, Java",
-      "",
-      "ML, AI AND ANALYTICS",
-      "TensorFlow/Keras, Neural Networks, Random Forest, SVM, Pandas, OpenAI API, Tableau, Power BI, SSRS, DBeaver, Excel",
-      "",
-      "WEB AND APPS",
-      "React, React Native (Expo), Next.js, Vue.js, Node.js, Express, MongoDB, Prisma, Firebase, AWS S3",
-      "",
-      "MARKETING AND DESIGN",
-      "Meta Suite, Canva, Hootsuite, Publer, Adobe Creative Suite"
-    ]
-  },
-  {
-    key: "MY AIM",
-    lines: [
-      "Apply data analysis and machine learning to real problems where decisions matter, with healthcare as the main focus.",
-      "",
-      "Build models that are effective and responsibly evaluated, because meaningful machine learning starts with strong data analysis.",
-      "",
-      "Right now that means healthcare ML research. I am open to opportunities in any domain where applied machine learning can make a real impact."
-    ]
-  },
-  {
-    key: "CONTACT",
-    intro: "PRESS A NUMBER TO OPEN A LINK.",
-    items: [
-      { key: "Email", meta: "sakinasaifee006@gmail.com", href: "mailto:sakinasaifee006@gmail.com" },
-      { key: "LinkedIn", meta: "linkedin.com/in/sakinasaifuddin", href: "https://www.linkedin.com/in/sakinasaifuddin/" },
-      { key: "GitHub", meta: "github.com/sakina-saifuddin", href: "https://github.com/sakina-saifuddin" },
-      { key: "Website", meta: "sakina-saifuddin.github.io", href: "https://sakina-saifuddin.github.io" }
-    ]
-  }
+export const BOOT = [
+  "Sakina Computer BASIC Version 3.0",
+  "Copyright (C) 1984, Sakina Saifuddin",
+  "61440 Bytes free",
+  "",
+  "Hi! Type ABOUT to start, or HELP."
 ];
+
+export const BAR = [
+  {key: "1", label: "ABOUT", cmd: "ABOUT"},
+  {key: "2", label: "WORK", cmd: "WORK"},
+  {key: "3", label: "PROJECTS", cmd: "PROJECTS"},
+  {key: "4", label: "HACKS", cmd: "HACKS"},
+  {key: "5", label: "CONTACT", cmd: "CONTACT"}
+];
+
+const about = [
+  "Hi, I'm Sakina Saifuddin.",
+  "Software engineer and data scientist in Houston, Texas, with 3.5+ years across software, data, automation and machine learning.",
+  "",
+  "I started in code. In 2021 I began a computer science degree at Iqra University in Karachi and, the same year, started building real apps at SoftSyncDev with React Native, Node.js and AWS. One early win: a fitness app whose videos took about five minutes to load now loads them in about three seconds.",
+  "",
+  "In 2022 I took a second job reading data about people. At The Walnut Agency I managed 70+ client accounts and used campaign data to grow engagement by 60%+. That is where numbers started to explain behavior for me.",
+  "",
+  "I wanted to work with the data itself, so I moved into business intelligence. At BluTech Consulting I built Power BI and Tableau dashboards on SQL for a major bank. My dashboards and SQL now sit behind 1,074 automated reports.",
+  "",
+  "Then machine learning. A research project on classifying seizures from EEG data pulled me in, and in 2025 I started a Master's in Engineering Data Science and AI at the University of Houston.",
+  "",
+  "I am not a healthcare-only candidate. I have trained EEG classifiers, chest X-ray GANs and healthcare data pipelines. I have also forecast retail demand over 3 million records, built finance pipelines, shipped mobile apps and run marketing analytics. I do all of it.",
+  "",
+  "Hackathons are my second passion. At CodeRED Orion, the University of Houston's biggest hackathon, I led our team to 2nd place out of 70+ teams and the Best Pitch/Demo award with Power Guard 360. I keep signing up for more.",
+  "",
+  "I am also lazy, on purpose. If I hate doing something by hand, I automate it. I automated my own job search: Sakina Job OS is a 12-stage agent that finds postings, checks fit, writes my resume and cover letter, finds warm LinkedIn contacts and drafts follow-ups. A human review step stops anything going out without me.",
+  "",
+  "My aim: become an AI engineer who builds automation, the agents and pipelines that remove the manual work people hate doing.",
+  "",
+  "Type ROLES to see what I am looking for."
+];
+
+const roles = [
+  "I am looking for early-career roles, internships and co-ops as:",
+  "",
+  "  AI Engineer",
+  "  AI Automation Engineer",
+  "  Machine Learning Engineer",
+  "  Data Scientist",
+  "",
+  "Healthcare, finance, retail, marketing. The domain matters less to me than the problem: something slow, manual or repetitive that a good system can take over.",
+  "",
+  "Based in Houston, Texas."
+];
+
+const work = [
+  "5 roles so far:",
+  "",
+  "Feb 2026 - Present",
+  "  BI & Automation Intern, TMAC / NIST-MEP",
+  "May 2026 - Sep 2026",
+  "  AI Automation Engineer, Dental-X AI",
+  "May 2024 - Aug 2025",
+  "  Business Intelligence Consultant, BluTech Consulting",
+  "Aug 2022 - Sep 2025",
+  "  Sr. Performance Management Analyst, The Walnut Agency",
+  "Jan 2021 - May 2024",
+  "  Software Engineer, SoftSyncDev",
+  "",
+  "Education: MS Engineering Data Science and AI, University of Houston (2025 - now). BS Computer Science, Iqra University (GPA 3.71, Gold Medalist)."
+];
+
+const projects = [
+  "11 project books at askksakina.netlify.app. The big ones:",
+  "",
+  "1  Power Guard 360. Predicts power plant turbine failures. 2nd place at CodeRED Orion.",
+  "2  Sakina Job OS. 12-stage n8n agent that runs my job search.",
+  "3  Retail Forecasting. 3M+ records, LightGBM beat two other models.",
+  "4  Grant Dashboards. Power BI plus Databricks, a two-day prep step automated.",
+  "5  Oracle Financial ETL. Python pipeline from Oracle exports to Power BI.",
+  "6  Pneumonia X-ray GAN. Accuracy from 73.56% to 82.21%.",
+  "7  EEG Seizure Detection. Deep learning on brain signals.",
+  "8  Healthcare Eligibility Pipeline. Many payers, one benefit summary.",
+  "9  Cost Center App. Monthly sign-off in Power Apps and SharePoint.",
+  "10 Fitness Video Fix. Five minutes down to about three seconds."
+];
+
+const hacks = [
+  "Hackathons are my second passion.",
+  "",
+  "CodeRED Orion, University of Houston, 70+ teams.",
+  "I led our team to 2nd place and the Best Pitch/Demo award ($500) with Power Guard 360.",
+  "",
+  "Two Random Forest models watch every turbine's sensor data and flag failures with the reasons behind them. A live Arduino sensor board drives one turbine and watches for gas leaks, a 3D digital twin shows the whole plant, and the engineer's phone app takes them to the job.",
+  "",
+  "Fast build, clear story, working demo. That is the part I enjoy."
+];
+
+const contact = [
+  "Open to internships, co-ops and early-career roles.",
+  "",
+  "Email     sakinasaifee006@gmail.com",
+  "LinkedIn  linkedin.com/in/sakinasaifuddin",
+  "GitHub    github.com/sakina-saifuddin",
+  "Ask me    askksakina.netlify.app",
+  "",
+  "Type EMAIL, LINKEDIN, GITHUB or ASK to open one."
+];
+
+const help = [
+  "Commands:",
+  "  ABOUT     my story",
+  "  ROLES     what I am looking for",
+  "  WORK      where I have worked",
+  "  PROJECTS  what I have built",
+  "  HACKS     hackathons",
+  "  CONTACT   how to reach me",
+  "  CLEAR     clear the screen"
+];
+
+export const commands = {
+  ABOUT: {lines: about},
+  ROLES: {lines: roles},
+  AIM: {lines: roles},
+  WORK: {lines: work},
+  EXPERIENCE: {lines: work},
+  PROJECTS: {lines: projects},
+  HACKS: {lines: hacks},
+  HACKATHONS: {lines: hacks},
+  CONTACT: {lines: contact},
+  HELP: {lines: help},
+  EMAIL: {href: "mailto:sakinasaifee006@gmail.com", lines: ["Opening your mail app."]},
+  LINKEDIN: {href: "https://www.linkedin.com/in/sakinasaifuddin/", lines: ["Opening LinkedIn in a new tab."]},
+  GITHUB: {href: "https://github.com/sakina-saifuddin", lines: ["Opening GitHub in a new tab."]},
+  ASK: {href: "https://askksakina.netlify.app", lines: ["Opening AskSakina in a new tab."]}
+};

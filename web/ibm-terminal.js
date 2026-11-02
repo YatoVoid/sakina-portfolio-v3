@@ -1,9 +1,11 @@
 import * as THREE from "three";
-import {MENU_TITLE, sections} from "./ibm-content.js";
+import {BOOT, BAR, commands} from "./ibm-content.js";
 
 const W = 640, H = 480, PX = 62, PY = 40, LH = 23, SIZE = 24;
-const GREEN = "#52ff86", DIM = "#2fb85a", BRIGHT = "#c9ffd8";
+const GREEN = "#52ff86", DARK = "#021206";
 const FONT = `${SIZE}px VT323, "DejaVu Sans Mono", monospace`;
+const BAR_H = 26;
+const CPS = 260;
 
 export function makeIbmTerminal({scene, position, size, onOpenLink}) {
   const cv = document.createElement("canvas");
@@ -13,7 +15,7 @@ export function makeIbmTerminal({scene, position, size, onOpenLink}) {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
 
-  const u = {uMap: {value: tex}, uTime: {value: 0}, uOn: {value: 1}};
+  const u = {uMap: {value: tex}, uTime: {value: 0}};
   const mesh = new THREE.Mesh(
     new THREE.PlaneGeometry(size[0], size[1]),
     new THREE.ShaderMaterial({
@@ -22,8 +24,7 @@ export function makeIbmTerminal({scene, position, size, onOpenLink}) {
       fragmentShader: `uniform sampler2D uMap;uniform float uTime;varying vec2 vUv;
         void main(){
           vec2 c=vUv-0.5;
-          vec2 w=c*(1.0+0.035*dot(c,c)*4.0);
-          vec2 uv=w+0.5;
+          vec2 uv=c*(1.0+0.035*dot(c,c)*4.0)+0.5;
           vec3 col=texture2D(uMap,uv).rgb;
           vec3 blur=texture2D(uMap,uv+vec2(0.0016,0.0)).rgb*0.5+texture2D(uMap,uv-vec2(0.0016,0.0)).rgb*0.5;
           col=mix(col,blur,0.35);
@@ -42,69 +43,82 @@ export function makeIbmTerminal({scene, position, size, onOpenLink}) {
   mesh.name = "IbmScreen";
   scene.add(mesh);
 
-  const st = {active: false, path: [], scroll: 0, t0: performance.now(), hits: []};
+  const maxW = W - PX * 2;
+  const rowsVisible = Math.floor((H - PY * 2 - BAR_H - 16) / LH);
 
-  const node = () => {
-    let n = {items: sections, root: true};
-    for (const i of st.path) n = n.items[i];
-    return n;
-  };
-
-  const wrap = (text, maxW) => {
+  const wrap = (text) => {
     g.font = FONT;
-    const words = text.split(" ");
+    if (text === "") return [""];
+    const lead = text.match(/^ */)[0];
+    const words = text.trim().split(" ");
     const out = [];
-    let line = "";
+    let line = lead;
     for (const w of words) {
-      const test = line ? line + " " + w : w;
-      if (g.measureText(test).width > maxW && line) { out.push(line); line = w; } else line = test;
+      const test = line.trim() ? line + " " + w : line + w;
+      if (g.measureText(test).width > maxW && line.trim()) { out.push(line); line = lead + w; } else line = test;
     }
     out.push(line);
     return out;
   };
 
-  const build = () => {
-    const n = node();
-    const rows = [];
-    const maxW = W - PX * 2;
-    const add = (text, color = GREEN, hit = null) => rows.push({text, color, hit});
-    if (n.root) {
-      add("C:\\SAKINA> MENU", DIM);
-      add("");
-      sections.forEach((s, i) => add(`[${i + 1}] ${s.key}`, GREEN, i));
-      add("");
-      add("PRESS A NUMBER OR CLICK A LINE", DIM);
-    } else {
-      add("C:\\SAKINA\\" + [sections[st.path[0]].key, ...(st.path.length > 1 ? [n.key] : [])].join("\\").replace(/ /g, "_").toUpperCase(), DIM);
-      add("");
-      if (n.when !== undefined || n.meta !== undefined) {
-        wrap(n.key.toUpperCase(), maxW).forEach(l => add(l, BRIGHT));
-        if (n.meta) wrap(n.meta, maxW).forEach(l => add(l, GREEN));
-        if (n.when) wrap(n.when, maxW).forEach(l => add(l, DIM));
-        add("");
-      }
-      if (n.intro) { wrap(n.intro, maxW).forEach(l => add(l, DIM)); add(""); }
-      if (n.items) {
-        n.items.forEach((it, i) => {
-          const head = `[${i + 1}] ${it.key}`;
-          wrap(head, maxW).forEach((l, k) => add(k ? "    " + l : l, GREEN, i));
-          if (it.meta) wrap(it.meta, maxW - 40).forEach(l => add("    " + l, DIM, i));
-        });
-      }
-      if (n.lines) {
-        n.lines.forEach((l, i) => {
-          if (!l) { add(""); return; }
-          const head = !n.meta && !n.when && l === l.toUpperCase() && l.length < 60 && /[A-Z]/.test(l);
-          const bullet = n.when !== undefined && n.items === undefined ? "> " : "";
-          wrap(bullet + l, maxW).forEach((x, k) => add(k && bullet ? "  " + x : x, head ? BRIGHT : GREEN));
-        });
-      }
-    }
-    return rows;
+  const st = {
+    active: false, booted: false, out: [], pending: [], cur: "", curFull: null, input: "",
+    pauseUntil: 0, last: 0, autoAt: 0, scrollBack: 0, bar: [], skip: false
   };
 
-  let rows = build();
-  const visible = () => Math.floor((H - PY * 2 - LH * 2) / LH);
+  const reset = (now) => {
+    st.out = []; st.cur = ""; st.curFull = null; st.input = ""; st.scrollBack = 0; st.skip = false;
+    st.pending = [];
+    BOOT.forEach(l => wrap(l).forEach(x => st.pending.push(x)));
+    st.pending.push("");
+    st.pending.push("READY");
+    st.booted = false;
+    st.last = now; st.pauseUntil = now + 250;
+    st.autoAt = 0;
+  };
+
+  const queueLines = (lines) => {
+    lines.forEach(l => wrap(l).forEach(x => st.pending.push(x)));
+    st.pending.push("");
+    st.pending.push("READY");
+  };
+
+  const run = (name) => {
+    const cmd = name.trim().toUpperCase();
+    if (!cmd) { st.pending.push("READY"); return; }
+    if (cmd === "CLEAR" || cmd === "CLS") { st.out = []; st.scrollBack = 0; st.pending.push("READY"); return; }
+    const c = commands[cmd];
+    if (!c) { queueLines(["Syntax error. Type HELP."]); return; }
+    queueLines(c.lines);
+    if (c.href) onOpenLink(c.href);
+  };
+
+  const submit = () => {
+    const t = st.input;
+    st.input = "";
+    st.out.push(t);
+    st.scrollBack = 0;
+    run(t);
+  };
+
+  const step = (now) => {
+    const dt = Math.min(100, now - st.last);
+    st.last = now;
+    if (now < st.pauseUntil) return;
+    if (st.curFull === null && st.pending.length) { st.curFull = st.pending.shift(); st.cur = ""; }
+    if (st.curFull !== null) {
+      const n = st.skip ? st.curFull.length : Math.max(1, Math.round(dt * CPS / 1000));
+      st.cur = st.curFull.slice(0, st.cur.length + n);
+      if (st.cur.length >= st.curFull.length) {
+        st.out.push(st.curFull); st.cur = ""; st.curFull = null;
+        if (!st.skip) st.pauseUntil = now + (st.out[st.out.length - 1] === "" ? 160 : 45);
+      }
+    } else {
+      st.skip = false;
+      if (!st.booted) { st.booted = true; st.autoAt = st.active ? now + 1600 : 0; }
+      else if (st.autoAt && now > st.autoAt && !st.input) { st.autoAt = 0; st.input = ""; st.out.push("ABOUT"); run("ABOUT"); }
+    }
+  };
 
   const draw = (now) => {
     g.setTransform(1, 0, 0, 1, 0, 0);
@@ -112,108 +126,92 @@ export function makeIbmTerminal({scene, position, size, onOpenLink}) {
     g.fillRect(0, 0, W, H);
     g.font = FONT;
     g.textBaseline = "alphabetic";
-    g.shadowColor = "rgba(82,255,134,.75)";
+    const busy = st.pending.length > 0 || st.curFull !== null;
+    const lines = [...st.out];
+    if (st.curFull !== null) lines.push(st.cur);
+    if (!busy) lines.push(st.input);
+    const end = Math.max(rowsVisible, lines.length) - st.scrollBack;
+    const slice = lines.slice(Math.max(0, end - rowsVisible), end);
+    g.shadowColor = "rgba(82,255,134,.7)";
     g.shadowBlur = 7;
-    g.fillStyle = BRIGHT;
-    g.fillText(MENU_TITLE + "  ·  SAKINA-DOS 3.0", PX, PY + 10);
-    g.shadowBlur = 0;
-    g.fillStyle = DIM;
-    g.fillRect(PX, PY + 18, W - PX * 2, 2);
-    const vis = visible();
-    let budget = Math.floor((now - st.t0) * 0.9);
-    st.hits = [];
-    const first = rows.slice(st.scroll, st.scroll + vis);
-    first.forEach((r, i) => {
-      const y = PY + 24 + LH * (i + 1) + 6;
-      const take = Math.max(0, Math.min(r.text.length, budget));
-      budget -= r.text.length;
-      const txt = r.text.slice(0, take);
-      g.shadowBlur = 7;
-      g.fillStyle = r.color;
-      g.fillText(txt, PX, y);
-      g.shadowBlur = 0;
-      if (r.hit !== null && r.hit !== undefined) st.hits.push({y0: y - LH + 4, y1: y + 4, index: r.hit});
+    g.fillStyle = GREEN;
+    slice.forEach((t, i) => {
+      const y = PY + 14 + LH * (i + 1);
+      g.fillText(t, PX, y);
+      const isLast = i === slice.length - 1 && end === lines.length;
+      if (isLast && (busy || Math.floor(now / 450) % 2 === 0)) {
+        const w = g.measureText(t).width;
+        g.fillRect(PX + w + 3, y - 3, 11, 3);
+      }
     });
-    const shownAll = budget >= 0;
-    if (shownAll && Math.floor(now / 500) % 2 === 0) {
-      const y = PY + 24 + LH * (first.length + 1) + 6;
-      g.fillStyle = GREEN;
-      g.fillRect(PX, y - 17, 11, 19);
-    }
     g.shadowBlur = 0;
-    g.fillStyle = DIM;
-    g.fillRect(PX, H - PY - 14, W - PX * 2, 2);
-    g.fillStyle = DIM;
-    const more = rows.length > vis;
-    const hint = (st.path.length ? "ESC BACK  " : "ESC EXIT  ") + (more ? "UP/DOWN SCROLL  " : "") + (node().items || node().root ? "1-" + (node().items || sections).length + " SELECT" : "");
-    g.fillText(hint, PX, H - PY + 6);
-    if (more && st.scroll + vis < rows.length) g.fillText("v", W - PX - 10, H - PY + 6);
+    st.bar = [];
+    const by = H - PY - BAR_H + 6, bw = (W - PX * 2) / BAR.length;
+    BAR.forEach((b, i) => {
+      const x = PX + i * bw;
+      g.fillStyle = GREEN;
+      g.fillRect(x + 16, by, bw - 4 - 16, BAR_H - 6);
+      g.font = `20px VT323, "DejaVu Sans Mono", monospace`;
+      g.fillText(b.key, x + 4, by + BAR_H - 10);
+      g.fillStyle = DARK;
+      g.fillText(b.label, x + 19, by + BAR_H - 10);
+      g.font = FONT;
+      st.bar.push({x0: x, x1: x + bw, y0: by, y1: by + BAR_H, cmd: b.cmd});
+    });
     tex.needsUpdate = true;
   };
 
-  const goTo = (path) => {
-    st.path = path;
-    st.scroll = 0;
-    st.t0 = performance.now();
-    rows = build();
-  };
-
-  const select = (i) => {
-    const n = node();
-    const list = n.items;
-    if (!list || !list[i]) return;
-    const it = list[i];
-    if (it.href) { onOpenLink(it.href); return; }
-    goTo([...st.path, i]);
-  };
-
-  const back = () => {
-    if (!st.path.length) return false;
-    goTo(st.path.slice(0, -1));
-    return true;
-  };
-
-  const scrollBy = (d) => {
-    const max = Math.max(0, rows.length - visible());
-    st.scroll = Math.min(max, Math.max(0, st.scroll + d));
-    st.t0 = performance.now() - 5000;
+  const choose = (cmd) => {
+    st.skip = false;
+    if (st.pending.length || st.curFull !== null) { st.pending = []; if (st.curFull !== null) st.out.push(st.curFull); st.cur = ""; st.curFull = null; }
+    st.autoAt = 0;
+    st.out.push(cmd);
+    st.scrollBack = 0;
+    run(cmd);
   };
 
   const onKey = (e) => {
     if (!st.active) return false;
     const k = e.key;
-    if (k >= "1" && k <= "9") { select(parseInt(k, 10) - 1); return true; }
-    if (k === "ArrowDown") { scrollBy(1); return true; }
-    if (k === "ArrowUp") { scrollBy(-1); return true; }
-    if (k === "PageDown") { scrollBy(visible() - 1); return true; }
-    if (k === "PageUp") { scrollBy(-(visible() - 1)); return true; }
-    if (k === "Backspace") return back();
-    if (k === "Escape") return back();
+    if (k === "Escape") return false;
+    const busy = st.pending.length > 0 || st.curFull !== null;
+    st.autoAt = 0;
+    if (k === "Enter" || k === " ") {
+      if (busy) { st.skip = true; return true; }
+      if (k === "Enter") { submit(); return true; }
+    }
+    if (/^F[1-5]$/.test(k)) { choose(BAR[parseInt(k.slice(1), 10) - 1].cmd); return true; }
+    if (k === "PageUp") { st.scrollBack = Math.min(Math.max(0, st.out.length - rowsVisible), st.scrollBack + rowsVisible - 2); return true; }
+    if (k === "PageDown") { st.scrollBack = Math.max(0, st.scrollBack - (rowsVisible - 2)); return true; }
+    if (busy) return k.length === 1 || k === "Backspace";
+    if (k === "Backspace") { st.input = st.input.slice(0, -1); return true; }
+    if (!st.input && /^[1-5]$/.test(k)) { choose(BAR[parseInt(k, 10) - 1].cmd); return true; }
+    if (k.length === 1) { if (st.input.length < 40) st.input += k.toUpperCase(); st.scrollBack = 0; return true; }
     return false;
   };
 
   const clickAt = (uv) => {
-    const y = (1 - uv.y) * H;
-    const h = st.hits.find(x => y >= x.y0 && y <= x.y1);
-    if (h) select(h.index);
-    else if (st.path.length && y > H - PY - 24) back();
+    const x = uv.x * W, y = (1 - uv.y) * H;
+    const b = st.bar.find(q => x >= q.x0 && x <= q.x1 && y >= q.y0 && y <= q.y1);
+    if (b) choose(b.cmd);
   };
+
+  reset(performance.now());
 
   return {
     mesh,
     get active() { return st.active; },
-    get depth() { return st.path.length; },
     setActive(v) {
       if (v === st.active) return;
       st.active = v;
-      if (v) { goTo([]); }
+      if (v) reset(performance.now());
     },
     onKey,
     clickAt,
     step(now, reduced) {
       u.uTime.value = reduced ? 0 : now / 1000;
-      draw(reduced ? st.t0 + 1e6 : now);
-    },
-    raycastTarget: mesh
+      step(now);
+      draw(now);
+    }
   };
 }
