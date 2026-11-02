@@ -30,7 +30,21 @@ def log(*a):
 
 def setup_cycles():
     sc.render.engine = 'CYCLES'
-    sc.cycles.device = 'CPU'
+    dev = os.environ.get("DEVICE", "CPU").upper()          # CPU | OPTIX | CUDA | HIP | METAL | ONEAPI  (friend's laptop: OPTIX for NVIDIA RTX, else CUDA)
+    if dev == "CPU":
+        sc.cycles.device = 'CPU'
+    else:
+        prefs = bpy.context.preferences.addons['cycles'].preferences
+        prefs.compute_device_type = dev
+        prefs.refresh_devices() if hasattr(prefs, "refresh_devices") else prefs.get_devices()
+        used = []
+        for d in prefs.devices:
+            d.use = (d.type != 'CPU')                   # GPU only; the CPU would slow the tile scheduler
+            if d.use: used.append(d.name)
+        if not used:
+            raise SystemExit(f"DEVICE={dev} requested but no such GPU found: {[(d.name, d.type) for d in prefs.devices]}")
+        sc.cycles.device = 'GPU'
+        print("BAKE GPU devices:", used, flush=True)
     sc.cycles.samples = SPP
     # V3: bakes are never denoised by Cycles; its denoise buffers + one untiled 4096^2 bake OOM'd the 8 GB cloud box.
     sc.cycles.use_denoising = False
@@ -267,6 +281,10 @@ def main():
             me.materials.clear()
             me.materials.append(bm)
             o["bake_group"] = cname
+    if os.environ.get("PACK"):                      # friend's laptop: embed the lightmaps so ONE .blend comes back
+        for im in D.images:
+            if im.name.endswith((".png",)) and im.filepath and not im.packed_file:
+                im.pack()
     bpy.ops.wm.save_as_mainfile(filepath=SAVE, compress=True)
     log("SAVED", SAVE)
 

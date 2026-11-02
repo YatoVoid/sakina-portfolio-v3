@@ -16,7 +16,8 @@ def _load():
     import bpy
     cands = []
     for root in {os.path.dirname(os.path.dirname(bpy.__file__)), "/usr/local/lib/python3.13/dist-packages/bpy"}:
-        cands += glob.glob(os.path.join(root, "**", "libOpenImageDenoise.so*"), recursive=True)
+        for pat in ("libOpenImageDenoise.so*", "OpenImageDenoise.dll", "libOpenImageDenoise*.dylib"):
+            cands += glob.glob(os.path.join(root, "**", pat), recursive=True)
     if not cands:
         raise RuntimeError("libOpenImageDenoise not found next to bpy")
     _lib = ctypes.CDLL(sorted(cands, key=len)[0])

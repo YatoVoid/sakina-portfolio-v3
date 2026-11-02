@@ -66,3 +66,7 @@ Known pre-existing bug: 6 of 13 tapes open the project of the tape above them (m
   the photo then reaches about 43 deg below eye level (was 9), so a steep camera still sees real rails/yard from the photo. Trade-off: the home view shows a tighter crop of the skyline
   (TV tower and the Arena no longer both fit). `/preview/` serves it (copy of the site with `../` asset paths). Main keeps the disc-removed room (`sakina-room-r5.glb`).
 - 2026-11-01 — Round 5d: /preview/ photo zoom raised 3.7x -> 5.2x (`web/sakina-view-r7.glb`; r6 removed) because the bottom of the lowest panes still showed the dark extension. Photo now reaches about 64 deg below eye level. Main page untouched.
+- 2026-11-01 — **Friend bake kit built** (`pipeline/friend_bake/`, zip made by `make_kit.sh`): packed `v3-integrated.blend` (all 21 edits incl. new e21 photo zoom 5.2x), `run_bake.py` + `run_bake.bat`, README for a non-technical user.
+  `bake_lightmaps.py` gained `DEVICE` (OPTIX/CUDA/HIP/CPU, clear error if no GPU) and `PACK` (lightmaps embedded in the returned .blend). Final settings: SPP 256, full group resolutions (Room/Desk/... 4096), no OIDN.
+  Tested in the cloud: GPU-missing error path, and a CPU end-to-end test run (one group) that saved a .blend with the lightmap embedded. NOT tested on a real GPU yet: the `test` run on the friend's PC is the first GPU check.
+  NEXT after the file comes back: lightmaps -> `fix_baked21.py` -> `export_web.py` -> Draco -> new GLB filenames -> /preview/ -> approval -> main.
