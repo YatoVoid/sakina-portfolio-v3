@@ -127,8 +127,8 @@ const crtLive=(()=>{
     fragmentShader:`uniform float uTime;varying vec2 vUv;
       float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
       void main(){
-        vec2 c=vUv-0.5;float d=pow(abs(c.x)*2.0,5.0)+pow(abs(c.y)*2.0,5.0);
-        float edge=(1.0-smoothstep(0.55,1.0,d))*(0.8+0.2*(1.0-dot(c,c)*3.0));
+        vec2 c=vUv-0.5;float d=pow(abs(c.x)*2.0,9.0)+pow(abs(c.y)*2.0,9.0);
+        float edge=(1.0-smoothstep(0.80,1.0,d))*(0.8+0.2*(1.0-dot(c,c)*3.0));
         float n=h(floor(vUv*vec2(240.0,180.0))+floor(uTime*24.0));
         float lines=0.82+0.18*sin(vUv.y*170.0*6.2831853);
         float flick=0.94+0.06*sin(uTime*53.0)+0.03*sin(uTime*7.0);
@@ -136,7 +136,7 @@ const crtLive=(()=>{
         vec3 col=vec3(0.30,0.46,0.85)*(0.55+0.45*n)*lines*flick*edge+vec3(0.5,0.65,1.0)*bar*0.10;
         gl_FragColor=vec4(col,1.0);
       }`});
-  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(CRT.w*0.96,CRT.h*0.96),m);
+  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(CRT.w*1.10,CRT.h*1.12),m);
   mesh.position.set(CRT.cx,CRT.cy,CRT.z+0.0012);mesh.renderOrder=1;scene.add(mesh);
   return u;
 })();
