@@ -175,13 +175,18 @@ const rainU={uTime:{value:0}};
       void main(){
         float t=uTime*.18;vec2 uv=(vUv-.5)*vec2(1.5,1.3)*1.7;
         float st=Static(uv*1.0,t);vec2 dr=DropLayer(uv,t)+DropLayer(uv*1.85+7.2,t)*.8;
-        float m=clamp(st+dr.x,0.,1.);
+        float m=clamp(st+dr.x,0.,1.);m=smoothstep(.55,.9,m)*.45;
         vec2 g=vec2(dFdx(m),dFdy(m));float hl=clamp(dot(normalize(g+1e-6),normalize(vec2(-.6,.8)))*length(g)*40.,0.,1.);
-        float body=m*.05+dr.y*.03;
-        float col=floor(uv.x*72.);float rr=N(col+1.);float xx=fract(uv.x*72.)-.5;
-        float yy=fract(uv.y*.4+uTime*(.55+rr*.5)+rr*9.);
-        float streak=smoothstep(.07,.0,abs(xx))*smoothstep(0.,.1,yy)*smoothstep(.3,.1,yy)*step(.62,rr)*.16;
-        vec3 c=vec3(.55,.66,.9)*(body+streak)+vec3(1.,.93,.82)*hl*.38*m;
+        float body=m*.03;
+        float streak=0.;
+        for(int k=0;k<3;k++){
+          float fk=float(k);float cols=60.+fk*38.;float sp=.9+fk*.45;
+          vec2 q=vec2(uv.x+uv.y*.12,uv.y);
+          float col=floor(q.x*cols);float rr=N(col+1.+fk*17.);float xx=fract(q.x*cols)-.5;
+          float yy=fract(q.y*(.35+fk*.1)+uTime*(sp+rr*.6)+rr*9.);
+          streak+=smoothstep(.06-fk*.012,.0,abs(xx))*smoothstep(0.,.08,yy)*smoothstep(.45,.08,yy)*step(.5-fk*.05,rr)*(.20-fk*.04);
+        }
+        vec3 c=vec3(.55,.66,.9)*(body+streak)+vec3(1.,.93,.82)*hl*.22*m;
         gl_FragColor=vec4(c,1.);
       }`});
   const mesh=new THREE.Mesh(new THREE.PlaneGeometry(1.5,1.3),m);
