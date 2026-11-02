@@ -1,0 +1,10 @@
+import {chromium} from 'playwright';
+const b=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=gl-egl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader']});
+const p=await b.newPage({viewport:{width:1440,height:810}});const logs=[];p.on('console',m=>{if(m.type()=='error')logs.push(m.text())});
+await p.goto(process.argv[2]);await p.waitForTimeout(12000);
+const D='/home/wali/v3-local-test/shots/bc-';
+await p.screenshot({path:D+'home.png'});
+await p.keyboard.press('i');await p.waitForTimeout(3000);await p.screenshot({path:D+'ibm.png'});
+await p.keyboard.press('Escape');await p.waitForTimeout(2500);
+await p.mouse.move(720,400);await p.mouse.down();await p.mouse.move(120,400,{steps:15});await p.mouse.up();await p.waitForTimeout(2200);await p.screenshot({path:D+'wall.png'});
+console.log(JSON.stringify(logs));await b.close();

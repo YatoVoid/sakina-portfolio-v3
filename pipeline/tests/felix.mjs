@@ -1,0 +1,14 @@
+import {chromium} from 'playwright';
+const b=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=gl-egl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader']});
+const p=await b.newPage({viewport:{width:1440,height:810}});
+const reqs=[];p.on('response',r=>reqs.push(r.status()+' '+r.request().resourceType()+' '+r.url().slice(0,140)+' '+(r.headers()['content-length']||'')));
+await p.goto('https://felixrieseberg.com/',{waitUntil:'load',timeout:60000}).catch(e=>console.log('goto',e.message));
+await p.waitForTimeout(15000);
+await p.screenshot({path:'/home/wali/v3-local-test/shots/felix-1.png'});
+console.log(await p.title());
+console.log(reqs.filter(r=>!/google|analytics/.test(r)).join('\n'));
+const info=await p.evaluate(()=>({canvas:[...document.querySelectorAll('canvas')].map(c=>c.id+' '+c.width+'x'+c.height),scripts:[...document.scripts].map(s=>s.src||('inline '+s.textContent.length)),lib:Object.keys(window).filter(k=>/three|THREE|babylon|PIXI/i.test(k))}));
+console.log(JSON.stringify(info,null,1));
+await p.mouse.move(720,400);await p.mouse.down();await p.mouse.move(400,380,{steps:15});await p.mouse.up();await p.waitForTimeout(2000);
+await p.screenshot({path:'/home/wali/v3-local-test/shots/felix-2.png'});
+await b.close();
