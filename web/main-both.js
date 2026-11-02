@@ -70,7 +70,7 @@ const envReady=new Promise(res=>{
 });
 // Local lift around the IBM corner (the bake leaves it nearly black). Emissive is scaled and a small warm floor is added
 // inside a soft ellipsoid centred on the dresser; nothing outside it changes.
-const IBMQ=new URLSearchParams(location.search).get("ibm");const IBM_K=IBMQ!==null?parseFloat(IBMQ):1.7;
+const IBMQ=new URLSearchParams(location.search).get("ibm");const IBM_K=IBMQ!==null?parseFloat(IBMQ):2.8;
 const IBM_LIFT_NAMES=["Room_Station","Room_Shell","Room_Floor","Room_Wall_Decor"];
 function ibmLift(m){
   m.onBeforeCompile=sh=>{
@@ -79,7 +79,7 @@ function ibmLift(m){
       .replace("#include <begin_vertex>","#include <begin_vertex>\nvWP2=(modelMatrix*vec4(transformed,1.0)).xyz;");
     sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vWP2;uniform vec3 uIbmC;uniform float uIbmK;")
       .replace("#include <emissivemap_fragment>",`#include <emissivemap_fragment>
-        vec3 d=(vWP2-uIbmC)/vec3(1.35,1.1,1.5);float f=1.0-smoothstep(0.25,1.0,length(d));
+        vec3 d=(vWP2-uIbmC)/vec3(1.7,1.5,1.9);float f=1.0-smoothstep(0.2,1.0,length(d));
         totalEmissiveRadiance=totalEmissiveRadiance*(1.0+uIbmK*f)+vec3(.010,.006,.003)*f*uIbmK;`)};
   m.needsUpdate=true;
 }
@@ -154,6 +154,19 @@ const roomP=new Promise((res,rej)=>loader.load("sakina-room-agx-both.glb",g=>{
     const src=meshes[n];if(!src)continue;
     const r=new THREE.Mesh(src.geometry,shadowMat);r.position.copy(src.position);r.quaternion.copy(src.quaternion);r.scale.copy(src.scale);
     r.receiveShadow=true;r.renderOrder=1;r.name=n+"_shadow";src.parent.add(r);
+  }
+  {
+    const N=1024,cv=document.createElement("canvas");cv.width=cv.height=N;const x=cv.getContext("2d");
+    let seed=11;const rnd=()=>((seed=Math.imul(seed^seed>>>15,seed|1)+0x6D2B79F5|0,((seed^seed>>>7)>>>0)/4294967296));
+    x.filter="blur(4px)";x.fillStyle="#000";
+    const leaf=(cx,cy,len,wid,rot)=>{x.save();x.translate(cx,cy);x.rotate(rot);x.beginPath();x.moveTo(0,0);
+      x.bezierCurveTo(wid*.9,-len*.25,wid,-len*.7,0,-len);x.bezierCurveTo(-wid,-len*.7,-wid*.9,-len*.25,0,0);x.fill();
+      x.fillRect(-3,0,6,len*.28);x.restore()};
+    for(let i=0;i<16;i++){const u=1-Math.pow(rnd(),1.7)*.8,v=.15+rnd()*.7;
+      leaf(u*N,v*N+N*.12,N*(.16+rnd()*.14),N*(.05+rnd()*.04),(rnd()-.5)*3.6)}
+    const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;
+    const m=new THREE.MeshBasicMaterial({map:t,color:0x0a0405,transparent:true,opacity:0.62,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4});
+    const p=new THREE.Mesh(new THREE.PlaneGeometry(2.0,2.0),m);p.rotation.y=Math.PI/2;p.position.set(-2.99,1.7,-1.5);p.renderOrder=1;p.name="LeafShadows";scene.add(p);
   }
   scene.add(g.scene);res();
 },e=>{if(e.lengthComputable){progressRoom=e.loaded/e.total;setProgress()}},rej));
