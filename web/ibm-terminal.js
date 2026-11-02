@@ -44,7 +44,8 @@ export function makeIbmTerminal({scene, position, size, onOpenLink}) {
   scene.add(mesh);
 
   const maxW = W - PX * 2;
-  const rowsVisible = Math.floor((H - PY * 2 - BAR_H - 16) / LH);
+  const rowsVisible = Math.floor((H - PY * 2 - BAR_H - 16) / LH) - 1;
+const PAGE = rowsVisible - 1;
 
   const wrap = (text) => {
     g.font = FONT;
@@ -63,7 +64,7 @@ export function makeIbmTerminal({scene, position, size, onOpenLink}) {
 
   const st = {
     active: false, booted: false, out: [], pending: [], cur: "", curFull: null, input: "",
-    pauseUntil: 0, last: 0, autoAt: 0, scrollBack: 0, bar: [], skip: false
+    pauseUntil: 0, last: 0, autoAt: 0, scrollBack: 0, bar: [], skip: false, waiting: false, count: 0, paged: false
   };
 
   const reset = (now) => {
@@ -72,12 +73,13 @@ export function makeIbmTerminal({scene, position, size, onOpenLink}) {
     BOOT.forEach(l => wrap(l).forEach(x => st.pending.push(x)));
     st.pending.push("");
     st.pending.push("READY");
-    st.booted = false;
+    st.booted = false; st.waiting = false; st.count = 0; st.paged = false;
     st.last = now; st.pauseUntil = now + 250;
     st.autoAt = 0;
   };
 
   const queueLines = (lines) => {
+    st.paged = true; st.count = 0;
     lines.forEach(l => wrap(l).forEach(x => st.pending.push(x)));
     st.pending.push("");
     st.pending.push("READY");
@@ -104,13 +106,14 @@ export function makeIbmTerminal({scene, position, size, onOpenLink}) {
   const step = (now) => {
     const dt = Math.min(100, now - st.last);
     st.last = now;
-    if (now < st.pauseUntil) return;
+    if (now < st.pauseUntil || st.waiting) return;
     if (st.curFull === null && st.pending.length) { st.curFull = st.pending.shift(); st.cur = ""; }
     if (st.curFull !== null) {
       const n = st.skip ? st.curFull.length : Math.max(1, Math.round(dt * CPS / 1000));
       st.cur = st.curFull.slice(0, st.cur.length + n);
       if (st.cur.length >= st.curFull.length) {
         st.out.push(st.curFull); st.cur = ""; st.curFull = null;
+        if (st.paged && ++st.count >= PAGE && st.pending.length > 2) { st.waiting = true; st.skip = false; }
         if (!st.skip) st.pauseUntil = now + (st.out[st.out.length - 1] === "" ? 160 : 45);
       }
     } else {
@@ -145,6 +148,13 @@ export function makeIbmTerminal({scene, position, size, onOpenLink}) {
       }
     });
     g.shadowBlur = 0;
+    const hint = st.waiting && st.scrollBack === 0 ? "v PRESS DOWN TO SCROLL   ^ UP TO GO BACK" : st.scrollBack > 0 ? "v DOWN FOR LATER   ^ UP FOR EARLIER" : !busy && st.out.length > rowsVisible ? "^ PRESS UP TO SCROLL BACK" : "";
+    if (hint && (st.scrollBack > 0 || Math.floor(now / 700) % 2 === 0 || !st.waiting)) {
+      g.fillStyle = "#c9ffd8";
+      g.font = `20px VT323, "DejaVu Sans Mono", monospace`;
+      g.fillText(hint, PX, H - PY - BAR_H - 6);
+      g.font = FONT;
+    }
     st.bar = [];
     const by = H - PY - BAR_H + 6, bw = (W - PX * 2) / BAR.length;
     BAR.forEach((b, i) => {
@@ -181,8 +191,13 @@ export function makeIbmTerminal({scene, position, size, onOpenLink}) {
       if (k === "Enter") { submit(); return true; }
     }
     if (/^F[1-5]$/.test(k)) { choose(BAR[parseInt(k.slice(1), 10) - 1].cmd); return true; }
+    if (k === "ArrowDown" || k === "PageDown") {
+      if (st.scrollBack > 0) st.scrollBack = Math.max(0, st.scrollBack - (k === "PageDown" ? rowsVisible - 2 : 1));
+      else if (st.waiting) { st.waiting = false; st.count = 0; st.pauseUntil = performance.now() + 150; }
+      return true;
+    }
+    if (k === "ArrowUp") { st.scrollBack = Math.min(Math.max(0, st.out.length - rowsVisible), st.scrollBack + 1); return true; }
     if (k === "PageUp") { st.scrollBack = Math.min(Math.max(0, st.out.length - rowsVisible), st.scrollBack + rowsVisible - 2); return true; }
-    if (k === "PageDown") { st.scrollBack = Math.max(0, st.scrollBack - (rowsVisible - 2)); return true; }
     if (busy) return k.length === 1 || k === "Backspace";
     if (k === "Backspace") { st.input = st.input.slice(0, -1); return true; }
     if (!st.input && /^[1-5]$/.test(k)) { choose(BAR[parseInt(k, 10) - 1].cmd); return true; }
