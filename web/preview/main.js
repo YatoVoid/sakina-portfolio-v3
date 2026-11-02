@@ -75,7 +75,7 @@ const outP=new Promise((res,rej)=>loader.load("../sakina-outside-r4lo.glb",g=>{g
   e=>{if(e.lengthComputable){progressOut=e.loaded/e.total;setProgress()}},rej));
 
 // Berlin rail-yard night photo behind the window (round 4, approved): two unlit emissive pictures ~80 m away (photo patch + panorama).
-const viewP=new Promise(res=>loader.load("../sakina-view-r7.glb",g=>{
+const viewP=new Promise(res=>loader.load("../sakina-view-r8.glb",g=>{
   g.scene.traverse(o=>{if(o.isMesh){o.material.side=THREE.DoubleSide;o.material.envMapIntensity=0;o.renderOrder=-1}});
   scene.add(g.scene);res();
 },undefined,e=>{console.warn("window view failed",e);res()}));

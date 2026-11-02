@@ -1,12 +1,12 @@
 // Enlarge the Berlin photo patch in angle space about the photographer's horizon / vanishing point, so it covers more of the sky
 // and (more importantly) more of the view below the horizon when the camera looks down.
-//   node zoom_view_photo.mjs <in.glb> <out.glb> <zoom>
+//   node zoom_view_photo.mjs <in.glb> <out.glb> <zoom> [anchor_photo_px_x=1680]   (default anchor = the METRO sign, so it stays in the window)
 // View space = origin at the hero eye (-0.02, 1.12, -0.25) three.js; z_view = -(Z+0.25); see components/window_view/view.py.
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-const [inp, out, zs] = process.argv.slice(2); const S = +zs;
+const [inp, out, zs, ax] = process.argv.slice(2); const S = +zs; const ANCHOR_PX = ax ? +ax : 1680;
 const C = [-0.02, 1.12, -0.25];
-const TH0 = (-2.5 - Math.atan(208 / 3200) * 180 / Math.PI) * Math.PI / 180;   // vanishing point yaw
+const TH0 = (-2.5 * Math.PI / 180) + Math.atan((ANCHOR_PX - 1288) / 3200);          // yaw of the anchor column (photo centre = -2.5 deg, f = 3200 px)
 const H0 = 79.75 * Math.tan(4 * Math.PI / 180);                                 // horizon height above the eye on the 79.75 m cylinder
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 const doc = await io.read(inp);
