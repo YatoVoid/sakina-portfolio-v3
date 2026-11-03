@@ -89,7 +89,7 @@ export function createNotebook({ source, scene, reduced, sfx, paperColor = "#e9e
   const inkMesh = new THREE.Mesh(new THREE.PlaneGeometry(PW, PH), new THREE.MeshBasicMaterial({ map: inkTex, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
   inkMesh.quaternion.setFromRotationMatrix(basis);
   inkMesh.position.copy(ORIGIN).addScaledVector(U, PW / 2).addScaledVector(V, PH / 2); inkMesh.position.y = 0.7394;
-  inkMesh.renderOrder = 3; inkMesh.frustumCulled = false; inkMesh.name = "NotebookInk"; inkMesh.visible = false; scene.add(inkMesh);
+  inkMesh.renderOrder = 3; inkMesh.frustumCulled = false; inkMesh.name = "NotebookInk"; inkMesh.userData.notebook = true; inkMesh.visible = false; scene.add(inkMesh);
 
   const hingeBase = new THREE.Group();
   hingeBase.quaternion.setFromRotationMatrix(basis);
@@ -234,49 +234,87 @@ export function createNotebook({ source, scene, reduced, sfx, paperColor = "#e9e
   }
   const hoverAbove = (lift = 0.045) => worldAt(startPt(script.ops[script.first]), lift);
 
+  // Where the pencil lies while it is not writing: on the desk just behind the notebook (the desk ends right at its front edge), clear of the text.
+  const restTip = new THREE.Vector3().copy(ORIGIN).addScaledVector(U, -0.03).addScaledVector(V, PH + 0.016).setY(0.7230);
+  const qDown = new THREE.Quaternion().setFromUnitVectors(a0, U.clone());
+  const written = [false, false];
+  let flipDir = 1;
+  const fullInk = i => { const c = mkCanvas(), x = c.getContext("2d"); for (const op of buildOps(NOTEBOOK_PAGES[i]).ops) drawOp(x, op, 1); return c; };
+  const paintSheet0 = () => { const sc = sheetC.getContext("2d"); paintPaper(sc, false); sc.drawImage(fullInk(0), 0, 0); sheetTex.needsUpdate = true; };
+  let nav = null;   // handwritten "page N" and arrow at the foot of the page, drawn in the ink layer once a page is finished
+  const showInk = () => {
+    ink.drawImage(paperC, 0, 0); ink.drawImage(baseC, 0, 0);
+    if (nav) {
+      ink.save(); ink.fillStyle = INK; ink.strokeStyle = INK; ink.lineCap = "round"; ink.lineJoin = "round";
+      ink.font = fontAt(64); ink.textBaseline = "alphabetic";
+      const label = "page " + (nav.page + 1), lw = ink.measureText(label).width, y = CH - 74, cx = CW / 2;
+      ink.fillText(label, cx - lw / 2 + (nav.next ? -50 : 50), y);
+      const ax = nav.next ? cx + lw / 2 - 10 : cx - lw / 2 - 10 + 20, s = nav.next ? 1 : -1;
+      const x0 = nav.next ? ax + 20 : ax - 20, x1 = x0 + s * 96, ym = y - 20;
+      ink.lineWidth = 7; ink.beginPath(); ink.moveTo(x0, ym + 3); ink.quadraticCurveTo((x0 + x1) / 2, ym - 7, x1, ym); ink.stroke();
+      ink.beginPath(); ink.moveTo(x1 - s * 30, ym - 26); ink.lineTo(x1, ym); ink.lineTo(x1 - s * 28, ym + 22); ink.stroke();
+      ink.restore();
+      nav.hit = { x: (x0 + x1) / 2, y: ym, rx: 120, ry: 90 };
+    }
+    inkTex.needsUpdate = true;
+  };
+
+  function settle(now) {
+    phase = "idle"; startGlide(restTip, qDown, 900, 0.04, now);
+    nav = { page, next: page === 0, prev: page === 1 }; showInk();
+  }
+  function finishPage(now) {
+    glide = null;
+    for (const op of script.ops.slice(drawn)) drawOp(base, op, 1);
+    drawn = script.ops.length; showInk(); written[page] = true;
+    settle(now);
+  }
   function begin(now) {
-    paintPaper(sheetC.getContext("2d"), false);
+    written[0] = written[1] = false;
     hingeBase.visible = false; hinge.rotation.y = 0; inkMesh.visible = true;
     pencil.visible = true;
     paintStatic(0);
+    nav = null;
     phase = "lift"; startGlide(hoverAbove(), qWrite, 900, 0.02, now); t0 = now;
   }
-  function turnPage(now) {
-    paintPaper(sheetC.getContext("2d"), true); sheetTex.needsUpdate = true;
-    hinge.rotation.y = 0; hingeBase.visible = true;
-    ink.drawImage(paperC, 0, 0); inkTex.needsUpdate = true;
+  function flipTo(target, now = performance.now()) {
+    if (phase !== "idle" || target === page || target < 0 || target > 1) return false;
+    nav = null; showInk();
+    flipDir = target > page ? 1 : -1;
+    paintSheet0(); hingeBase.visible = true; hinge.rotation.y = flipDir > 0 ? 0 : -Math.PI;
+    if (flipDir > 0) { ink.drawImage(paperC, 0, 0); if (written[1]) ink.drawImage(fullInk(1), 0, 0); inkTex.needsUpdate = true; }
     phase = "flip"; flipT0 = now;
     sfx?.type("flip");
-    const above = worldAt([CW * 0.62, CH * 0.62], 0.09);
-    startGlide(above, qWrite, 450, 0, now);
+    return true;
+  }
+  function reset() {
+    glide = null; hingeBase.visible = false; hinge.rotation.y = 0; paintStatic(0);
   }
 
   const api = {
     mesh: pencil,
-    get playing() { return phase !== "rest" && phase !== "done" && phase !== "return"; },
-    get shown() { return phase !== "rest"; },
-    start(now = performance.now()) { begin(now); },
-    skip() {
-      if (phase === "rest" || phase === "done") return;
-      glide = null;
-      loadPage(1);
-      for (const op of script.ops) drawOp(base, op, 1);
-      drawn = script.ops.length;
-      ink.drawImage(paperC, 0, 0); ink.drawImage(baseC, 0, 0); inkTex.needsUpdate = true;
-      const first = mkCanvas().getContext("2d");
-      for (const op of buildOps(NOTEBOOK_PAGES[0]).ops) drawOp(first, op, 1);
-      const sc = sheetC.getContext("2d"); sc.drawImage(paperC, 0, 0); sc.drawImage(first.canvas, 0, 0); sheetTex.needsUpdate = true;
-      hingeBase.visible = true; hinge.rotation.y = -Math.PI; hingeBase.position.y = 0.7399;
-      phase = "done"; startGlide(worldAt(endPt(script.ops[script.ops.length - 1]), 0.016), qWrite, 300, 0, performance.now());
+    pickMeshes: () => [pencil, inkMesh],
+    navAt(hit) {
+      if (!nav || !nav.hit || hit.object !== inkMesh || !hit.uv) return null;
+      const x = hit.uv.x * CW, y = (1 - hit.uv.y) * CH, h = nav.hit;
+      if (Math.abs(x - h.x) > h.rx || Math.abs(y - h.y) > h.ry) return null;
+      return nav.next ? 1 : 0;
     },
+    get playing() { return phase === "lift" || phase === "write"; },
+    get shown() { return phase !== "rest"; },
+    get page() { return page; },
+    start(now = performance.now()) { if (phase === "rest" || phase === "return") begin(now); },
+    skip(now = performance.now()) { if (phase === "lift" || phase === "write") finishPage(now); },
+    flip: flipTo,
     stop(now = performance.now()) {
       if (phase === "rest" || phase === "return") return;
-      if (phase === "flip" || (page === 1 && drawn === 0)) { glide = null; hingeBase.visible = false; hinge.rotation.y = 0; paintStatic(0, true); }
+      nav = null;
+      if (phase === "flip" || page === 1) reset();
       phase = "return"; startGlide(tip0, qRest, 1000, 0.05, now);
     },
     step(now) {
       if (phase === "rest") return;
-      if (phase === "return") { if (!stepGlide(now)) { phase = "rest"; } return; }
+      if (phase === "return") { if (!stepGlide(now)) { phase = "rest"; reset(); } return; }
       if (phase === "lift") {
         if (!stepGlide(now)) { phase = "write"; t0 = now - script.ops[script.first].s; }
         return;
@@ -287,21 +325,23 @@ export function createNotebook({ source, scene, reduced, sfx, paperColor = "#e9e
         const { xy, lift } = tipAt(Math.min(t, script.total + 1));
         worldAt(xy, lift, tip); setPose(tip, qWrite);
         if (t < script.total && now - lastScratch > 85 && lift < 0.002) { lastScratch = now; sfx?.type("pencil"); }
-        if (t > script.total + 500) {
-          if (page === 0) turnPage(now); else phase = "done";
-        }
+        if (t > script.total + 500) finishPage(now);
         return;
       }
       if (phase === "flip") {
         stepGlide(now);
-        const k = clamp01((now - flipT0 - 350) / (reduced ? 1 : 1500)), s = smooth(k);
-        hinge.rotation.y = -Math.PI * s; hingeBase.position.y = 0.7399 + 0.0008 * Math.sin(Math.PI * k);
-        if (k >= 1 && !glide) {
-          loadPage(1); phase = "lift"; startGlide(hoverAbove(), qWrite, 700, 0.02, now);
+        const k = clamp01((now - flipT0) / (reduced ? 1 : 1400)), s = smooth(k);
+        hinge.rotation.y = -Math.PI * (flipDir > 0 ? s : 1 - s); hingeBase.position.y = 0.7399 + 0.0008 * Math.sin(Math.PI * k);
+        if (k >= 1) {
+          if (flipDir > 0) {
+            hinge.rotation.y = -Math.PI;
+            if (written[1]) { paintStatic(1, true); settle(now); }
+            else { loadPage(1); phase = "lift"; startGlide(hoverAbove(), qWrite, 800, 0.02, now); }
+          } else { hingeBase.visible = false; hinge.rotation.y = 0; paintStatic(0, true); settle(now); }
         }
         return;
       }
-      if (phase === "done") stepGlide(now);
+      if (phase === "idle") stepGlide(now);
     }
   };
   inkMesh.visible = true;
