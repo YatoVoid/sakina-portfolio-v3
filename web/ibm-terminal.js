@@ -7,6 +7,10 @@ const FONT = `${SIZE}px VT323, "DejaVu Sans Mono", monospace`;
 const BAR_H = 32;
 const CPS = 260;
 
+const style = document.createElement("style");
+style.textContent = "#grain{transition:opacity .6s}html.ibm-view #grain{opacity:.13!important}";
+document.head.append(style);
+
 export function makeIbmTerminal({scene, position, size, rotationY = Math.PI / 2, onOpenLink, onType}) {
   const cv = document.createElement("canvas");
   cv.width = W; cv.height = H;
@@ -15,24 +19,36 @@ export function makeIbmTerminal({scene, position, size, rotationY = Math.PI / 2,
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
 
-  const u = {uMap: {value: tex}, uTime: {value: 0}};
+  const u = {uMap: {value: tex}, uTime: {value: 0}, uOff: {value: 0}, uSize: {value: new THREE.Vector2(size[0], size[1])}};
   const mesh = new THREE.Mesh(
     new THREE.PlaneGeometry(size[0], size[1]),
     new THREE.ShaderMaterial({
       uniforms: u,
       vertexShader: "varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}",
-      fragmentShader: `uniform sampler2D uMap;uniform float uTime;varying vec2 vUv;
+      fragmentShader: `uniform sampler2D uMap;uniform float uTime;uniform float uOff;uniform vec2 uSize;varying vec2 vUv;
+        float ease(float x){return x<.5?2.*x*x:1.-pow(-2.*x+2.,2.)/2.;}
         void main(){
-          vec2 c=vUv-0.5;
-          vec2 uv=c+0.5;
+          vec2 q=vUv-0.5;
+          float e1=ease(clamp(uOff/.55,0.,1.)),e2=ease(clamp((uOff-.55)/.25,0.,1.)),fade=clamp((uOff-.8)/.2,0.,1.);
+          float hh=mix(.5,.004,e1),hw=mix(.5,.014,e2);
+          float inside=smoothstep(hw+.012,hw-.004,abs(q.x))*smoothstep(hh+.006,hh-.002,abs(q.y));
+          vec2 uv=vec2(q.x,q.y*(.5/max(hh,.02)))+.5;
           vec3 col=texture2D(uMap,uv).rgb;
           vec3 blur=texture2D(uMap,uv+vec2(0.0016,0.0)).rgb*0.5+texture2D(uMap,uv-vec2(0.0016,0.0)).rgb*0.5;
-          col=mix(col,blur,0.35);
-          float lines=0.80+0.20*sin(vUv.y*${H}.0*3.14159);
-          float vig=1.0-0.5*smoothstep(0.35,1.1,dot(c,c)*1.9);
-          float flick=0.97+0.03*sin(uTime*47.0);
-          float edge=1.0;
-          gl_FragColor=vec4(col*lines*vig*flick*1.35+vec3(0.0,0.012,0.004),edge);
+          col=mix(col,blur,0.3);
+          float lines=0.86+0.14*sin(vUv.y*${H}.0*3.14159);
+          float vig=1.0-0.4*smoothstep(0.3,1.1,dot(q,q)*1.9);
+          float flick=0.985+0.015*sin(uTime*47.0);
+          vec3 pic=col*lines*vig*flick*1.3;
+          float glow=e1*e1*e1;
+          pic=pic*(1.0+3.0*glow)+vec3(0.55,0.85,0.65)*glow*(1.0-e2*0.15);
+          pic*=1.0-fade;
+          vec3 glass=vec3(0.004,0.010,0.006);
+          float sheen=smoothstep(0.0,0.75,dot(q,vec2(-0.62,0.78))+0.18)*0.05;
+          vec3 outc=mix(glass,pic,inside)+vec3(0.55,0.72,0.62)*sheen*(0.4+0.6*(1.0-inside));
+          vec2 p=q*uSize;vec2 hb=uSize*0.5-vec2(0.014);
+          vec2 dd=abs(p)-hb;float d=length(max(dd,0.0))+min(max(dd.x,dd.y),0.0)-0.014;
+          gl_FragColor=vec4(outc,smoothstep(0.0014,-0.0014,d));
         }`,
       transparent: true, depthWrite: false
     })
@@ -64,7 +80,7 @@ const PAGE = rowsVisible - 1;
 
   const st = {
     active: false, booted: false, out: [], pending: [], cur: "", curFull: null, input: "",
-    pauseUntil: 0, last: 0, autoAt: 0, scrollBack: 0, bar: [], skip: false, waiting: false, count: 0, paged: false
+    powerDir: 0, off: 0, pauseUntil: 0, last: 0, autoAt: 0, scrollBack: 0, bar: [], skip: false, waiting: false, count: 0, paged: false
   };
 
   const reset = (now) => {
@@ -221,13 +237,22 @@ const PAGE = rowsVisible - 1;
     setActive(v) {
       if (v === st.active) return;
       st.active = v;
+      document.documentElement.classList.toggle("ibm-view", v);
       if (v) reset(performance.now());
     },
     onKey,
     clickAt,
     command(cmd) { if (st.active) choose(cmd); },
+    setPower(on) { st.powerDir = on ? -1 : 1; },
     step(now, reduced) {
       u.uTime.value = reduced ? 0 : now / 1000;
+      if (st.powerDir) {
+        const dtp = Math.min(0.1, (now - (st.pt || now)) / 1000);
+        st.off = Math.min(1, Math.max(0, st.off + st.powerDir * dtp / (reduced ? 0.01 : st.powerDir > 0 ? 0.85 : 1.1)));
+        u.uOff.value = st.off;
+        if (st.off <= 0 || st.off >= 1) st.powerDir = 0;
+      }
+      st.pt = now;
       step(now);
       draw(now);
     }

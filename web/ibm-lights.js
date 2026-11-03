@@ -48,7 +48,10 @@ export function addIbmLights(scene) {
   const dim = new THREE.Color(0x0b3a1a);
   const lit = new THREE.Color(0x4dff7e);
 
+  let on = true;
+
   return {
+    setOn(v) { on = v; },
     step(now) {
       const t = now / 1000;
       const a = Math.sin(t * 5.2) > 0.1;
@@ -56,7 +59,7 @@ export function addIbmLights(scene) {
       dots[0].material.color.copy(a ? lit : dim);
       dots[1].material.color.copy(b ? lit : dim);
       dots[2].material.color.copy(lit);
-      monLed.material.color.copy(Math.floor(t * 1.6) % 2 === 0 ? lit : dim.clone().lerp(lit, 0.35));
+      monLed.material.color.copy(!on ? new THREE.Color(0x050805) : Math.floor(t * 1.6) % 2 === 0 ? lit : dim.clone().lerp(lit, 0.35));
     }
   };
 }
