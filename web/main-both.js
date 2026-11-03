@@ -5,7 +5,7 @@ import {DRACOLoader} from "three/addons/loaders/DRACOLoader.js";
 import {projects,ibm,notepad,credits} from "./content.js";
 import {Ambience} from "./audio.js";
 import {pad} from "./pad-content.js";
-import {makeIbmTerminal} from "./ibm-terminal.js";
+import {makeIbmTerminal} from "./ibm-terminal.js?v=5";
 import {addIbmLights} from "./ibm-lights.js";
 import {makePadTexture,PAD,UNDER} from "./pad-texture.js";
 import {EffectComposer} from "three/addons/postprocessing/EffectComposer.js";
