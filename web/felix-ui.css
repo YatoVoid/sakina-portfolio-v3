@@ -82,3 +82,4 @@ html:not([data-view="ibm"]):not([data-view="desk"]):not([data-view="outside"]):n
 
 @media (max-width:1000px){.brand h1{font-size:22px}.menu{gap:2px}.menu button,.menu a{font-size:30px;padding:3px 10px 1px}}
 @media (max-width:720px){.brand h1{font-size:19px}.menu button,.menu a{font-size:25px;padding:2px 8px 0}}
+

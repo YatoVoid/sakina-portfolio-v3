@@ -12,9 +12,11 @@
 import * as THREE from "three";
 
 const D2R = THREE.MathUtils.degToRad;
-const HOME_LIMITS = { azLeft: D2R(38), azRight: D2R(118), polarMin: D2R(30), polarMax: D2R(90) };   // camera-left swing stops 0.5 m short of the plant
+// HOME limits are felixrieseberg.com's own (his desktop.js): absolute azimuth -1.3..+1.2 rad and polar 0.95..1.72 rad around the TV (the left stop is pulled in to -1.08 and the low stop to 1.6 here, where the plant fills the foreground),
+// zoom 0.3..2.6 m with a home distance of 1.75 m, rotateSpeed 0.5, damping 0.06.
+const HOME_LIMITS = { azMin: -1.08, azMax: 1.2, polarMin: 0.95, polarMax: 1.6, dolly: [0.5, 1.48] };
 const PRESET_LIMITS = { az: D2R(35), polarSpan: D2R(20), polarMin: D2R(35), polarMax: D2R(95) };
-const DOLLY_MIN = 0.80, DOLLY_MAX = 1.20;
+const DOLLY_PRESET = [0.80, 1.20];
 const RAD_PER_PX = 0.0042;                         // full drag across ~600 px swings 145 deg (the whole HOME range)
 const YAW_MAX = D2R(80);                          // head turn past the left orbit stop, toward the right wall (opt-in: enableYaw)
 const DRAG_THRESHOLD = 6;                          // px: below this a press is a click/tap
@@ -33,7 +35,7 @@ export class LookControls {
     this.clickBlocked = false;                     // true when the last press became a drag/pinch
     this._center = new THREE.Vector3();
     this._dist = 1; this._az0 = 0; this._polar0 = Math.PI / 2;
-    this._lim = { azMin: -1, azMax: 1, polarMin: 0.6, polarMax: 1.6 };
+    this._lim = { azMin: -1, azMax: 1, polarMin: 0.6, polarMax: 1.6 }; this._dollyLim = DOLLY_PRESET;
     this._az = 0; this._polar = 0; this._dolly = 1;         // current offsets (smoothed)
     this._gAz = 0; this._gPolar = 0; this._gDolly = 1;      // goals
     this._ptrs = new Map(); this._pinch0 = 0; this._dolly0 = 1; this._start = null;
@@ -54,20 +56,21 @@ export class LookControls {
     this._az0 = Math.atan2(off.x, off.z);
     this._polar0 = Math.acos(THREE.MathUtils.clamp(off.y / this._dist, -1, 1));
     if (home) {
-      this._lim = { azMin: -HOME_LIMITS.azLeft, azMax: HOME_LIMITS.azRight,
+      this._lim = { azMin: HOME_LIMITS.azMin - this._az0, azMax: HOME_LIMITS.azMax - this._az0,
                     polarMin: HOME_LIMITS.polarMin - this._polar0, polarMax: HOME_LIMITS.polarMax - this._polar0 };
     } else {
       this._lim = { azMin: -PRESET_LIMITS.az, azMax: PRESET_LIMITS.az,
                     polarMin: Math.max(PRESET_LIMITS.polarMin, this._polar0 - PRESET_LIMITS.polarSpan) - this._polar0,
                     polarMax: Math.min(PRESET_LIMITS.polarMax, this._polar0 + PRESET_LIMITS.polarSpan) - this._polar0 };
     }
+    if (!home) this._dollyLim = DOLLY_PRESET; else this._dollyLim = HOME_LIMITS.dolly;
     this._az = this._gAz = 0; this._polar = this._gPolar = 0; this._dolly = this._gDolly = 1;
   }
 
   update() {
     const now = performance.now(), dt = Math.min(0.1, (now - this._last) / 1000); this._last = now;
     if (!this.enabled) return;
-    const k = 1 - Math.exp(-dt * 14);              // responsive, settles in ~0.3 s, no long drift
+    const k = 1 - Math.exp(-dt * 5);               // about the glide of damping 0.06 at 60 fps
     this._az += (this._gAz - this._az) * k;
     this._polar += (this._gPolar - this._polar) * k;
     this._dolly += (this._gDolly - this._dolly) * k;
@@ -101,21 +104,21 @@ export class LookControls {
     p.x = e.clientX; p.y = e.clientY;
     if (this._ptrs.size >= 2) {
       const s = this._spread();
-      if (this._pinch0 > 0) this._gDolly = THREE.MathUtils.clamp(this._dolly0 * this._pinch0 / s, DOLLY_MIN, DOLLY_MAX);
+      if (this._pinch0 > 0) this._gDolly = THREE.MathUtils.clamp(this._dolly0 * this._pinch0 / s, this._dollyLim[0], this._dollyLim[1]);
       return;
     }
     if (this._start && Math.hypot(e.clientX - this._start.x, e.clientY - this._start.y) > DRAG_THRESHOLD) this.clickBlocked = true;
     if (!this.clickBlocked) return;
     const d = -dx * RAD_PER_PX;
     if (this.enableYaw && this._home) {
-      if (d > 0) {
-        const useAz = Math.min(d, Math.max(0, this._lim.azMax - this._gAz));
-        this._gAz += useAz;
-        this._gYaw = THREE.MathUtils.clamp(this._gYaw + (d - useAz), 0, YAW_MAX);
+      if (d < 0) {
+        const t = -d, useAz = Math.min(t, Math.max(0, this._gAz - this._lim.azMin));
+        this._gAz -= useAz;
+        this._gYaw = THREE.MathUtils.clamp(this._gYaw + (t - useAz), 0, YAW_MAX);
       } else {
-        const useYaw = Math.min(-d, this._gYaw);
+        const useYaw = Math.min(d, this._gYaw);
         this._gYaw -= useYaw;
-        this._gAz = THREE.MathUtils.clamp(this._gAz + d + useYaw, this._lim.azMin, this._lim.azMax);
+        this._gAz = THREE.MathUtils.clamp(this._gAz + d - useYaw, this._lim.azMin, this._lim.azMax);
       }
     } else this._gAz = THREE.MathUtils.clamp(this._gAz + d, this._lim.azMin, this._lim.azMax);
     this._gPolar = THREE.MathUtils.clamp(this._gPolar - dy * RAD_PER_PX, this._lim.polarMin, this._lim.polarMax);
@@ -129,7 +132,7 @@ export class LookControls {
   _wheel(e) {
     if (!this.enabled) return;
     e.preventDefault();
-    this._gDolly = THREE.MathUtils.clamp(this._gDolly * Math.exp(e.deltaY * 0.0012), DOLLY_MIN, DOLLY_MAX);
+    this._gDolly = THREE.MathUtils.clamp(this._gDolly * Math.exp(e.deltaY * 0.0012), this._dollyLim[0], this._dollyLim[1]);
   }
 
   _spread() {

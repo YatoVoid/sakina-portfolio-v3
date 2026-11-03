@@ -1,7 +1,8 @@
 import * as THREE from "three";
-import {LookControls} from "./look-controls.js?v=10";
+import {LookControls} from "./look-controls.js?v=15";
 import {createSfx} from "./sfx.js?v=4";
-import {createNotebook} from "./notebook.js?v=4";
+import {createNotebook} from "./notebook.js?v=6";
+import {createFrames} from "./frames.js?v=4";
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 import {DRACOLoader} from "three/addons/loaders/DRACOLoader.js";
 import {projects,ibm,notepad,credits} from "./content.js";
@@ -52,7 +53,7 @@ const HOME=homeFrame();
 camera.position.copy(HOME.pos);
 
 // Limited orbit around the current view target (round 2): no cursor parallax, zoom and position kept inside the room.
-const controls=new LookControls(camera,canvas);controls.enableYaw=true;
+const controls=new LookControls(camera,canvas);
 controls.target.copy(HOME.target);
 camera.lookAt(controls.target);
 controls.setFromCamera(true);
@@ -142,6 +143,21 @@ function deskGone(m){
   m.customProgramCacheKey=()=>"pcw_Room_Desk_dg";
   m.needsUpdate=true;
 }
+// The degree used to hang on the back wall under the clocks; its shadow is baked into the wall, so that patch is lifted to the wall colour.
+const WP_K=parseFloat(new URLSearchParams(location.search).get("wpk")||"0.025");
+function wallPatch(m){
+  const prev=m.onBeforeCompile;
+  m.onBeforeCompile=(sh,r)=>{
+    prev.call(m,sh,r);
+    sh.fragmentShader=sh.fragmentShader.replace("#include <emissivemap_fragment>",`#include <emissivemap_fragment>
+      float wpx=smoothstep(-2.30,-2.14,vWPw.x)*(1.0-smoothstep(-1.46,-1.30,vWPw.x));
+      float wpy=smoothstep(1.06,1.26,vWPw.y)*(1.0-smoothstep(1.66,1.80,vWPw.y));
+      float wpz=1.0-smoothstep(-2.44,-2.40,vWPw.z);
+      totalEmissiveRadiance=mix(totalEmissiveRadiance,max(totalEmissiveRadiance,vec3(${WP_K.toFixed(3)},${(WP_K*0.52).toFixed(3)},${(WP_K*0.34).toFixed(3)})),wpx*wpy*wpz);`);
+  };
+  m.customProgramCacheKey=()=>"pcw_Room_Shell_wp";
+  m.needsUpdate=true;
+}
 const DG_K=parseFloat(new URLSearchParams(location.search).get("dgk")||"1.5");
 const HEALREF=parseFloat(new URLSearchParams(location.search).get("pref")||"0.17");
 function heal(m){
@@ -194,6 +210,7 @@ const roomP=new Promise((res,rej)=>loader.load("sakina-room-agx-both.glb",g=>{
     if(o.name==="Room_Desk"||o.name==="Room_Plant")heal(m);
     if(o.name!=="Room_Plant"&&o.name!=="Room_Lamp")pcWhite(m,o.name);
     if(o.name==="Room_Desk")deskGone(m);
+    if(o.name==="Room_Shell")wallPatch(m);
     const sp=SPEC[o.name];
     if(sp){m.roughness=sp[0];m.metalness=sp[2]||0;if("specularIntensity" in m){m.specularIntensity=1;m.specularColor.setRGB(1,1,1);m.ior=1.5}m.envMapIntensity=sp[1]*REFL;envReady.then(t=>{m.envMap=t;m.needsUpdate=true})}
     else m.envMapIntensity=0;
@@ -801,7 +818,8 @@ function tipFor3d(h){
     case"pad":return "CLICK TO LIFT THE WORK NOTES";
     case"desk":return snap?.name==="desk"?"CLICK TO ZOOM BACK OUT":"CLICK TO ZOOM IN ON THE TV";
     case"vcr":return vcrTip(h.id);
-    case"notepad":return snap?.name==="notepad"?(notebook?.playing?"CLICK TO SKIP TO THE END":"CLICK TO WATCH IT BEING WRITTEN AGAIN"):"CLICK TO SEE WHAT I AM WORKING TOWARD NEXT";
+    case"notepad":return snap?.name==="notepad"?(notebook?.playing?"CLICK TO FINISH THIS PAGE":"CLICK THE ARROW ON THE PAGE TO TURN IT"):"CLICK TO SEE WHAT I AM WORKING TOWARD NEXT";
+    case"edge":return "CLICK OR DRAG RIGHT TO LOOK AT THE CHAIR WALL";
     case"window":return "CLICK TO LOOK AT THE VIEW OUTSIDE THE WINDOW";
     case"power":return tv.on?"CLICK TO TURN OFF THE TV":"CLICK TO TURN ON THE TV";
     case"pcpower":return pc.on?"CLICK TO TURN OFF THE COMPUTER":"CLICK TO TURN ON THE COMPUTER";
@@ -854,7 +872,7 @@ function pick(ev){
   ray.setFromCamera(ptr,camera);
   const targets=["Room_Tapes","Room_Station","Room_Desk"].map(n=>meshes[n]).filter(Boolean);
   targets.push(padMesh,tvButton.hit,pcButton.hit,crtHit,windowHit,...VCR);
-  if(notebook)targets.push(notebook.mesh);
+  if(notebook)targets.push(...notebook.pickMeshes());
   if(phone)targets.push(...phone.pickMeshes());
   if(deck)targets.push(...deck.pickMeshes());
   const hit=ray.intersectObjects(targets,false)[0];
@@ -863,7 +881,7 @@ function pick(ev){
   if(hit.object.userData.tape!==undefined)return {kind:"tapes",idx:hit.object.userData.tape};
   if(hit.object.userData.phone)return {kind:"phone",part:hit.object.userData.phone};
   if(n==="Pad")return {kind:"pad"};
-  if(hit.object.userData.notebook)return {kind:"notepad"};
+  if(hit.object.userData.notebook)return {kind:"notepad",nav:notebook?.navAt(hit)};
   if(hit.object.userData.vcr)return {kind:"vcr",id:hit.object.userData.vcr};
   if(n==="WindowHit")return {kind:"window"};
   if(n==="TvPower")return {kind:"power"};
@@ -877,9 +895,11 @@ function pick(ev){
   if(Math.hypot(hit.point.x+0.47,hit.point.z+1.84)<0.3&&hit.point.y<0.95)return {kind:"notepad"};
   return null;
 }
+const edgeZone=()=>false;
 canvas.addEventListener("pointermove",ev=>{
   if(ev.pointerType!=="mouse"||tween||ev.buttons)return;
   hover=snap?.name==="outside"?{kind:"window"}:pick(ev);
+  if(!hover&&edgeZone(ev))hover={kind:"edge"};
   canvas.classList.toggle("hot",!!hover);
   const h=$("hint");
   moveHint(h,ev);
@@ -901,9 +921,10 @@ canvas.addEventListener("pointerup",ev=>{
   }
   if(snap?.name==="outside"){go("home");return}
   const hit=pick(ev);
-  if(!hit)return;
+  if(!hit){if(edgeZone(ev))go("chair");return}
   if(hit.kind==="vcr")vcrDo(hit.id);
   else if(hit.kind==="tapes")showTape(hit.idx);
+  else if(hit.kind==="notepad"&&snap?.name==="notepad"&&hit.nav!=null)notebook.flip(hit.nav);
   else if(hit.kind==="phone")phoneClick(hit.part);
   else go(hit.kind);
 });
@@ -1381,6 +1402,7 @@ Promise.all([roomP,outP,viewP,tapesP]).then(()=>{
   try{setupWind()}catch(e){console.warn("wind failed",e)}
   try{setupPlant()}catch(e){console.warn("plant failed",e)}
   try{notebook=createNotebook({source:meshes.Room_Desk,scene,reduced,sfx})}catch(e){console.warn("notebook failed",e)}
+  try{createFrames({meshes,scene})}catch(e){console.warn("frames failed",e)}
   try{setupClock()}catch(e){console.warn("clock failed",e)}
   buildViews();
   const l=$("loader");l.classList.add("done");
@@ -1390,4 +1412,3 @@ Promise.all([roomP,outP,viewP,tapesP]).then(()=>{
   console.error(err);
   $("loader-text").textContent="FAILED TO LOAD SCENE";
 });
-window.__dbg={camera,scene,THREE,controls};
