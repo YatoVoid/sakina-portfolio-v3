@@ -10,7 +10,7 @@ const clamp01 = x => Math.min(1, Math.max(0, x));
 
 // Splits the tapes out of the merged Room_Tapes mesh into one mesh each (sharing its vertex buffers and lightmap), so each can
 // move on its own: out of a stack, along the desk and into the recorder, and back. Tapes above a gap settle down onto the stack.
-export function createTapeDeck({ source, tapes, material, reduced, slow = 1, onInserted, onEject, onEjected }) {
+export function createTapeDeck({ source, tapes, material, reduced, slow = 1, onInsert, onInserted, onEject, onEjected }) {
   source.updateWorldMatrix(true, false);
   const e = source.matrixWorld.elements;
   const g = source.geometry, pos = g.attributes.position, index = g.index.array;
@@ -135,6 +135,7 @@ export function createTapeDeck({ source, tapes, material, reduced, slow = 1, onI
       job = { type: "eject", q, curve: pathFor(q), t0: 0, dur: reduced ? 1 : 1500 * slow };
     } else if (target >= 0) {
       const q = parts[target];
+      onInsert?.();
       job = { type: "insert", q, curve: pathFor(q), t0: 0, dur: reduced ? 1 : 2000 * slow };
     }
   }
