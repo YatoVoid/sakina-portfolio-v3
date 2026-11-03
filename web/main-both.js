@@ -6,6 +6,7 @@ import {projects,ibm,notepad,credits} from "./content.js";
 import {Ambience} from "./audio.js";
 import {pad} from "./pad-content.js";
 import {makeIbmTerminal} from "./ibm-terminal.js";
+import {addIbmLights} from "./ibm-lights.js";
 import {makePadTexture,PAD,UNDER} from "./pad-texture.js";
 import {EffectComposer} from "three/addons/postprocessing/EffectComposer.js";
 import {RenderPass} from "three/addons/postprocessing/RenderPass.js";
@@ -461,7 +462,8 @@ function tapeAt(p){
   }
   return best;
 }
-const term=makeIbmTerminal({scene,position:[-2.7225,0.873,-1.195],size:[0.285,0.215],onOpenLink:href=>{if(href.startsWith("mailto:"))location.href=href;else window.open(href,"_blank","noopener")}});
+const ibmLights=addIbmLights(scene);
+const term=makeIbmTerminal({scene,position:[-2.7573,0.873,-1.1926],size:[0.283,0.208],rotationY:1.2896,onOpenLink:href=>{if(href.startsWith("mailto:"))location.href=href;else window.open(href,"_blank","noopener")}});
 addEventListener("keydown",e=>{if(e.metaKey||e.ctrlKey||e.altKey||document.getElementById("crt-gate"))return;if(term.onKey(e)){e.preventDefault();e.stopImmediatePropagation()}},true);
 let VIEWS;
 function buildViews(){
@@ -761,7 +763,7 @@ function frame(now){
   if(controls.enabled)controls.update();
   stepPad(now);
   crtGlass.uniforms.uTime.value=reduced?0:now/1000;
-  crtLive.uTime.value=reduced?0:now/1000;if(now-(crtScreen.last||0)>50){crtScreen.last=now;crtScreen.draw(reduced?0:now)}term.step(now,reduced);rainU.uTime.value=reduced?0:now/1000;steamU.uTime.value=reduced?3:now/1000;windU.uTime.value=reduced?0:now/1000;stepTv(now);syncMenu();if(clock.tex)drawClock(reduced?0:Math.floor((now-clock.t0)/1000));
+  crtLive.uTime.value=reduced?0:now/1000;if(now-(crtScreen.last||0)>50){crtScreen.last=now;crtScreen.draw(reduced?0:now)}term.step(now,reduced);ibmLights.step(now);rainU.uTime.value=reduced?0:now/1000;steamU.uTime.value=reduced?3:now/1000;windU.uTime.value=reduced?0:now/1000;stepTv(now);syncMenu();if(clock.tex)drawClock(reduced?0:Math.floor((now-clock.t0)/1000));
   composer.render();
 }
 
