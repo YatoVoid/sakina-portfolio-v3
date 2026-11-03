@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import {LookControls} from "./look-controls.js?v=14";
+import {LookControls} from "./look-controls.js?v=15";
 import {createSfx} from "./sfx.js?v=4";
 import {createNotebook} from "./notebook.js?v=6";
 import {createFrames} from "./frames.js?v=4";
@@ -1412,4 +1412,3 @@ Promise.all([roomP,outP,viewP,tapesP]).then(()=>{
   console.error(err);
   $("loader-text").textContent="FAILED TO LOAD SCENE";
 });
-window.__dbg={camera,scene,THREE,controls,meshes};
