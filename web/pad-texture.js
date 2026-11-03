@@ -45,8 +45,12 @@ function rules(g, w, h, first, step) {
   return ys;
 }
 
+export const PAD_ROWS = [];
+export const PAD_W = W, PAD_H = H;
 function drawPad(g, pad) {
   const r = rng(11);
+  PAD_ROWS.length = 0;
+  let rowNo = 0;
   paper(g, W, H, 3);
   g.fillStyle = "#cfc6a6";
   g.fillRect(0, 0, W, 30);
@@ -99,6 +103,7 @@ function drawPad(g, pad) {
       g.font = "600 50px Caveat, cursive";
       g.fillText("\u2013", 0, 0);
       g.fillText(text, 34, 0);
+      PAD_ROWS.push({ i: rowNo++, x0: x - 10, x1: x + 34 + g.measureText(text).width + 10, y0: y - 50, y1: y + 16 });
       g.restore();
     });
     rule += 1 + per + 1;

@@ -25,7 +25,7 @@ if(loader){
 
   // The glass corners in crt-still.jpg (1600x900): top left, top right, bottom right, bottom left.
   // The screen box is drawn onto them in perspective (Heckbert's unit-square projection).
-  const Q=[[687.6,300.6],[911.4,300.6],[908.6,468.4],[690.4,468.4]],BOX=[688,301,223,167];
+  let Q=[[687.6,300.6],[911.4,300.6],[908.6,468.4],[690.4,468.4]],BOX=[688,301,223,167];
   const warp=()=>{
     const k=innerWidth/1600,W=BOX[2]*k,H=BOX[3]*k,
       [[x0,y0],[x1,y1],[x2,y2],[x3,y3]]=Q.map(([x,y])=>[(x-BOX[0])*k-W/2,(y-BOX[1])*k-H/2]),
@@ -34,6 +34,13 @@ if(loader){
     scr.style.setProperty("--warp",`matrix3d(${[a/W,d/W,0,gg/W,b/H,e/H,0,hh/H,0,0,1,0,(a+b)/2+x0,(d+e)/2+y0,0,(gg+hh)/2+1].map(v=>+v.toFixed(9)).join(",")})`);
   };
   warp();addEventListener("resize",warp);
+  // Once the room is showing, follow the TV glass as the 3D camera actually projects it (it no longer matches the still).
+  addEventListener("crtquad",e=>{
+    if(!gate.classList.contains("ready")||entered)return;
+    const k=innerWidth/1600;
+    Q=e.detail.map(([x,y])=>[(x-innerWidth/2)/k+800,(y-innerHeight/2)/k+450]);
+    warp();
+  });
 
   let shown=0,target=0,ready=false,entered=false,withSound=true,last=performance.now();
   const readPct=()=>{const m=/(\d+)%/.exec(document.getElementById("loader-text")?.textContent||"");return m?+m[1]/100:null};
@@ -63,6 +70,7 @@ if(loader){
     entered=true;
     if(withSound&&soundBtn&&soundBtn.getAttribute("aria-pressed")!=="true")soundBtn.click();
     gate.classList.add("out");
+    dispatchEvent(new Event("crt-enter"));
     root.classList.remove("crt-gating");
     removeEventListener("resize",warp);
     setTimeout(()=>gate.remove(),reduced?0:1000);
