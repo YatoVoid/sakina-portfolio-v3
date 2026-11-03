@@ -16,14 +16,19 @@ const HOME_LIMITS = { azLeft: D2R(38), azRight: D2R(118), polarMin: D2R(30), pol
 const PRESET_LIMITS = { az: D2R(35), polarSpan: D2R(20), polarMin: D2R(35), polarMax: D2R(95) };
 const DOLLY_MIN = 0.80, DOLLY_MAX = 1.20;
 const RAD_PER_PX = 0.0042;                         // full drag across ~600 px swings 145 deg (the whole HOME range)
+const YAW_MAX = D2R(80);                          // head turn past the left orbit stop, toward the right wall (opt-in: enableYaw)
 const DRAG_THRESHOLD = 6;                          // px: below this a press is a click/tap
 // x min follows the left wall (moved to x -2.30 in round 3) with a 35 cm margin
+const smoothstepYaw = x => { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * x); };
+const UP = new THREE.Vector3(0, 1, 0);
 const ROOM = new THREE.Box3(new THREE.Vector3(-2.85, 0.35, -2.25), new THREE.Vector3(3.3, 2.5, 3.2));
 
 export class LookControls {
   constructor(camera, dom) {
     this.camera = camera; this.dom = dom;
     this.enabled = true;
+    this.enableYaw = false; this._home = false; this._yaw = 0; this._gYaw = 0;
+    this.lookTarget = new THREE.Vector3();
     this.target = new THREE.Vector3();
     this.clickBlocked = false;                     // true when the last press became a drag/pinch
     this._center = new THREE.Vector3();
@@ -42,7 +47,8 @@ export class LookControls {
 
   // Adopt the camera's current position/target (after load or a preset flight). home=true -> wide HOME limits.
   setFromCamera(home = false) {
-    this._center.copy(this.target);
+    this._home = home; this._yaw = this._gYaw = 0;
+    this._center.copy(this.target); this.lookTarget.copy(this.target);
     const off = this.camera.position.clone().sub(this._center);
     this._dist = off.length();
     this._az0 = Math.atan2(off.x, off.z);
@@ -65,13 +71,19 @@ export class LookControls {
     this._az += (this._gAz - this._az) * k;
     this._polar += (this._gPolar - this._polar) * k;
     this._dolly += (this._gDolly - this._dolly) * k;
-    const az = this._az0 + this._az, polar = this._polar0 + this._polar, r = this._dist * this._dolly;
+    this._yaw += (this._gYaw - this._yaw) * k;
+    const az = this._az0 + this._az * (1 - smoothstepYaw(this._yaw / YAW_MAX)), polar = this._polar0 + this._polar, r = this._dist * this._dolly;
     const pos = new THREE.Vector3(r * Math.sin(polar) * Math.sin(az), r * Math.cos(polar), r * Math.sin(polar) * Math.cos(az))
       .add(this._center);
     ROOM.clampPoint(pos, pos);
     this.camera.position.copy(pos);
     this.target.copy(this._center);
     this.camera.lookAt(this.target);
+    this.lookTarget.copy(this.target);
+    if (this._yaw > 1e-4) {
+      this.lookTarget.sub(pos).applyAxisAngle(UP, -this._yaw).add(pos);
+      this.camera.lookAt(this.lookTarget);
+    }
   }
 
   _down(e) {
@@ -94,7 +106,18 @@ export class LookControls {
     }
     if (this._start && Math.hypot(e.clientX - this._start.x, e.clientY - this._start.y) > DRAG_THRESHOLD) this.clickBlocked = true;
     if (!this.clickBlocked) return;
-    this._gAz = THREE.MathUtils.clamp(this._gAz - dx * RAD_PER_PX, this._lim.azMin, this._lim.azMax);
+    const d = -dx * RAD_PER_PX;
+    if (this.enableYaw && this._home) {
+      if (d > 0) {
+        const useAz = Math.min(d, Math.max(0, this._lim.azMax - this._gAz));
+        this._gAz += useAz;
+        this._gYaw = THREE.MathUtils.clamp(this._gYaw + (d - useAz), 0, YAW_MAX);
+      } else {
+        const useYaw = Math.min(-d, this._gYaw);
+        this._gYaw -= useYaw;
+        this._gAz = THREE.MathUtils.clamp(this._gAz + d + useYaw, this._lim.azMin, this._lim.azMax);
+      }
+    } else this._gAz = THREE.MathUtils.clamp(this._gAz + d, this._lim.azMin, this._lim.azMax);
     this._gPolar = THREE.MathUtils.clamp(this._gPolar - dy * RAD_PER_PX, this._lim.polarMin, this._lim.polarMax);
   }
 

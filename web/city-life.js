@@ -54,13 +54,15 @@ void main() {
   vec3 col = vec3(0.0);
 
   // trains: right track toward the viewer, left tracks away from the viewer, each on a loop with a pause
-  float c1 = mod(t, 22.0) / 22.0;
+  float c1 = mod(t, 15.0) / 15.0;
   col += train(p, vec2(803.0, 648.0), vec2(1215.0, 940.0), c1 * 1.5 - 0.12, 6.0, 1.0);
-  float c2 = mod(t + 9.0, 30.0) / 30.0;
+  float c2 = mod(t + 9.0, 19.0) / 19.0;
   col += train(p, vec2(548.0, 536.0), vec2(150.0, 930.0), 1.0 - (c2 * 1.5 - 0.12), 5.0, 0.8);
+  float c3 = mod(t + 5.0, 27.0) / 27.0;
+  col += train(p, vec2(566.0, 540.0), vec2(300.0, 936.0), c3 * 1.5 - 0.12, 4.0, 0.62);
 
   // cars on the road past the lamps: white headlights one way, red tail lights the other
-  for (int i = 0; i < 9; i++) {
+  for (int i = 0; i < 16; i++) {
     float f = float(i);
     float dirn = mod(f, 2.0) < 1.0 ? 1.0 : -1.0;
     float u = fract(t * (0.018 + 0.006 * h1(f)) * dirn + h1(f + 3.0));
@@ -72,16 +74,30 @@ void main() {
     col += lc * (dotGlow(p, vec2(x - 2.4 * sc, y), 1.8 * sc) + dotGlow(p, vec2(x + 2.4 * sc, y), 1.8 * sc)) * 0.42 * fl;
     col += lc * dotGlow(p, vec2(x, y), 7.0 * sc) * 0.07;
     col += lc * streak(p, vec2(x, y + 7.0 * sc), vec2(3.2 * sc, 9.0 * sc)) * 0.1;
+    if (dirn < 0.0) col += vec3(1.0, 0.9, 0.7) * streak(p, vec2(x - 16.0 * sc, y + 1.2 * sc), vec2(18.0 * sc, 2.4 * sc)) * 0.12;
+  }
+
+  // a bus now and then: a long body with a row of lit windows
+  float bu = fract(t / 31.0 + 0.2);
+  if (bu < 0.6) {
+    float bx = mix(842.0, 1395.0, bu / 0.6), by = 546.0 + (bx - 842.0) * 0.046 + 5.0;
+    float bs = 0.55 + 0.9 * (bu / 0.6);
+    vec2 q = p - vec2(bx, by - 4.0 * bs);
+    float body = box(q, vec2(24.0 * bs, 5.5 * bs), 1.0 * bs + 0.4);
+    float wins = body * smoothstep(0.35, 0.5, fract(q.x / (6.0 * bs))) * (1.0 - smoothstep(0.85, 0.95, fract(q.x / (6.0 * bs)))) * box(q - vec2(0.0, -1.2 * bs), vec2(24.0 * bs, 2.2 * bs), 0.8 * bs);
+    col += vec3(1.0, 0.86, 0.55) * wins * 0.45 + vec3(0.6, 0.5, 0.4) * body * 0.05;
+    col += vec3(1.0, 0.12, 0.08) * dotGlow(p, vec2(bx - 25.0 * bs, by), 2.4 * bs) * 0.5;
   }
 
   // people on the pavement: small warm shapes that bob as they walk
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 9; i++) {
     float f = float(i) + 20.0;
     float dirn = mod(f, 2.0) < 1.0 ? 1.0 : -1.0;
     float u = fract(t * 0.0045 * dirn + h1(f));
     float x = mix(900.0, 1380.0, u);
     float y = 564.0 + (x - 900.0) * 0.05 + 1.1 * abs(sin(t * 5.0 + f));
-    col += vec3(1.0, 0.7, 0.42) * (dotGlow(p, vec2(x, y), 1.6) * 0.22 + dotGlow(p, vec2(x, y - 2.4), 1.3) * 0.16);
+    col += vec3(1.0, 0.7, 0.42) * (dotGlow(p, vec2(x, y), 2.2) * 0.26 + dotGlow(p, vec2(x, y - 3.2), 1.8) * 0.2);
+    if (mod(f, 2.0) < 1.0) col += vec3(0.35, 0.42, 0.6) * dotGlow(p, vec2(x, y - 6.0), 3.4) * 0.16;
   }
 
   // METRO signs: on for most of a cycle, off briefly, with a soft glow

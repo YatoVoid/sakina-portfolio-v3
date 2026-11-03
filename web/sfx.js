@@ -3,13 +3,14 @@
 const TICKS = [0, 0.45, 0.9, 1.35, 1.8, 2.25];
 
 export function createSfx({ enabled }) {
-  let ctx = null, out = null, clockBuf = null, loading = null, noise = null, tickN = 0, typedAt = 0;
+  let ctx = null, out = null, soft = null, dest = null, clockBuf = null, loading = null, noise = null, tickN = 0, typedAt = 0;
 
   function ready() {
     if (!enabled()) return false;
     if (!ctx) {
       try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { return false; }
       out = ctx.createGain(); out.gain.value = 0.9; out.connect(ctx.destination);
+      soft = ctx.createGain(); soft.gain.value = 0.5; soft.connect(out);
       noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
       const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     }
@@ -29,7 +30,7 @@ export function createSfx({ enabled }) {
     const f = ctx.createBiquadFilter(); f.type = type; f.Q.value = q;
     f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(f1, t + dur);
     const g = ctx.createGain(); env(g, t, Math.min(0.03, dur / 3), peak, dur);
-    s.connect(f).connect(g).connect(out); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.05);
+    s.connect(f).connect(g).connect(dest || out); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.05);
   }
   function tone(t, dur, type, f0, f1, peak, lp) {
     const o = ctx.createOscillator(); o.type = type;
@@ -37,20 +38,24 @@ export function createSfx({ enabled }) {
     const g = ctx.createGain(); env(g, t, 0.01, peak, dur);
     let n = o;
     if (lp) { const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = lp; o.connect(f); n = f; }
-    n.connect(g).connect(out); o.start(t); o.stop(t + dur + 0.05);
+    n.connect(g).connect(dest || out); o.start(t); o.stop(t + dur + 0.05);
   }
   const click = (t, peak = 0.25) => hiss(t, 0.025, peak, "highpass", 2500, 3500);
   const thump = (t, peak = 0.5) => tone(t, 0.22, "sine", 95, 42, peak);
 
   return {
+    // the recorder's motor and latch, kept quiet: the tape coming out, and the tape going back in
     eject() {
-      if (!ready()) return; const t = ctx.currentTime + 0.02;
-      click(t, 0.3); hiss(t + 0.05, 0.55, 0.16, "bandpass", 380, 900, 2); tone(t + 0.05, 0.55, "sawtooth", 70, 105, 0.05, 500);
-      click(t + 0.62, 0.35); thump(t + 0.62, 0.55);
+      if (!ready()) return; const t = ctx.currentTime + 0.02; dest = soft;
+      click(t, 0.5); hiss(t + 0.05, 0.9, 0.22, "bandpass", 380, 900, 2); tone(t + 0.05, 0.9, "sawtooth", 70, 120, 0.08, 520);
+      click(t + 0.95, 0.5); thump(t + 0.95, 0.7);
+      dest = null;
     },
     insert() {
-      if (!ready()) return; const t = ctx.currentTime + 0.02;
-      hiss(t, 0.4, 0.12, "bandpass", 700, 330, 2); thump(t + 0.38, 0.5); click(t + 0.4, 0.3);
+      if (!ready()) return; const t = ctx.currentTime + 0.02; dest = soft;
+      click(t, 0.4); hiss(t + 0.1, 1.2, 0.18, "bandpass", 700, 330, 2); tone(t + 0.1, 1.2, "sawtooth", 95, 62, 0.06, 480);
+      thump(t + 1.5, 0.7); click(t + 1.52, 0.5);
+      dest = null;
     },
     tvOff() {
       if (!ready()) return; const t = ctx.currentTime + 0.01;
@@ -72,6 +77,11 @@ export function createSfx({ enabled }) {
     type(kind = "key") {
       if (!ready()) return;
       const t = ctx.currentTime + 0.005;
+      if (kind === "pencil") {
+        if (t - typedAt < 0.05) return; typedAt = t;
+        hiss(t, 0.07, 0.05 + Math.random() * 0.02, "bandpass", 2600 + Math.random() * 900, 1800, 1.5); return;
+      }
+      if (kind === "flip") { hiss(t, 0.5, 0.12, "bandpass", 900, 3200, 0.8); hiss(t + 0.35, 0.18, 0.08, "highpass", 2000, 1000); return; }
       if (kind === "out") {
         if (t - typedAt < 0.07) return; typedAt = t;
         click(t, 0.1); tone(t, 0.04, "square", 190 + Math.random() * 40, 120, 0.03, 900); return;

@@ -25,7 +25,7 @@ if(loader){
 
   // The glass corners in crt-still.jpg (1600x900): top left, top right, bottom right, bottom left.
   // The screen box is drawn onto them in perspective (Heckbert's unit-square projection).
-  let Q=[[687.6,300.6],[911.4,300.6],[908.6,468.4],[690.4,468.4]],BOX=[688,301,223,167];
+  let Q=[[637.1,389.4],[888.6,387.5],[887.6,572.8],[639.1,578.6]],BOX=[637,388,251,188];
   const warp=()=>{
     const k=innerWidth/1600,W=BOX[2]*k,H=BOX[3]*k,
       [[x0,y0],[x1,y1],[x2,y2],[x3,y3]]=Q.map(([x,y])=>[(x-BOX[0])*k-W/2,(y-BOX[1])*k-H/2]),
