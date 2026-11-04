@@ -54,10 +54,33 @@ export function createPhone({ source, scene, reduced, soundOn, onState }) {
   hitBox.position.set(0.96, 0.76, -2.18); hitBox.name = "PhoneBase"; hitBox.userData.phone = "base"; root.add(hitBox);
 
   const lamp = glow("255,40,24", 0.05, LAMP, scene), grille = glow("255,190,90", 0.07, GRILLE, scene);
+
+  // The speaker key: the bottom left key of the phone's left block, drawn red with a speaker symbol over the baked key.
+  const KEY = new THREE.Vector3(0.8923, 0.7653, -2.1366), KEY_N = new THREE.Vector3(-0.0158, 0.9885, 0.1505).normalize();
+  const keyTex = (() => {
+    const cv = document.createElement("canvas"); cv.width = 196; cv.height = 172;
+    const g = cv.getContext("2d");
+    const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+    const fillG = g.createLinearGradient(0, 0, 0, 172); fillG.addColorStop(0, "#c8372b"); fillG.addColorStop(1, "#8e1d16");
+    g.fillStyle = "#4a0f0b"; rr(2, 2, 192, 168, 22); g.fill();
+    g.fillStyle = fillG; rr(8, 6, 180, 152, 18); g.fill();
+    g.fillStyle = "rgba(255,255,255,.18)"; rr(14, 10, 168, 30, 12); g.fill();
+    g.fillStyle = "#f7e9dc"; g.strokeStyle = "#f7e9dc"; g.lineCap = "round"; g.lineWidth = 9;
+    g.beginPath(); g.moveTo(52, 70); g.lineTo(78, 70); g.lineTo(106, 46); g.lineTo(106, 126); g.lineTo(78, 102); g.lineTo(52, 102); g.closePath(); g.fill();
+    for (const r of [22, 42]) { g.beginPath(); g.arc(106, 86, r, -0.9, 0.9); g.stroke(); }
+    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+  })();
+  const keyMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.0245, 0.0215), new THREE.MeshBasicMaterial({ map: keyTex, color: 0xd8d0c8, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+  keyMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), KEY_N).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2));
+  keyMesh.position.copy(KEY).addScaledVector(KEY_N, 0.0007);
+  keyMesh.name = "PhoneSpeakerKey"; keyMesh.userData.phone = "speaker"; keyMesh.renderOrder = 3; root.add(keyMesh);
+  const keyGlow = glow("255,60,40", 0.05, KEY.clone().addScaledVector(KEY_N, 0.004), scene);
   const LAND = { dy: DESK_TOP + 0.0015 - minY, dz: 0.27, dx: 0.03, yaw: -0.42 }, LIFT = 0.1;
 
   // state: ringing -> lifting -> down (handset on the desk) -> speaker; hang-up returns to idle
-  const st = { mode: "ringing", s: 0, dir: 0, t0: 0, settle: 0 };
+  const HEARD = "sakina-phone-heard";
+  const heard = () => { try { return sessionStorage.getItem(HEARD) === "1"; } catch { return false; } };
+  const st = { mode: heard() ? "idle" : "ringing", s: 0, dir: 0, t0: 0, settle: 0, release: false };
   const audioEl = new Audio("sakina-phone.mp3?v=2"); audioEl.preload = "auto"; audioEl.volume = 1;
   let actx = null, level = 0;
   const caption = document.getElementById("phone-cap");
@@ -91,6 +114,7 @@ export function createPhone({ source, scene, reduced, soundOn, onState }) {
 
   function answer() {
     if (st.mode !== "ringing" && st.mode !== "idle") return false;
+    try { sessionStorage.setItem(HEARD, "1"); } catch { /* storage unavailable */ }
     st.dir = 1; st.t0 = 0; setMode("lifting"); return true;
   }
   function speaker() {
@@ -109,14 +133,19 @@ export function createPhone({ source, scene, reduced, soundOn, onState }) {
     if (st.mode !== "down" && st.mode !== "speaker") return false;
     stopVoice(); st.dir = -1; st.t0 = 0; setMode("returning"); return true;
   }
-  audioEl.addEventListener("ended", () => { if (st.mode === "speaker") { if (caption) caption.hidden = true; setMode("down"); } });
+  audioEl.addEventListener("ended", () => { if (st.mode === "speaker") hangup(); });
+  function release() {
+    if (st.mode === "down" || st.mode === "speaker") return hangup();
+    if (st.mode === "lifting") st.release = true;
+    return false;
+  }
 
   let last = performance.now();
   function step(now) {
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
     if (st.dir) {
       st.s = clamp01(st.s + st.dir * dt / (reduced ? 0.01 : 1.5));
-      if (st.dir > 0 && st.s >= 1) { st.dir = 0; st.settle = now; setMode("down"); }
+      if (st.dir > 0 && st.s >= 1) { st.dir = 0; st.settle = now; setMode("down"); if (st.release) { st.release = false; hangup(); } }
       if (st.dir < 0 && st.s <= 0) { st.dir = 0; holder.position.copy(c); holder.rotation.set(0, 0, 0); setMode("idle"); }
     }
     if (st.s > 0) {
@@ -128,6 +157,7 @@ export function createPhone({ source, scene, reduced, soundOn, onState }) {
       holder.rotation.set(0, 0, on ? 0.02 * Math.sin(now * 0.075) : 0);
       ringTone(now);
     }
+    keyGlow.material.opacity = st.mode === "down" && !reduced ? 0.25 + 0.2 * Math.sin(now * 0.005) : st.mode === "down" ? 0.35 : 0;
     const blink = st.mode === "ringing" ? (Math.floor(now / 300) % 2 ? 1 : 0.15) : st.mode === "idle" ? 0 : 0.35;
     lamp.material.opacity = reduced && st.mode === "ringing" ? 1 : blink;
     const talking = st.mode === "speaker" && !audioEl.paused;
@@ -136,10 +166,11 @@ export function createPhone({ source, scene, reduced, soundOn, onState }) {
   }
 
   return {
-    step, answer, speaker, hangup,
+    step, answer, speaker, hangup, release,
     get mode() { return st.mode; },
     get busy() { return st.dir !== 0; },
-    pickMeshes: () => [mesh, hitBox],
+    pickMeshes: () => [mesh, hitBox, keyMesh],
+    speakerHit: ray => ray.intersectObject(keyMesh, false).length > 0,
     frame: new THREE.Box3(new THREE.Vector3(0.83, 0.72, -2.31), new THREE.Vector3(1.1, 0.84, -1.95))
   };
 }

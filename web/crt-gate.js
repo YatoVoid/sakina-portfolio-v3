@@ -26,18 +26,27 @@ if(loader){
   // The glass corners in crt-still.jpg (1600x900): top left, top right, bottom right, bottom left.
   // The screen box is drawn onto them in perspective (Heckbert's unit-square projection).
   let Q=[[637.1,389.4],[888.6,387.5],[887.6,572.8],[639.1,578.6]],BOX=[637,388,251,188];
+  // The still is a 1600x900 capture of the home view. The 3D camera keeps a fixed vertical field of view (wider only on narrow windows),
+  // so the still is scaled by height, with the same lens rule as lensFov() in main-pad.js, and stays the exact view the room loads into.
+  const scaleK=()=>{
+    const a=innerWidth/innerHeight,t=Math.tan(16*Math.PI/180),h=Math.max(t,Math.min(.62,.29/a));
+    return innerHeight/900*t/h;
+  };
+  const setK=()=>gate.style.setProperty("--k",scaleK()+"px");
+  setK();
   const warp=()=>{
-    const k=innerWidth/1600,W=BOX[2]*k,H=BOX[3]*k,
+    const k=scaleK(),W=BOX[2]*k,H=BOX[3]*k,
       [[x0,y0],[x1,y1],[x2,y2],[x3,y3]]=Q.map(([x,y])=>[(x-BOX[0])*k-W/2,(y-BOX[1])*k-H/2]),
       sx=x0-x1+x2-x3,sy=y0-y1+y2-y3,dx1=x1-x2,dx2=x3-x2,dy1=y1-y2,dy2=y3-y2,den=dx1*dy2-dx2*dy1,
       gg=(sx*dy2-dx2*sy)/den,hh=(dx1*sy-sx*dy1)/den,a=x1-x0+gg*x1,b=x3-x0+hh*x3,d=y1-y0+gg*y1,e=y3-y0+hh*y3;
     scr.style.setProperty("--warp",`matrix3d(${[a/W,d/W,0,gg/W,b/H,e/H,0,hh/H,0,0,1,0,(a+b)/2+x0,(d+e)/2+y0,0,(gg+hh)/2+1].map(v=>+v.toFixed(9)).join(",")})`);
   };
-  warp();addEventListener("resize",warp);
+  const onResize=()=>{setK();warp()};
+  warp();addEventListener("resize",onResize);
   // Once the room is showing, follow the TV glass as the 3D camera actually projects it (it no longer matches the still).
   addEventListener("crtquad",e=>{
     if(!gate.classList.contains("ready")||entered)return;
-    const k=innerWidth/1600;
+    const k=scaleK();
     Q=e.detail.map(([x,y])=>[(x-innerWidth/2)/k+800,(y-innerHeight/2)/k+450]);
     warp();
   });
@@ -72,7 +81,7 @@ if(loader){
     gate.classList.add("out");
     dispatchEvent(new Event("crt-enter"));
     root.classList.remove("crt-gating");
-    removeEventListener("resize",warp);
+    removeEventListener("resize",onResize);
     setTimeout(()=>gate.remove(),reduced?0:1000);
   };
   enter.addEventListener("click",go);

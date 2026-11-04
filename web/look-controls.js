@@ -15,6 +15,7 @@ const D2R = THREE.MathUtils.degToRad;
 // HOME limits are felixrieseberg.com's own (his desktop.js): absolute azimuth -1.3..+1.2 rad and polar 0.95..1.72 rad around the TV (the left stop is pulled in to -1.08 and the low stop to 1.6 here, where the plant fills the foreground),
 // zoom 0.3..2.6 m with a home distance of 1.75 m, rotateSpeed 0.5, damping 0.06.
 const HOME_LIMITS = { azMin: -1.08, azMax: 1.2, polarMin: 0.95, polarMax: 1.6, dolly: [0.5, 1.48] };
+const CHAIR_PAN = [1.05, 0.5];             // how far the pivot slides toward the leather chair at the far end of the leftward swing
 const PRESET_LIMITS = { az: D2R(35), polarSpan: D2R(20), polarMin: D2R(35), polarMax: D2R(95) };
 const DOLLY_PRESET = [0.80, 1.20];
 const RAD_PER_PX = 0.0042;                         // full drag across ~600 px swings 145 deg (the whole HOME range)
@@ -76,11 +77,17 @@ export class LookControls {
     this._dolly += (this._gDolly - this._dolly) * k;
     this._yaw += (this._gYaw - this._yaw) * k;
     const az = this._az0 + this._az * (1 - smoothstepYaw(this._yaw / YAW_MAX)), polar = this._polar0 + this._polar, r = this._dist * this._dolly;
+    let pan = 0;
+    if (this._home && this._az < 0 && this._lim.azMin < 0) {
+      const f = THREE.MathUtils.clamp(this._az / this._lim.azMin, 0, 1);
+      pan = smoothstepYaw(THREE.MathUtils.clamp((f - 0.3) / 0.7, 0, 1));
+    }
+    const c = this._center.clone(); c.x += CHAIR_PAN[0] * pan; c.z += CHAIR_PAN[1] * pan;
     const pos = new THREE.Vector3(r * Math.sin(polar) * Math.sin(az), r * Math.cos(polar), r * Math.sin(polar) * Math.cos(az))
-      .add(this._center);
+      .add(c);
     ROOM.clampPoint(pos, pos);
     this.camera.position.copy(pos);
-    this.target.copy(this._center);
+    this.target.copy(c);
     this.camera.lookAt(this.target);
     this.lookTarget.copy(this.target);
     if (this._yaw > 1e-4) {

@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import {LookControls} from "./look-controls.js?v=15";
-import {createSfx} from "./sfx.js?v=4";
+import {LookControls} from "./look-controls.js?v=19";
+import {createSfx} from "./sfx.js?v=5";
 import {createNotebook} from "./notebook.js?v=6";
 import {createFrames} from "./frames.js?v=4";
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
@@ -13,11 +13,12 @@ import {createTapeDeck} from "./tape-deck.js?v=3";
 import {makeIbmTerminal} from "./ibm-terminal.js?v=6";
 import {addIbmLights} from "./ibm-lights.js?v=2";
 import {createCityLife} from "./city-life.js?v=3";
-import {createPhone} from "./phone.js?v=3";
+import {createPhone} from "./phone.js?v=5";
 import {EffectComposer} from "three/addons/postprocessing/EffectComposer.js";
 import {RenderPass} from "three/addons/postprocessing/RenderPass.js";
 import {UnrealBloomPass} from "three/addons/postprocessing/UnrealBloomPass.js";
 import {OutputPass} from "three/addons/postprocessing/OutputPass.js";
+import {ShaderPass} from "three/addons/postprocessing/ShaderPass.js";
 
 const $=id=>document.getElementById(id);
 const canvas=$("scene");
@@ -30,7 +31,10 @@ try{
   $("nogl").hidden=false;$("loader").remove();
   throw new Error("WebGL unavailable");
 }
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const PR_FIXED=parseFloat(new URLSearchParams(location.search).get("pr")||"0");
+const PR_CAP=PR_FIXED||Math.min(devicePixelRatio,1.75);
+let prNow=PR_CAP;
+renderer.setPixelRatio(prNow);
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.NoToneMapping;
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
@@ -69,7 +73,7 @@ function setProgress(){
   $("loader-fill").style.width=p+"%";$("loader-text").textContent="LOADING "+p+"%";
 }
 // Per-tape click boxes generated from the Blender scene (pipeline/tools/tape_layout.py).
-let cityLife=null,gateEl,phone=null;const _gq=new THREE.Vector3();
+let cityLife=null,gateEl,phone=null,phoneQuiet=false;const _gq=new THREE.Vector3();
 const TAPE_PAL=[0xc9a227,0x1f8f73,0xa8281f,0x2a4a9a,0xd9631c,0x2f7d3a,0x1f2f63,0x3a8a4a,0x7a3b8c,0xd0541d,0xa02a3c,0x1c6f8a,0x8a7a2a];
 let TAPES=[];
 let deck=null,notebook=null;const logoMeshes=[];
@@ -269,9 +273,11 @@ const roomP=new Promise((res,rej)=>loader.load("sakina-room-agx-both.glb",g=>{
 const outP=new Promise((res,rej)=>loader.load("sakina-outside-r4lo.glb",g=>{g.scene.position.y=-10;scene.add(g.scene);res()},
   e=>{if(e.lengthComputable){progressOut=e.loaded/e.total;setProgress()}},rej));
 
+const VIEW_ZOOM=parseFloat(new URLSearchParams(location.search).get("vz")||"1.7");
 // Berlin rail-yard night photo behind the window (round 4, approved): two unlit emissive pictures ~80 m away (photo patch + panorama).
 const viewP=new Promise(res=>loader.load("sakina-view-r4lo.glb",g=>{
   g.scene.traverse(o=>{if(o.isMesh){o.material.side=THREE.DoubleSide;o.material.envMapIntensity=0;o.renderOrder=-1}});
+  {const b=new THREE.Box3().setFromObject(g.scene),c=b.getCenter(new THREE.Vector3());g.scene.scale.setScalar(VIEW_ZOOM);g.scene.position.copy(c).multiplyScalar(1-VIEW_ZOOM)}
   scene.add(g.scene);
   const ph=g.scene.getObjectByName("WindowView_Photo");
   if(ph){g.scene.updateMatrixWorld(true);try{cityLife=createCityLife(ph,reduced)}catch(e){console.warn("city life failed",e)}}
@@ -575,6 +581,8 @@ function setShift(px){shiftPx=px;if(Math.abs(px)<0.5)camera.clearViewOffset();el
 let tween=null;
 function flyTo(name){
   const v=VIEWS[name];if(!v)return;
+  if(name!=="phone"){phone?.release();phoneQuiet=false}
+  crtVideo.away(name==="notepad");
   const from={p:camera.position.clone(),t:(controls.lookTarget.lengthSq()?controls.lookTarget:controls.target).clone(),s:shiftPx};
   const dur=reduced?1:1300;
   document.documentElement.dataset.view=name==="ibm"||name==="desk"||name==="outside"||name==="notepad"||name==="chair"?name:"";
@@ -711,7 +719,10 @@ function go(name){
   }
   else if(name==="pad")liftPad();
   else if(name==="power")toggleTv();
-  else if(name==="phone"){flyTo("phone");closePanel();phone?.answer()}
+  else if(name==="phone"){
+    if(phone&&!tween&&snap?.name==="phone"&&(phone.mode==="down"||phone.mode==="speaker")){phone.hangup();return}
+    flyTo("phone");closePanel();phone?.answer()
+  }
   else if(name==="pcpower")togglePc();
   else if(name==="clocks"){flyTo("clocks");closePanel()}
   else if(name==="chair"){flyTo(snap?.name==="chair"&&!tween?"home":"chair");closePanel()}
@@ -736,13 +747,9 @@ function syncMenu(){
 $("panel-close").addEventListener("click",()=>go("home"));
 // Credits: an index card floats up from below the frame and is typed on; ESC, a click outside or CLOSE puts it back.
 const CREDITS=[
-  ["Three.js","MIT licence","https://threejs.org"],
-  ["Room, props and lighting","Modelled in Blender, baked with Cycles",null],
-  ["Clock tick","Recorded for felixrieseberg.com","https://www.felixrieseberg.com"],
-  ["Phone voice","Piper text to speech, Amy voice (MIT)","https://github.com/rhasspy/piper"],
-  ["Fonts","VT323, Archivo, Courier Prime, IBM Plex Mono, SIL Open Font Licence","https://fonts.google.com"],
-  ["Rain, lo-fi, VCR and power sounds","Generated live with the Web Audio API",null],
-  ["Page layout and controls","After felixrieseberg.com","https://www.felixrieseberg.com"]
+  ["Clock tick","felixrieseberg.com","https://www.felixrieseberg.com"],
+  ["Phone voice","Piper, Amy voice","https://github.com/rhasspy/piper"],
+  ["Fonts","Google Fonts","https://fonts.google.com"]
 ];
 const cred=(()=>{
   const root=el("div",undefined,"cred");root.id="cred";root.hidden=true;
@@ -825,9 +832,8 @@ function tipFor3d(h){
     case"pcpower":return pc.on?"CLICK TO TURN OFF THE COMPUTER":"CLICK TO TURN ON THE COMPUTER";
     case"phone":{
       const mo=phone.mode;
-      if(h.part==="handset")return mo==="down"||mo==="speaker"?"CLICK THE HANDSET TO HANG UP":mo==="ringing"?"THE PHONE IS RINGING · CLICK TO ANSWER":"CLICK TO PICK UP THE PHONE";
-      if(mo==="down")return "CLICK TO PUT ME ON SPEAKER";
-      if(mo==="speaker")return "ON SPEAKER · CLICK THE HANDSET TO HANG UP";
+      if(h.part==="speaker"&&mo==="down")return "CLICK TO PUT ME ON SPEAKER";
+      if(mo==="down"||mo==="speaker")return "CLICK TO PUT THE PHONE BACK";
       return mo==="ringing"?"THE PHONE IS RINGING · CLICK TO ANSWER":"CLICK TO PICK UP THE PHONE";
     }
     default:return "CLICK TO OPEN THE NOTEPAD";
@@ -879,7 +885,7 @@ function pick(ev){
   if(!hit)return null;
   const n=hit.object.name;
   if(hit.object.userData.tape!==undefined)return {kind:"tapes",idx:hit.object.userData.tape};
-  if(hit.object.userData.phone)return {kind:"phone",part:hit.object.userData.phone};
+  if(hit.object.userData.phone)return {kind:"phone",part:hit.object.userData.phone==="base"&&phone.speakerHit(ray)?"speaker":hit.object.userData.phone};
   if(n==="Pad")return {kind:"pad"};
   if(hit.object.userData.notebook)return {kind:"notepad",nav:notebook?.navAt(hit)};
   if(hit.object.userData.vcr)return {kind:"vcr",id:hit.object.userData.vcr};
@@ -929,14 +935,58 @@ canvas.addEventListener("pointerup",ev=>{
   else go(hit.kind);
 });
 
-const composer=new EffectComposer(renderer,new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,samples:4}));
+const composer=new EffectComposer(renderer,new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,samples:2}));
 composer.addPass(new RenderPass(scene,camera));
 const bloom=new UnrealBloomPass(new THREE.Vector2(1,1),0.7,0.6,0.88);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
+// The colour grade, tint, vignette and film grain, done in one pass here. They used to be a CSS filter, two blend layers and a canvas
+// refilled 12 times a second, which made the browser re-composite the whole page on every frame.
+const gradeU={uTime:{value:0},uTint:{value:1}};
+const gradePass=new ShaderPass(new THREE.ShaderMaterial({uniforms:{tDiffuse:{value:null},...gradeU},
+  vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+  fragmentShader:`uniform sampler2D tDiffuse;uniform float uTime,uTint;varying vec2 vUv;
+    float hash(vec2 p){vec3 q=fract(vec3(p.xyx)*0.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
+    vec3 softLight(vec3 cb,vec3 cs){
+      vec3 d=mix(sqrt(cb),((16.0*cb-12.0)*cb+4.0)*cb,step(cb,vec3(0.25)));
+      return mix(cb-(1.0-2.0*cs)*cb*(1.0-cb),cb+(2.0*cs-1.0)*(d-cb),step(vec3(0.5),cs));
+    }
+    void main(){
+      vec3 c=texture2D(tDiffuse,vUv).rgb;
+      c=clamp(vec3(c.r+0.012,pow(max(c.g,0.0),1.03)+0.010,c.b+0.016),0.0,1.0);
+      float l=dot(c,vec3(0.2126,0.7152,0.0722));c=clamp(mix(vec3(l),c,1.08),0.0,1.0);
+      c=clamp((c-0.5)*0.97+0.5,0.0,1.0);c=clamp(c*1.08,0.0,1.0);
+      float g=clamp((1.0-vUv.y)/0.7,0.0,1.0);
+      vec3 tc=mix(vec3(40.0,50.0,120.0),vec3(255.0,150.0,60.0),g)/255.0;
+      c=mix(c,softLight(c,tc),mix(0.30,0.12,g)*uTint);
+      vec2 e=vec2((vUv.x-0.5)/0.75,(vUv.y-0.42)/0.70);float r=length(e);
+      float va=r<0.55?0.0:r<0.88?0.22*(r-0.55)/0.33:r<1.0?0.22+0.18*(r-0.88)/0.12:0.4;
+      c=mix(c,vec3(6.0,3.0,14.0)/255.0,va);
+      float n=hash(floor(vUv*vec2(1280.0,720.0))+vec2(floor(uTime*12.0)*37.0,floor(uTime*12.0)*17.0));
+      vec3 gn=vec3(128.0+(n-0.5)*170.0)/255.0*vec3(1.0,0.97,0.9);
+      vec3 ov=mix(2.0*c*gn,1.0-2.0*(1.0-c)*(1.0-gn),step(vec3(0.5),c));
+      c=mix(c,ov,0.3);
+      gl_FragColor=vec4(c,1.0);
+    }`}));
+composer.addPass(gradePass);
+function setBuffers(){
+  const w=innerWidth,h=innerHeight;
+  renderer.setPixelRatio(prNow);composer.setPixelRatio(prNow);
+  renderer.setSize(w,h,false);composer.setSize(w,h);steamU.uPx.value=h*prNow/(2*Math.tan(camera.fov*Math.PI/360));
+}
+// Drops the render resolution when frames run long and brings it back when there is room, so the scene keeps moving.
+let emaDt=16.7,lastT=0,slowT=0,fastT=0;
+function adaptRes(now){
+  const dt=lastT?now-lastT:16.7;lastT=now;
+  if(PR_FIXED||dt>250||document.hidden)return;
+  emaDt+=(dt-emaDt)*0.06;
+  if(emaDt>24){slowT+=dt;fastT=0}else if(emaDt<15){fastT+=dt;slowT=0}else{slowT=0;fastT=0}
+  if(slowT>1200&&prNow>0.72){prNow=Math.max(0.72,prNow-0.2);slowT=0;emaDt=16.7;setBuffers()}
+  else if(fastT>8000&&prNow<PR_CAP){prNow=Math.min(PR_CAP,prNow+0.15);fastT=0;setBuffers()}
+}
 function resize(){
   const w=innerWidth,h=innerHeight;
-  renderer.setSize(w,h,false);composer.setSize(w,h);steamU.uPx.value=h*renderer.getPixelRatio()/(2*Math.tan(camera.fov*Math.PI/360));
+  camera.fov=lensFov();setBuffers();steamU.uPx.value=h*renderer.getPixelRatio()/(2*Math.tan(camera.fov*Math.PI/360));
   camera.aspect=w/h;
   camera.fov=lensFov();
   camera.updateProjectionMatrix();
@@ -950,8 +1000,10 @@ function resize(){
 }
 addEventListener("resize",resize);resize();
 
+let tintK=1;
 function frame(now){
   requestAnimationFrame(frame);
+  adaptRes(now);
   stepTween(now);
   if(controls.enabled)controls.update();
   stepPad(now);deck?.step(now);cityLife?.step(now/1000);phone?.step(now);notebook?.step(now);stepDeskGone();stepPc(now);term.step(now,reduced);ibmLights.step(now);crtVideo.step(now);
@@ -962,9 +1014,11 @@ function frame(now){
       dispatchEvent(new CustomEvent("crtquad",{detail:q}))}
   }
   crtGlass.uniforms.uTime.value=reduced?0:now/1000;
-  crtLive.uTime.value=reduced?0:now/1000;if(now-(crtScreen.last||0)>50){crtScreen.last=now;crtScreen.draw(reduced?0:now)}rainU.uTime.value=reduced?0:now/1000;steamU.uTime.value=reduced?3:now/1000;windU.uTime.value=reduced?0:now/1000;stepTv(now);syncMenu();if(clock.tex)drawClock(reduced?0:Math.floor((now-clock.t0)/1000));
+  crtLive.uTime.value=reduced?0:now/1000;if(crtScreen.mesh.visible&&now-(crtScreen.last||0)>50){crtScreen.last=now;crtScreen.draw(reduced?0:now)}rainU.uTime.value=reduced?0:now/1000;steamU.uTime.value=reduced?3:now/1000;windU.uTime.value=reduced?0:now/1000;stepTv(now);syncMenu();if(clock.tex)drawClock(reduced?0:Math.floor((now-clock.t0)/1000));
+  vidPass.enabled=crtVideo.active&&tv.off<0.02;
+  gradeU.uTime.value=reduced?0:now/1000;
+  tintK+=((document.documentElement.dataset.view==="ibm"?0.12:1)-tintK)*0.06;gradeU.uTint.value=tintK;
   composer.render();
-  if(crtVideo.active&&tv.off<0.02){renderer.autoClear=false;renderer.render(vidScene,camera);renderer.autoClear=true}
 }
 
 // The old sheet is part of the room's geometry. Taking its triangles out leaves the desk top that was under it.
@@ -1075,6 +1129,8 @@ const osd=(()=>{
 // The picture is drawn after the scene's post-processing, straight to the canvas, so the film keeps its own colours.
 const VW=1.075,VH=1.09;
 const vidScene=new THREE.Scene();
+const vidPass=new RenderPass(vidScene,camera);vidPass.clear=false;vidPass.clearDepth=false;vidPass.enabled=false;
+composer.insertPass(vidPass,composer.passes.indexOf(gradePass));
 const vidMat=new THREE.ShaderMaterial({uniforms:{uVid:{value:null},uK:{value:0},uNs:{value:0},uTime:{value:0}},transparent:true,depthTest:false,depthWrite:false,
   vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
   fragmentShader:`uniform sampler2D uVid;uniform float uK,uNs,uTime;varying vec2 vUv;
@@ -1096,28 +1152,52 @@ const crtVideo=(()=>{
   const v=document.createElement("video");v.playsInline=true;v.preload="auto";v.setAttribute("playsinline","");v.muted=true;
   const tex=new THREE.VideoTexture(v);tex.colorSpace=THREE.NoColorSpace;tex.minFilter=THREE.LinearFilter;tex.generateMipmaps=false;
   vidMat.uniforms.uVid.value=tex;
-  let want=0,k=0,burst=0,held=false,cur=-1,last=performance.now();
+  // While a film loads the CRT shows a black card with the name and a bar that fills as the file buffers; the film starts when it is ready.
+  const lc=document.createElement("canvas");lc.width=960;lc.height=730;const lg=lc.getContext("2d");
+  const loadTex=new THREE.CanvasTexture(lc);loadTex.colorSpace=THREE.NoColorSpace;loadTex.minFilter=THREE.LinearFilter;loadTex.generateMipmaps=false;
+  const drawLoad=p=>{
+    lg.fillStyle="#000";lg.fillRect(0,0,960,730);
+    lg.fillStyle="#f4f5ff";lg.textAlign="center";lg.textBaseline="alphabetic";
+    lg.font="900 74px Archivo";lg.fillText("SAKINA SAIFUDDIN",480,350);
+    lg.strokeStyle="rgba(244,245,255,.85)";lg.lineWidth=3;lg.strokeRect(220,404,520,22);
+    lg.fillRect(226,410,508*p,10);
+    lg.font="30px VT323";lg.fillStyle="rgba(244,245,255,.7)";lg.fillText("LOADING "+Math.round(p*100)+"%",480,472);
+    loadTex.needsUpdate=true;
+  };
+  const buffered=()=>{if(!v.duration||!isFinite(v.duration))return 0;let e=0;for(let i=0;i<v.buffered.length;i++)if(v.buffered.start(i)<=0.6)e=Math.max(e,v.buffered.end(i));return Math.min(1,e/v.duration)};
+  let started=false,loadAt=0,shown=0,drawnAt=0;
+  let want=0,k=0,burst=0,held=false,cur=-1,last=performance.now(),away=false,userPaused=false,snapIn=false;
   const api={onEnd:null,get paused(){return v.paused},get userMuted(){return userMute},get playing(){return cur>=0&&want>0},get active(){return vidMat.uniforms.uK.value>0.01||vidMat.uniforms.uNs.value>0.01}};
   v.addEventListener("ended",()=>{const done=cur;want=0;burst=1;api.onEnd?.(done)});
   let userMute=false;
-  const muted=()=>soundBtn.getAttribute("aria-pressed")!=="true"||onComputer()||userMute;
+  const muted=()=>soundBtn.getAttribute("aria-pressed")!=="true"||onComputer()||userMute||phoneQuiet;
   Object.assign(api,{
-    play(i){
-      cur=i;v.src=VIDEOS[i];v.muted=muted();v.currentTime=0;want=1;burst=1;
-      v.play().catch(e=>console.warn("video blocked",e));
+    play(i,snap=false){
+      snapIn=snap;cur=i;started=false;shown=0;loadAt=performance.now();drawnAt=0;vidMat.uniforms.uVid.value=loadTex;drawLoad(0);
+      v.pause();v.src=VIDEOS[i];v.muted=muted();want=1;burst=0;userPaused=false;
     },
     stop(){if(cur<0)return;want=0;burst=1},
-    togglePause(){if(cur<0||!want)return null;if(v.paused)v.play().catch(()=>{});else v.pause();return !v.paused},
-    restart(){if(cur<0)return false;v.currentTime=0;if(v.paused)v.play().catch(()=>{});return true},
+    togglePause(){if(cur<0||!want||!started)return null;if(v.paused){userPaused=false;v.play().catch(()=>{})}else{userPaused=true;v.pause()}return !v.paused},
+    away(on){away=on;if(on){if(started)v.pause()}else if(cur>=0&&want&&started&&v.paused&&!held&&!userPaused)v.play().catch(()=>{})},
+    restart(){if(cur<0||!started)return false;v.currentTime=0;if(v.paused)v.play().catch(()=>{});return true},
     toggleMute(){userMute=!userMute;return userMute},
     cycleVolume(){v.volume=v.volume>0.8?0.6:v.volume>0.5?0.3:1;return v.volume},
-    hold(on){held=on;if(on)v.pause();else if(cur>=0&&want&&v.paused)v.play().catch(()=>{})},
+    hold(on){held=on;if(on)v.pause();else if(cur>=0&&want&&started&&v.paused&&!away)v.play().catch(()=>{})},
     step(now){
       const dt=Math.min(.1,(now-last)/1000);last=now;
       const mu=muted();if(v.muted!==mu)v.muted=mu;
-      const ready=v.readyState>=2&&!held;
+      if(want&&!started&&cur>=0){
+        const target=v.readyState>=4?1:buffered();
+        shown+=(target-shown)*Math.min(1,dt*5);
+        if(now-drawnAt>60){drawnAt=now;drawLoad(Math.min(1,shown))}
+        if(!held&&!away&&v.readyState>=4&&shown>0.97&&performance.now()-loadAt>1200){
+          started=true;vidMat.uniforms.uVid.value=tex;v.currentTime=0;burst=0.5;
+          v.play().catch(e=>console.warn("video blocked",e));
+        }
+      }
+      const ready=(started?v.readyState>=2:true)&&!held;
       const goal=want&&ready?1:0;
-      k+=(goal-k)*Math.min(1,dt*(reduced?60:3.2));
+      k+=(goal-k)*Math.min(1,dt*(reduced||(snapIn&&!started)?60:3.2));
       if(!want&&k<0.02&&cur>=0){v.pause();cur=-1}
       burst=Math.max(0,burst-dt/0.75);
       const ns=reduced?0:Math.sin(Math.min(1,burst)*Math.PI)*0.85*(want?1:Math.max(.4,k));
@@ -1162,7 +1242,7 @@ function setupTapes(){
   crtVideo.onEnd=playNext;
   logoMeshes.forEach(([mesh,name])=>deck.adoptLogo(mesh,name));
   addIntroTape(matFor);
-  try{phone=createPhone({source:src,scene,reduced,soundOn:()=>soundBtn.getAttribute("aria-pressed")==="true"});if(phone)buildViews()}catch(e){console.warn("phone failed",e)}
+  try{phone=createPhone({source:src,scene,reduced,soundOn:()=>soundBtn.getAttribute("aria-pressed")==="true",onState:m=>{if(m==="speaker")phoneQuiet=true}});if(phone)buildViews()}catch(e){console.warn("phone failed",e)}
   console.log("tape deck",deck.parts.map(q=>q.holder.children.length).join(","));
 }
 // Twelfth tape: the intro film. It sits on top of the right-hand stack and carries its own spine label.
@@ -1200,7 +1280,7 @@ function addIntroTape(matFor){
 addEventListener("crt-enter",()=>setTimeout(()=>{
   if(!deck||deck.inVcr>=0||crtVideo.playing||padOpen())return;
   if(!tv.on)setTv(true);
-  crtVideo.play(11);
+  crtVideo.play(11,true);
 },reduced?0:900));
 function showTape(idx,{fly=true}={}){
   if(fly&&!padOpen())flyTo("home");
@@ -1265,8 +1345,8 @@ const VCR=(()=>{
   return defs.map(d=>{const m=new THREE.Mesh(new THREE.BoxGeometry(d.w,d.h,0.02),mat);m.position.set(d.x,d.y,d.z);m.name="Vcr_"+d.id;m.userData.vcr=d.id;scene.add(m);return m});
 })();
 const windowHit=(()=>{
-  const m=new THREE.Mesh(new THREE.PlaneGeometry(2.4,1.7),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
-  m.position.set(0.05,1.65,-2.6);m.name="WindowHit";scene.add(m);return m;
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(1.81,1.7),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
+  m.position.set(0.075,1.65,-2.6);m.name="WindowHit";scene.add(m);return m;
 })();
 function nudge(text){const h=$("hint");h.textContent=text;h.classList.add("show");clearTimeout(nudge.t);nudge.t=setTimeout(()=>h.classList.remove("show"),1600)}
 function vcrTip(id){
@@ -1365,8 +1445,8 @@ function phoneClick(part){
   if(!phone||phone.busy)return;
   const mo=phone.mode;
   if(mo==="ringing"||mo==="idle"){flyTo("phone");closePanel();phone.answer()}
-  else if(part==="handset"||mo==="speaker"&&part==="handset")phone.hangup();
-  else if(part==="base"&&mo==="down")phone.speaker();
+  else if(mo==="down"&&part==="speaker")phone.speaker();
+  else if(mo==="down"||mo==="speaker")phone.hangup();
 }
 
 // VCR display: the baked "23:05" is part of the lightmap, so a live readout is drawn over the plate (VCR_LCD, x .085...146, y .7615...7915, z -2.0475).
@@ -1396,6 +1476,14 @@ function drawClock(sec){
 const CLOCK_INK="#cdeeee";
 const CLOCK_AT=new THREE.Vector3(0.1155,0.773,-2.0465);
 
+// Uploads every texture and compiles every shader before the loading screen lifts, so the first move to a new view does not hitch.
+function warm(){
+  const seen=new Set();
+  scene.traverse(o=>{
+    for(const mt of [].concat(o.material||[]))for(const key in mt){const t=mt[key];if(t&&t.isTexture&&!t.isVideoTexture&&!seen.has(t)){seen.add(t);try{renderer.initTexture(t)}catch{}}}
+  });
+  try{renderer.compile(scene,camera);renderer.compile(vidScene,camera)}catch(e){console.warn("warm-up failed",e)}
+}
 Promise.all([roomP,outP,viewP,tapesP]).then(()=>{
   hideSheet();
   try{setupTapes()}catch(e){console.warn("tapes failed",e)}
@@ -1405,6 +1493,7 @@ Promise.all([roomP,outP,viewP,tapesP]).then(()=>{
   try{createFrames({meshes,scene})}catch(e){console.warn("frames failed",e)}
   try{setupClock()}catch(e){console.warn("clock failed",e)}
   buildViews();
+  warm();
   const l=$("loader");l.classList.add("done");
   setTimeout(()=>l.remove(),1000);
   requestAnimationFrame(frame);
@@ -1412,3 +1501,5 @@ Promise.all([roomP,outP,viewP,tapesP]).then(()=>{
   console.error(err);
   $("loader-text").textContent="FAILED TO LOAD SCENE";
 });
+
+

@@ -46,16 +46,17 @@ export function createSfx({ enabled }) {
   return {
     // the recorder's motor and latch, kept quiet: the tape coming out, and the tape going back in
     eject() {
-      if (!ready()) return; const t = ctx.currentTime + 0.02; dest = soft;
-      click(t, 0.5); hiss(t + 0.05, 0.9, 0.22, "bandpass", 380, 900, 2); tone(t + 0.05, 0.9, "sawtooth", 70, 120, 0.08, 520);
-      click(t + 0.95, 0.5); thump(t + 0.95, 0.7);
-      dest = null;
+      if (!ready()) return; const t = ctx.currentTime + 0.02;
+      click(t, 0.9); tone(t, 0.07, "square", 420, 200, 0.18, 2200);
+      hiss(t + 0.06, 0.85, 0.3, "bandpass", 900, 1900, 1); tone(t + 0.06, 0.85, "sawtooth", 190, 310, 0.14, 1500);
+      click(t + 0.95, 0.9); tone(t + 0.95, 0.1, "square", 340, 150, 0.3, 1800); hiss(t + 0.95, 0.08, 0.5, "bandpass", 1400, 600, 1);
     },
     insert() {
-      if (!ready()) return; const t = ctx.currentTime + 0.02; dest = soft;
-      click(t, 0.4); hiss(t + 0.1, 1.2, 0.18, "bandpass", 700, 330, 2); tone(t + 0.1, 1.2, "sawtooth", 95, 62, 0.06, 480);
-      thump(t + 1.5, 0.7); click(t + 1.52, 0.5);
-      dest = null;
+      if (!ready()) return; const t = ctx.currentTime + 0.02;
+      click(t, 0.8); tone(t, 0.06, "square", 380, 220, 0.16, 2200);
+      hiss(t + 0.1, 1.3, 0.3, "bandpass", 1700, 800, 1); tone(t + 0.1, 1.3, "sawtooth", 300, 180, 0.14, 1500);
+      click(t + 1.5, 0.9); tone(t + 1.5, 0.1, "square", 340, 150, 0.32, 1800); hiss(t + 1.5, 0.09, 0.55, "bandpass", 1400, 600, 1);
+      click(t + 1.62, 0.7);
     },
     tvOff() {
       if (!ready()) return; const t = ctx.currentTime + 0.01;
