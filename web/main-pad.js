@@ -1145,35 +1145,23 @@ const vidMat=new THREE.ShaderMaterial({uniforms:{uVid:{value:null},uK:{value:0},
 {const mesh=new THREE.Mesh(new THREE.PlaneGeometry(CRT.w*VW,CRT.h*VH),vidMat);mesh.position.set(CRT.cx,CRT.cy,CRT.z+0.004);vidScene.add(mesh)}
 
 // The tape in the recorder plays on the CRT: tracking static, then the picture. When a film ends the next tape in the row loads.
-const VIDEOS=["tmac","dentalx","uh","blutech","softsync","walnut","powerguard","cio","forecast-kitchen","cost-center","gan","intro"].map(n=>"videos/"+n+".mp4?v=4");
+const VIDEOS=["tmac","dentalx","uh","blutech","softsync","walnut","powerguard","cio","forecast-kitchen","cost-center","gan","intro"].map(n=>"videos/"+n+".mp4?v=5");
 const onComputer=()=>term.active||snap?.name==="ibm";
 const PLAY_ORDER=[11,0,1,2,3,4,5,6,7,8,9,10];
 const crtVideo=(()=>{
   const v=document.createElement("video");v.playsInline=true;v.preload="auto";v.setAttribute("playsinline","");v.muted=true;
   const tex=new THREE.VideoTexture(v);tex.colorSpace=THREE.NoColorSpace;tex.minFilter=THREE.LinearFilter;tex.generateMipmaps=false;
   vidMat.uniforms.uVid.value=tex;
-  // While a film loads the CRT shows a black card with the name and a bar that fills as the file buffers; the film starts when it is ready.
-  const lc=document.createElement("canvas");lc.width=960;lc.height=730;const lg=lc.getContext("2d");
-  const loadTex=new THREE.CanvasTexture(lc);loadTex.colorSpace=THREE.NoColorSpace;loadTex.minFilter=THREE.LinearFilter;loadTex.generateMipmaps=false;
-  const drawLoad=p=>{
-    lg.fillStyle="#000";lg.fillRect(0,0,960,730);
-    lg.fillStyle="#f4f5ff";lg.textAlign="center";lg.textBaseline="alphabetic";
-    lg.font="900 74px Archivo";lg.fillText("SAKINA SAIFUDDIN",480,350);
-    lg.strokeStyle="rgba(244,245,255,.85)";lg.lineWidth=3;lg.strokeRect(220,404,520,22);
-    lg.fillRect(226,410,508*p,10);
-    lg.font="30px VT323";lg.fillStyle="rgba(244,245,255,.7)";lg.fillText("LOADING "+Math.round(p*100)+"%",480,472);
-    loadTex.needsUpdate=true;
-  };
   const buffered=()=>{if(!v.duration||!isFinite(v.duration))return 0;let e=0;for(let i=0;i<v.buffered.length;i++)if(v.buffered.start(i)<=0.6)e=Math.max(e,v.buffered.end(i));return Math.min(1,e/v.duration)};
-  let started=false,loadAt=0,shown=0,drawnAt=0;
-  let want=0,k=0,burst=0,held=false,cur=-1,last=performance.now(),away=false,userPaused=false,snapIn=false;
+  let started=false,loadAt=0,shown=0;
+  let want=0,k=0,burst=0,held=false,cur=-1,last=performance.now(),away=false,userPaused=false;
   const api={onEnd:null,get paused(){return v.paused},get userMuted(){return userMute},get playing(){return cur>=0&&want>0},get active(){return vidMat.uniforms.uK.value>0.01||vidMat.uniforms.uNs.value>0.01}};
   v.addEventListener("ended",()=>{const done=cur;want=0;burst=1;api.onEnd?.(done)});
   let userMute=false;
   const muted=()=>soundBtn.getAttribute("aria-pressed")!=="true"||onComputer()||userMute||phoneQuiet;
   Object.assign(api,{
-    play(i,snap=false){
-      snapIn=snap;cur=i;started=false;shown=0;loadAt=performance.now();drawnAt=0;vidMat.uniforms.uVid.value=loadTex;drawLoad(0);
+    play(i){
+      cur=i;started=false;shown=0;loadAt=performance.now();
       v.pause();v.src=VIDEOS[i];v.muted=muted();want=1;burst=0;userPaused=false;
     },
     stop(){if(cur<0)return;want=0;burst=1},
@@ -1189,15 +1177,14 @@ const crtVideo=(()=>{
       if(want&&!started&&cur>=0){
         const target=v.readyState>=4?1:buffered();
         shown+=(target-shown)*Math.min(1,dt*5);
-        if(now-drawnAt>60){drawnAt=now;drawLoad(Math.min(1,shown))}
         if(!held&&!away&&v.readyState>=4&&shown>0.97&&performance.now()-loadAt>1200){
           started=true;vidMat.uniforms.uVid.value=tex;v.currentTime=0;burst=0.5;
           v.play().catch(e=>console.warn("video blocked",e));
         }
       }
       const ready=(started?v.readyState>=2:true)&&!held;
-      const goal=want&&ready?1:0;
-      k+=(goal-k)*Math.min(1,dt*(reduced||(snapIn&&!started)?60:3.2));
+      const goal=want&&started&&ready?1:0;
+      k+=(goal-k)*Math.min(1,dt*(reduced?60:3.2));
       if(!want&&k<0.02&&cur>=0){v.pause();cur=-1}
       burst=Math.max(0,burst-dt/0.75);
       const ns=reduced?0:Math.sin(Math.min(1,burst)*Math.PI)*0.85*(want?1:Math.max(.4,k));
@@ -1280,7 +1267,7 @@ function addIntroTape(matFor){
 addEventListener("crt-enter",()=>setTimeout(()=>{
   if(!deck||deck.inVcr>=0||crtVideo.playing||padOpen())return;
   if(!tv.on)setTv(true);
-  crtVideo.play(11,true);
+  crtVideo.play(11);
 },reduced?0:900));
 function showTape(idx,{fly=true}={}){
   if(fly&&!padOpen())flyTo("home");
